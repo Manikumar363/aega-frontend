@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { label: "HOME", href: "/" },
   { label: "ABOUT US", href: "/about" },
   // { label: "GLOBAL IMPACT", href: "/global-impact" },
-  {label: "FOR MEMBERS", href: "/members/training" },
+  {label: "FOR MEMBERS", href: "/members" },
   {/*{ 
     label: "FOR MEMBERS", 
     hasDropdown: true,
@@ -20,7 +20,7 @@ const NAV_LINKS = [
       { label: "Range of Services", href: "/members/services" },
     ]
   },*/},
-  {label:"FOR UNIVERSITY & SPONSORS", href:"/for-universities-sponsors"},
+  {label:"FOR UNIVERSITY & SPONSORS", href:"/university"},
   { 
     label: "NEWS & EVENTS", 
     hasDropdown: true,
@@ -44,7 +44,7 @@ const NAV_LINKS = [
     label: "FOR THE PUBLIC", 
     hasDropdown: true,
     dropdownItems: [
-      // { label: "Public", href: "/public" },
+      { label: "Public", href: "/public" },
       { label: "Student Complaint Form", href: "/public/complaint" },
       // { label: "FAQs", href: "/public/faqs" },
     ]

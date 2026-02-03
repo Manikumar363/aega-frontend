@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Testimonial from "@/components/university/testimonials";
 
 export default function ForThePublicPage() {
   return (
@@ -8,7 +9,7 @@ export default function ForThePublicPage() {
       {/* Background Image - Top Right Gradient */}
       <div className="pointer-events-none absolute right-0 top-0 h-auto w-auto">
         <Image
-          src="/common/bg-right-top.png"
+          src="/members-design.png"
           alt="Background"
           width={900}
           height={600}
@@ -99,6 +100,7 @@ export default function ForThePublicPage() {
             </div>
           </div>
         </div>
+        <Testimonial />
       </div>
     </div>
   );

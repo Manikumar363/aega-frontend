@@ -38,8 +38,8 @@ export default function AgentLearning() {
                     </div>
 
                     {/* Right: Photo with orange corners */}
-                    <div className="relative w-full md:w-1/2 max-w-md flex-shrink-0 flex flex-col items-center md:items-start">
-                        <div className="relative w-full aspect-[2/3] max-w-md shadow-2xl overflow-hidden">
+                    <div className="relative w-full md:w-1/2 max-w-md shrink-0 flex flex-col items-center md:items-start">
+                        <div className="relative w-full aspect-2/3 max-w-md shadow-2xl overflow-hidden">
                             <Image
                                 src="/presentation.jpg"
                                 alt="Agent Learning Path"

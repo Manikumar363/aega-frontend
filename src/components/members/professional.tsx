@@ -14,8 +14,8 @@ export default function Professional() {
         <section className="relative w-full min-h-[600px] bg-[#03091F] overflow-hidden flex items-center justify-center py-12 md:py-24">
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-center w-full max-w-7xl px-4 md:px-10 gap-10 md:gap-20">
                 {/* Left: Photo with orange corners */}
-                <div className="relative w-full md:w-1/2 max-w-md flex-shrink-0 flex flex-col items-center md:items-start">
-                    <div className="relative w-full aspect-[2/3] max-w-md shadow-2xl overflow-hidden">
+                <div className="relative w-full md:w-1/2 max-w-md shrink-0 flex flex-col items-center md:items-start">
+                    <div className="relative w-full aspect-2/3 max-w-md shadow-2xl overflow-hidden">
                         <Image
                             src="/benefits.png"
                             alt="Professional Guidelines Photo"

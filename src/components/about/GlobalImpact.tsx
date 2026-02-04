@@ -49,8 +49,8 @@ export default function GlobalImpact() {
     return (
         <section className="relative w-full bg-[#03091F] overflow-hidden pb-20">
             {/* Top right orange diagonal */}
-            <div className="hidden md:block absolute right-0 top-0 w-[120vw] h-[320px] -z-10">
-                <Image src="/orange-design1.png" alt="orange diagonal" fill className="object-cover object-right-top" />
+            <div className="hidden md:block absolute right-0 top-0 w-[120vw] h-80 -z-10">
+                <Image src="/orange-design1.png" alt="orange diagonal" fill className="object-cover object-top-right" />
             </div>
             {/* Bottom left orange diagonal */}
             <div className="hidden md:block absolute right-250 bottom-4 w-[50vw] h-[300px] -z-10 rotate-180 ">

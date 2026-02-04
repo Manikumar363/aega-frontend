@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function MembersHero() {
+export default function NewsHero() {
   return (
     <section className="relative w-full bg-[#03091F] py-24 overflow-hidden">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
@@ -8,11 +8,8 @@ export default function MembersHero() {
           {/* Left Content */}
           <div className="z-10">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-              FOR MEMBERS
+              NEWS & EVENTS
             </h1>
-            <p className="text-lg text-white/80 leading-relaxed max-w-lg">
-              Access comprehensive training, compliance resources, and professional development tools to elevate your practice and build credibility.
-            </p>
           </div>
 
           {/* Right Diagonal Orange Shape */}

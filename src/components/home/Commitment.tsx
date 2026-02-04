@@ -78,7 +78,7 @@ export default function Commitment() {
 
 				{/* Right: Image and Description over Diagonal */}
 				<div className="relative flex flex-col items-center justify-center w-full h-full">
-					<div className="relative w-full max-w-md aspect-[4/3] shadow-2xl overflow-hidden mb-4">
+					<div className="relative w-full max-w-md aspect-4/3 shadow-2xl overflow-hidden mb-4">
 						<Image
 							src="/commitment.jpeg" // replace with your image
 							alt="Commitment Visual"

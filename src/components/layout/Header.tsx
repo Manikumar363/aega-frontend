@@ -21,7 +21,7 @@ const NAV_LINKS = [
     ]
   },*/},
   {label:"FOR UNIVERSITY & SPONSORS", href:"/university"},
-  { 
+  {/*{ 
     label: "NEWS & EVENTS", 
     hasDropdown: true,
     dropdownItems: [
@@ -29,7 +29,8 @@ const NAV_LINKS = [
       { label: "Upcoming Events", href: "/news/events" },
       { label: "Blogs", href: "/blogs" },
     ]
-  },
+  },*/},
+  {label:"NEWS & EVENTS", href:"/news"},
   { 
     label: "COMPLIANCES & COURSES", 
     hasDropdown: true,

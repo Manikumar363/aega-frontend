@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
-export default function BlogsGrid() {
+export default function NewsMain() {
   const BLOGS = [
     {
       image: "/blog-1.jpg",
@@ -56,13 +56,13 @@ export default function BlogsGrid() {
         {/* Breadcrumb */}
         <div className="mb-6">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/60">
-            NEWS & EVENTS › BLOGS
+            NEWS & EVENTS › LATEST INDUSTRY NEWS
           </p>
         </div>
 
         {/* Heading */}
         <h1 className="mb-16 text-5xl font-bold text-white md:text-6xl">
-          BLOGS
+          LATEST INDUSTRY NEWS  
         </h1>
 
         {/* Blog Cards Grid - 3 columns, 2 rows */}

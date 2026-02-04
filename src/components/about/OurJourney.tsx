@@ -33,7 +33,7 @@ export default function OurJourney() {
 		<section className="relative w-full min-h-[600px] bg-[#03091F] overflow-hidden flex items-center justify-center py-12 md:py-24">
 			<div className="relative z-10 flex flex-col md:flex-row items-center justify-center w-full max-w-7xl px-4 md:px-10 gap-10 md:gap-20">
 				{/* Left: Photo with orange corners */}
-				<div className="relative w-full md:w-1/2 max-w-md flex-shrink-0 flex flex-col items-center md:items-start">
+				<div className="relative w-full md:w-1/2 max-w-md shrink-0 flex flex-col items-center md:items-start">
 					{/* Top Left Orange Overlay */}
 					<div className="absolute left-0 top-0 w-32 h-16 z-10" style={{transform: 'translate(-30%, -40%)'}}>
 						<Image src="/ourVision-design.png" alt="corner" fill className="object-contain" style={{objectPosition: 'left top'}} />
@@ -42,7 +42,7 @@ export default function OurJourney() {
 					<div className="absolute right-0 bottom-0 w-32 h-16 z-10" style={{transform: 'translate(30%, 40%) rotate(180deg)'}}>
 						<Image src="/ourVision-design.png" alt="corner" fill className="object-contain" style={{objectPosition: 'right bottom'}} />
 					</div>
-					<div className="relative w-full aspect-[4/3] max-w-md shadow-2xl overflow-hidden">
+					<div className="relative w-full aspect-4/3 max-w-md shadow-2xl overflow-hidden">
 						<Image
 							src="/OurJourney.png"
 							alt="Our Journey Photo"

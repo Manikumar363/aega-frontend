@@ -29,7 +29,7 @@ const NAV_LINKS = [
       { label: "Upcoming Events", href: "/news/events" },
       { label: "Blogs", href: "/blogs" },
     ]
-  },*/},
+  },
   {label:"NEWS & EVENTS", href:"/news"},
   { 
     label: "COMPLIANCES & COURSES", 
@@ -39,7 +39,8 @@ const NAV_LINKS = [
       { label: "Training Courses", href: "/compliance/courses" },
       { label: "Certifications", href: "/compliance/certifications" },
     ]
-  },
+  },*/},
+  {label:"COMPLIANCES & COURSES", href:"/compliance"},
   { label: "POLICY", href: "/policy" },
   { 
     label: "FOR THE PUBLIC", 

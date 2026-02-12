@@ -63,11 +63,14 @@ export default function UniversityDocumentsForm() {
       </div>
 
       {/* Sign Up Button */}
+      
       <button
         type="submit"
-        className="bg-[#F58A07] px-12 py-4 text-sm font-bold uppercase text-white hover:bg-[#e07b06]"
+        className="bg-[#F58A07] cursor-pointer px-12 py-4 text-sm font-bold uppercase text-white hover:bg-[#e07b06]"
       >
+        <a href="/university/dashboard">
         SIGN UP
+        </a>
       </button>
     </form>
   );

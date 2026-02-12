@@ -1,6 +1,13 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
+  const [activeRole, setActiveRole] = useState<"agent" | "university">("agent");
+  const router = useRouter();
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#050b1f]">
       {/* Background Images */}
@@ -45,10 +52,26 @@ export default function SignInPage() {
           <div className="flex-1 max-w-[620px]">
             {/* Toggle */}
             <div className="flex mb-6">
-              <button className="flex-1 bg-[#f7941d] py-2 text-sm font-medium text-white">
+              <button
+                type="button"
+                onClick={() => setActiveRole("agent")}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  activeRole === "agent"
+                    ? "bg-[#f7941d] text-white"
+                    : "border border-white/30 text-white"
+                }`}
+              >
                 AGENT
               </button>
-              <button className="flex-1 border border-white/30 py-2 text-sm font-medium text-white">
+              <button
+                type="button"
+                onClick={() => setActiveRole("university")}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  activeRole === "university"
+                    ? "bg-[#f7941d] text-white"
+                    : "border border-white/30 text-white"
+                }`}
+              >
                 UNIVERSITY
               </button>
             </div>
@@ -93,15 +116,27 @@ export default function SignInPage() {
             </div>
 
             {/* Sign In */}
-            <button className="w-[180px] bg-[#f7941d] py-2 text-sm font-medium text-white hover:opacity-90">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  activeRole === "agent"
+                    ? "/agent/dashboard"
+                    : "/university/dashboard"
+                )
+              }
+              className="w-[180px] bg-[#f7941d] py-2 text-sm font-medium text-white hover:opacity-90"
+            >
               SIGN IN
             </button>
 
             <p className="mt-4 text-sm text-white/60">
               Don’t have an account?{" "}
-              <span className="cursor-pointer text-[#f7941d]">
+              <a href="/signup">
+              <span className="cursor-pointer text-[#f7941d]" >
                 Sign up
               </span>
+              </a>
             </p>
           </div>
         </div>

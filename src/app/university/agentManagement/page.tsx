@@ -2,22 +2,30 @@
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
 import { useState } from "react";
+import ViewAgent from "@/components/agentManagement/viewAgent";
+import Router from "next/router";
+import { useRouter } from "next/navigation";
+
+type Agent = {
+  id: number;
+  name: string;
+  verified: "blue" | "orange" | "red";
+  mobile: string;
+  email: string;
+  agency: string;
+  avatar: string;
+  online: boolean;
+};
 
 export default function UniversityAgentManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(8);
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const router = useRouter();
 
-  const agents: Array<{
-    id: number;
-    name: string;
-    verified: "blue" | "orange" | "red";
-    mobile: string;
-    email: string;
-    agency: string;
-    avatar: string;
-    online: boolean;
-  }> = [
+  const agents: Agent[] = [
     {
       id: 1,
       name: "Liam",
@@ -128,6 +136,25 @@ export default function UniversityAgentManagementPage() {
 
   return (
     <DashboardLayout role="university">
+      {/* Agent Details Modal */}
+      {showAgentModal && selectedAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-[#14112E] rounded-lg shadow-lg max-w-3xl w-full relative">
+            <button
+              className="absolute top-4 right-4 text-white bg-[#F68E2D] hover:bg-[#e57d1f] rounded-full w-8 h-8 flex items-center justify-center"
+              onClick={() => setShowAgentModal(false)}
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="p-6">
+              <ViewAgent agent={selectedAgent} />
+            </div>
+          </div>
+        </div>
+      )}
       <div className="space-y-6">
         {/* Search and Add Agent */}
         <div className="flex items-center gap-6">
@@ -220,6 +247,7 @@ export default function UniversityAgentManagementPage() {
                         <button 
                           className="w-8 h-8 bg-[#F68E2D] hover:bg-[#e57d1f] rounded-lg flex items-center justify-center transition-colors"
                           aria-label="View details"
+                          onClick={() => router.push(`/university/agentManagement/${agent.id}`)}
                         >
                           <svg
                             className="w-4 h-4 text-white"

@@ -17,17 +17,48 @@ import {
   AgentManagementIcon,
   SearchIcon,
   NotificationsIcon,
-  CertificateIcon
+  CertificateIcon,
+  StudentManagementIcon,
+  UniManagementIcon,
+  OfficeIcon
 } from "../ui/icons";
 
-interface DashboardLayoutProps {
+type SvgIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+type IconLike = SvgIcon | (() => SvgIcon);
+
+type NavItem = {
+  icon: IconLike;
+  label: string;
+  href: string;
+};
+
+type DashboardLayoutProps = {
   children: React.ReactNode;
   role: "agent" | "university";
-}
+};
+
+const resolveIcon = (icon: IconLike): SvgIcon => {
+  // Supports both:
+  // 1) (props) => <svg .../>
+  // 2) () => (props) => <svg .../>
+  try {
+    const maybeFactoryResult = (icon as () => SvgIcon)();
+    if (typeof maybeFactoryResult === "function") {
+      return maybeFactoryResult;
+    }
+  } catch {
+    // not a factory, ignore
+  }
+  return icon as SvgIcon;
+};
 
 // ✅ Define role-based nav items for AGENT & UNIVERSITY
-const agentTopNav = [
+const agentTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/agent/dashboard" },
+  {icon: StudentManagementIcon, label: "Student Management", href: "/agent/student-management" },
+  {icon: AgentManagementIcon, label: "Agent Management", href: "/agent/agent-management" },
+  {icon: UniManagementIcon, label: "University Management", href: "/agent/university-management" },
+  {icon:OfficeIcon, label: "Office Management", href: "/agent/office-management" },
   { icon: CDPIcon, label: "CDP Training", href: "/agent/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/agent/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/agent/audits" },
@@ -35,7 +66,7 @@ const agentTopNav = [
   { icon: ProfileIcon, label: "Profile", href: "/agent/profile" },
 ];
 
-const universityTopNav = [
+const universityTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/university/dashboard" },
   {icon: AgentManagementIcon, label: "Agent Management", href: "/university/agentManagement" },
   { icon: CDPIcon, label: "CDP Training", href: "/university/CDP" },
@@ -45,13 +76,13 @@ const universityTopNav = [
   { icon: ProfileIcon, label: "Profile", href: "/university/profile" },
 ];
 
-const agentBottomNav = [
+const agentBottomNav: NavItem[] = [
   { icon: HelpIcon, label: "Help Center", href: "/agent/help-center" },
   { icon: PasswordIcon, label: "Password", href: "/agent/password" },
 //   { icon: LogoutIcon, label: "Logout", href: "/agent/logout" },
 ];
 
-const universityBottomNav = [
+const universityBottomNav: NavItem[] = [
   { icon: HelpIcon, label: "Help Center", href: "/university/help-center" },
   { icon: PasswordIcon, label: "Password & Security", href: "/university/password" },
 //   { icon: LogoutIcon, label: "Logout", href: "/university/logout" },
@@ -158,25 +189,28 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         {/* Top Navigation */}
         <nav className="px-4 mt-3">
           <ul className="space-y-3">
-            {topNavigationItems.map((item) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 transition-colors ${
-                    pathname === item.href
-                      ? "bg-[#F68E2D] text-white"
-                      : "text-white/80 hover:bg-[#F68E2D] hover:text-white"
-                  }`}
-                >
-                  <span className={`w-6 h-6 flex items-center justify-center ${
-                    pathname === item.href ? "text-white" : ""
-                  }`}>
-                    <item.icon />
-                  </span>
-                  <span className="text-sm">{item.label}</span>
-                </Link>
-              </li>
-            ))}
+            {topNavigationItems.map((item) => {
+              const Icon = resolveIcon(item.icon);
+              return (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 transition-colors ${
+                      pathname === item.href
+                        ? "bg-[#F68E2D] text-white"
+                        : "text-white/80 hover:bg-[#F68E2D] hover:text-white"
+                    }`}
+                  >
+                    <span className={`w-6 h-6 flex items-center justify-center ${
+                      pathname === item.href ? "text-white" : ""
+                    }`}>
+                      <Icon />
+                    </span>
+                    <span className="text-sm">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
@@ -186,25 +220,28 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         {/* Bottom Navigation */}
         <nav className="px-4 pb-4">
           <ul className="space-y-1">
-            {bottomNavigationItems.map((item) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    pathname === item.href
-                      ? "bg-white/10 text-white"
-                      : "text-white/80 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className={`w-6 h-6 flex items-center justify-center ${
-                    pathname === item.href ? "text-white" : ""
-                  }`}>
-                    <item.icon />
-                  </span>
-                  <span className="text-sm">{item.label}</span>
-                </Link>
-              </li>
-            ))}
+            {bottomNavigationItems.map((item) => {
+              const Icon = resolveIcon(item.icon);
+              return (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                      pathname === item.href
+                        ? "bg-white/10 text-white"
+                        : "text-white/80 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <span className={`w-6 h-6 flex items-center justify-center ${
+                      pathname === item.href ? "text-white" : ""
+                    }`}>
+                      <Icon />
+                    </span>
+                    <span className="text-sm">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           {/* Logout Button */}

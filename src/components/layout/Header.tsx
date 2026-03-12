@@ -20,7 +20,7 @@ const NAV_LINKS = [
       { label: "Range of Services", href: "/members/services" },
     ]
   },*/},
-  {label:"FOR UNIVERSITY & SPONSORS", href:"/university"},
+  {label:"FOR UNIVERSITY & SPONSORS", href:"/university-sponsors"},
   {/*{ 
     label: "NEWS & EVENTS", 
     hasDropdown: true,

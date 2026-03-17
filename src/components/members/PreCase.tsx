@@ -19,7 +19,7 @@ export default function PreCase() {
            <div className="flex flex-col items-center md:items-start w-full md:w-5/12 pt-8">
              <div className="relative ml-5 -mt-10 w-full max-w-xs aspect-3/4 shadow-2xl overflow-hidden">
                <Image
-                 src="/presentation.jpg"
+                 src="/peter-journey.png"
                  alt="Pre-CAS Session"
                  fill
                  className="object-cover object-center"

@@ -78,23 +78,23 @@ export default function Commitment() {
 
 				{/* Right: Image and Description over Diagonal */}
 				<div className="relative flex flex-col items-center justify-center w-full h-full">
-					<div className="relative w-full max-w-md aspect-4/3 shadow-2xl overflow-hidden mb-4">
+					<div className="relative w-full max-w-md aspect-4/5 shadow-2xl overflow-hidden mb-4">
 						<Image
-							src="/commitment.jpeg" // replace with your image
+							src="/landingPage/peter-podcast.png" // replace with your image
 							alt="Commitment Visual"
 							fill
 							className="object-cover object-center"
 							priority
 						/>
 					</div>
-					<div className="bg-[#03091F] p-6 rounded-lg w-full max-w-md -mt-8">
+					{/* <div className="bg-[#03091F] p-6 rounded-lg w-full max-w-md -mt-8"> 
 						<div className="flex items-center gap-3 mb-2">
 							<Image src="/logo.png" alt="AEGA Logo" width={160} height={130} className="object-contain" />
 						</div>
 						<p className="text-white/90 text-base font-light">
 							AEGA is the premier global alliance for the student recruitment sector, bridging operational gaps, strengthening compliance, and ensuring safer, more sustainable international mobility.
 						</p>
-					</div>
+					</div>*/}
 				</div>
 			</div>
 		</section>

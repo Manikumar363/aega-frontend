@@ -2,18 +2,18 @@ import { ArrowUpRight } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section className="relative w-full h-[85vh] flex items-center bg-[#03091F] overflow-hidden">
+    <section className="relative w-full h-[95vh] flex items-center bg-[#03091F] overflow-hidden">
       
       {/* 1. BACKGROUND IMAGE LAYER */}
       {/* This assumes hero.png acts as the main background visual */}
       <div className="absolute inset-0 z-0">
         <img 
-          src="/Man.png" 
+          src="/peter.png" 
           alt="Background" 
-          className="w-full h-full object-cover opacity-80" 
+          className="w-full h-full object-cover object-[right_13%] opacity-90 scale-100" 
         />
-        {/* Dark Overlay to ensure text is readable */}
-        <div className="absolute inset-0 bg-linear-to-r from-[#03091F]/90 via-[#03091F]/70 to-transparent"></div>
+        {/* Dark Overlay to ensure text is readable 
+        <div className="absolute inset-0 bg-linear-to-r from-[#03091F]/90 via-[#03091F]/70 to-transparent"></div>*/}
       </div>
 
       {/* 2. CONTENT LAYER */}

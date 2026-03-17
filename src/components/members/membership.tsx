@@ -55,7 +55,7 @@ export default function Membership() {
                     <div className="relative w-full md:w-1/2 max-w-md shrink-0 flex flex-col items-center md:items-start">
                         <div className="relative w-full aspect-2/3 max-w-md shadow-2xl overflow-hidden">
                             <Image
-                                src="/benefits.png"
+                                src="/aboutPage/peter-meeting.png"
                                 alt="Membership Benefits Photo"
                                 fill
                                 className="object-cover object-center rounded-none"

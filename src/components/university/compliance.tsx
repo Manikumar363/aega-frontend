@@ -17,7 +17,7 @@ export default function Compliance() {
                 <div className="relative w-full md:w-1/2 max-w-md shrink-0 flex flex-col items-center md:items-start">
                     <div className="relative w-full aspect-2/3 max-w-md shadow-2xl overflow-hidden">
                         <Image
-                            src="/benefits.png"
+                            src="/peter-explaining.png"
                             alt="Professional Guidelines Photo"
                             fill
                             className="object-cover object-center rounded-none"

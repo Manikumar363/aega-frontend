@@ -26,8 +26,8 @@ export default function WhoAreWe() {
               </span>
               <div className="relative ml-5 -mt-10 w-full max-w-xs aspect-3/4 shadow-2xl overflow-hidden">
                 <Image
-                  src="/our-vision.png"
-                  alt="Story of Us Photo"
+                  src="/landingPage/peter-seminar.png"
+                  alt="peter seminar "
                   fill
                   className="object-cover object-center"
                   priority

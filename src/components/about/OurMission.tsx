@@ -30,7 +30,7 @@ export default function OurMission() {
         {/* Banner Image */}
         <div className="relative mb-12 overflow-hidden shadow-2xl">
           <Image
-            src="/mission-banner.png"
+            src="/aboutPage/peter-map.png"
             alt="Our Mission"
             width={1400}
             height={400}

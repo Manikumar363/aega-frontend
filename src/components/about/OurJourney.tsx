@@ -44,7 +44,7 @@ export default function OurJourney() {
 					</div>
 					<div className="relative w-full aspect-4/3 max-w-md shadow-2xl overflow-hidden">
 						<Image
-							src="/OurJourney.png"
+							src="/peter-journey.png"
 							alt="Our Journey Photo"
 							fill
 							className="object-cover object-center rounded-none"

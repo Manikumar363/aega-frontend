@@ -37,7 +37,7 @@ export default function OurJourney() {
           <div className="relative">
             <div className="relative overflow-hidden shadow-2xl">
               <Image
-                src="/OurJourneyy.png"
+                src="/peter-journey.png"
                 alt="AEGA Conference"
                 width={500}
                 height={650}

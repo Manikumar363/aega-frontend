@@ -38,7 +38,7 @@ export default function Impact() {
         {/* Banner Image */}
         <div className="relative mb-12 overflow-hidden shadow-2xl">
           <Image
-            src="/mission-banner.png"
+            src="/landingPage/peter-explaining.png"
             alt="Our Mission"
             width={1400}
             height={400}

@@ -11,22 +11,24 @@ export default function SignUpLayout({ children, userType, onToggle }: SignUpLay
   return (
     <div className="relative flex min-h-screen w-full bg-[#0A1628]">
       {/* Left Section - Combined Zigzag + Presentation Image */}
-      <div 
-        className="relative hidden w-[420px] bg-cover bg-center lg:block"
-        style={{
-          backgroundImage: 'url(/presentation.png)', // Combined image
-        }}
-      >
+      <div className="relative hidden w-[420px] overflow-hidden lg:block">
+        <Image
+          src="/common/bg-left-shape.png"
+          alt="Left background shape"
+          fill
+          className="object-cover"
+          priority
+        />
         {/* If you want presentation image separately, uncomment below */}
-        {/* <div className="absolute left-1/2 top-1/2 z-10 h-[480px] w-[320px] -translate-x-1/2 -translate-y-1/2">
+         <div className="absolute left-1/2 top-1/2 z-10 h-[480px] w-[320px] -translate-x-1/2 -translate-y-1/2">
           <Image
-            src="/signup/presentation.jpg"
-            alt="Presentation"
+            src="/landingPage/peter-seminar.png"
+            alt="Peter Seminar"
             fill
             className="object-cover shadow-2xl"
             priority
           />
-        </div> */}
+        </div> 
       </div>
 
       {/* Right Section - Form */}

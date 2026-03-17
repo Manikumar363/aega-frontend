@@ -6,9 +6,9 @@ export const WhyAEGA = () => {
   return (
     <section className="relative py-20 bg-zinc-800 flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
-      <div className="absolute inset-0 opacity-40">
+      <div className="absolute inset-0 opacity-90">
         <Image
-          src="/why-aega.jpeg"
+          src="/landingPage/why-aega.png"
           alt="Why AEGA Background"
           fill
           className="object-cover"

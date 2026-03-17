@@ -25,7 +25,7 @@ export default function OurStory() {
              </span>
              <div className="relative ml-5 -mt-10 w-full max-w-xs aspect-3/4 shadow-2xl overflow-hidden">
                <Image
-                 src="/our-vision.png"
+                 src="/aboutPage/peter-podcast.png"
                  alt="Story of Us Photo"
                  fill
                  className="object-cover object-center"

@@ -49,13 +49,13 @@ export default function AboutIntro() {
 
             {/* Portrait Image - Proper aspect ratio */}
             <div className="relative mx-auto  overflow-hidden bg-[#0A1F3D] shadow-lg">
-              <div className="relative aspect-[1/1] w-full">
+              <div className="relative aspect-1/1 w-full">
                 <Image
-                  src="/pete.jpeg"
-                  alt="Pete Yetton"
+                  src="/aboutPage/peter-portrait.png"
+                  alt="peter portrait "
                   fill
-                //   className="object-cover object-[center_20%]"
-                //   sizes="(max-width: 768px) 90vw, 400px"
+                  className="object-cover object-[center_20%]"
+                  sizes="(max-width: 768px) 90vw, 400px"
                   priority
                 />
               </div>

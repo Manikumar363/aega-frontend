@@ -36,13 +36,13 @@ export default function TrustCompliance() {
         </div>
 
         {/* Banner Image */}
-        <div className="relative mb-12 overflow-hidden shadow-2xl">
+        <div className="relative mb-12 ">
           <Image
-            src="/mission-banner.png"
+            src="/landingPage/why-aega.png"
             alt="Our Mission"
             width={1400}
             height={400}
-            className="h-auto w-full object-cover"
+            className="h-auto w-full object-cover opacity-100"
             priority
           />
         </div>

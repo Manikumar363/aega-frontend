@@ -20,7 +20,9 @@ import {
   CertificateIcon,
   StudentManagementIcon,
   UniManagementIcon,
-  OfficeIcon
+  OfficeIcon,
+  RevenueIcon,
+  LeaveManagementIcon
 } from "../ui/icons";
 
 type SvgIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -57,8 +59,10 @@ const agentTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/agent/dashboard" },
   {icon: StudentManagementIcon, label: "Student Management", href: "/agent/student-management" },
   {icon: AgentManagementIcon, label: "Agent Management", href: "/agent/agent-management" },
-  {icon: UniManagementIcon, label: "University Management", href: "/agent/university-management" },
-  {icon:OfficeIcon, label: "Office Management", href: "/agent/office-management" },
+  {icon: UniManagementIcon, label: "Uni Management", href: "/agent/university-management" },
+  {icon:OfficeIcon, label: "Office", href: "/agent/office-management" },
+  {icon: RevenueIcon, label: "Revenue", href: "/agent/revenue" },
+  {icon:LeaveManagementIcon, label: "Leave Management", href: "/agent/leave-management" },
   { icon: CDPIcon, label: "CDP Training", href: "/agent/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/agent/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/agent/audits" },
@@ -77,8 +81,6 @@ const universityTopNav: NavItem[] = [
 ];
 
 const agentBottomNav: NavItem[] = [
-  { icon: HelpIcon, label: "Help Center", href: "/agent/help-center" },
-  { icon: PasswordIcon, label: "Password", href: "/agent/password" },
 //   { icon: LogoutIcon, label: "Logout", href: "/agent/logout" },
 ];
 
@@ -91,6 +93,7 @@ const universityBottomNav: NavItem[] = [
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -126,6 +129,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   };
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
 
   useEffect(() => {
     if (isSidebarOpen) {
@@ -137,6 +141,12 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       document.body.style.overflow = "unset";
     };
   }, [isSidebarOpen]);
+
+  useEffect(() => {
+    const closeMenu = () => setIsProfileMenuOpen(false);
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
+  }, []);
 
   const searchEnabledRoutes = [
     `/${role}/dashboard`,
@@ -244,16 +254,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             })}
           </ul>
 
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2 w-full text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors mt-3"
-          >
-            <span className="w-4 h-4 flex items-center justify-center">
-              <LogoutIcon />
-            </span>
-            <span className="text-sm">Logout</span>
-          </button>
         </nav>
       </div>
 
@@ -311,12 +311,44 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             >
               <NotificationsIcon className="w-8 h-8" />
             </button>
-            <button
-              className="p-0 hover:bg-white/10 rounded"
-              onClick={() => router.push(`/${role}/profile`)}
-            >
-              <ProfileIcon className="w-6 h-6" />
-            </button>
+
+            <div className="relative">
+              <button
+                className="p-0 hover:bg-white/10 rounded"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleProfileMenu();
+                }}
+              >
+                <ProfileIcon className="w-6 h-6" />
+              </button>
+
+              {isProfileMenuOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-52 bg-[#14112E] border border-white/10 rounded-lg shadow-lg py-2 z-20"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      router.push(`/${role}/profile`);
+                    }}
+                  >
+                    Profile
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

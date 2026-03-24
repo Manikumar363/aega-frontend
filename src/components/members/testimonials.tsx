@@ -26,43 +26,23 @@ export default function Testimonials() {
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                AEGA has completely changed how we approach compliance. The training is practical, clear, and directly aligned with what universities expect. For the first time, we feel confident that our processes are audit‑ready and ethically sound.
+                 Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                <Image
-                  src="/sara.png"
-                  alt="Sarah Thompson"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="text-left">
-                <p className="text-lg font-bold text-white">Sarah Thompson</p>
-                <p className="text-base text-white/60">Compliance Manager, UniPath</p>
-              </div>
+                <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
             </div>
           </div>
           {/* Second Review Card */}
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                Being part of AEGA has elevated our credibility with university partners. The structured CPD, compliance scoring, and certifications give us a professional standing that sets us compliance scoring apart in a crowded market.
+                Pete took the time to understand our business and people, ensuring we developed a truly joined-up, end-to-end approach to UKVI compliance. By engaging widely across teams, he identified what needed to change and helped us implement clear, tailored improvements that strengthened our processes, systems, and overall readiness.
               </p>
             </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                <Image
-                  src="/commitment.jpeg"
-                  alt="Phill Evans"
-                  fill
-                  className="object-cover"
-                />
-              </div>
+            <div className="flex items-center gap-4">            
               <div className="text-left">
-                <p className="text-lg font-bold text-white">Linh Nguyen</p>
-                <p className="text-base text-white/60">Senior Investment Advisor</p>
+                <p className="text-base text-white/60">Chief Financial Officer/Executive Board member</p>
               </div>
             </div>
           </div>

@@ -26,21 +26,12 @@ export default function Leadership() {
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                AEGA has completely changed how we approach compliance. The training is practical, clear, and directly aligned with what universities expect. For the first time, we feel confident that our processes are audit‑ready and ethically sound.
+                  Peter Yetton’s guidance has been invaluable in strengthening our international recruitment and compliance operations. His collaborative approach helped us apply the principles of “safe growth,” improve audit readiness, enhance transparency, and build stronger agent relationships enabling us to confidently sustain recruitment even in higher-risk markets.
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                <Image
-                  src="/sara.png"
-                  alt="Sarah Thompson"
-                  fill
-                  className="object-cover"
-                />
-              </div>
               <div className="text-left">
-                <p className="text-lg font-bold text-white">Sarah Thompson</p>
-                <p className="text-base text-white/60">Compliance Manager, UniPath</p>
+                <p className="text-base text-white/60">Director of UKVI Compliance</p>
               </div>
             </div>
           </div>
@@ -48,21 +39,12 @@ export default function Leadership() {
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                Being part of AEGA has elevated our credibility with university partners. The structured CPD, compliance scoring, and certifications give us a professional standing that sets us compliance scoring apart in a crowded market.
+               Pete’s guidance was instrumental in helping our team achieve confident compliance and deliver a very positive audit outcome. Through clear strategic direction, thorough process reviews, and practical support, he strengthened our operations and upskilled our wider institution enabling a capable, collaborative team and reducing reliance on single points of failure.
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                <Image
-                  src="/commitment.jpeg"
-                  alt="Phill Evans"
-                  fill
-                  className="object-cover"
-                />
-              </div>
               <div className="text-left">
-                <p className="text-lg font-bold text-white">Linh Nguyen</p>
-                <p className="text-base text-white/60">Senior Investment Advisor</p>
+                <p className="text-base text-white/60">Director of International Recruitment and Admissions</p>
               </div>
             </div>
           </div>

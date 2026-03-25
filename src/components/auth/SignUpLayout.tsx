@@ -22,7 +22,7 @@ export default function SignUpLayout({ children, userType, onToggle }: SignUpLay
         {/* If you want presentation image separately, uncomment below */}
          <div className="absolute left-1/2 top-1/2 z-10 h-[480px] w-[320px] -translate-x-1/2 -translate-y-1/2">
           <Image
-            src="/landingPage/peter-seminar.png"
+            src="/peter-speech.png"
             alt="Peter Seminar"
             fill
             className="object-cover shadow-2xl"

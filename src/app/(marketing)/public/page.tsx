@@ -38,7 +38,7 @@ export default function ForThePublicPage() {
           <div className="w-full max-w-md lg:w-auto">
             <div className="relative h-[480px] w-full overflow-hidden shadow-2xl lg:w-[360px]">
               <Image
-                src="/landingPage/peter-seminar.png"
+                src="/peter-speech.png"
                 alt="Presentation"
                 fill
                 className="object-cover"

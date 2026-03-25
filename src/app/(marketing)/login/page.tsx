@@ -40,7 +40,7 @@ export default function SignInPage() {
           <div className="hidden md:flex w-[360px] justify-center">
             <div className="relative h-[460px] w-[320px] rounded-md">
               <Image
-                src="/landingPage/peter-seminar.png"
+                src="/peter-speech.png"
                 alt="peter-seminar"
                 fill
                 className="object-cover"

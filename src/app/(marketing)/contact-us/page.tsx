@@ -29,7 +29,7 @@ export default function ContactPage() {
   return (
     <div className="relative w-full overflow-hidden bg-[#0A1628]">
       {/* Orange Diagonal Background - Top Right */}
-      <div className="pointer-events-none absolute right-0 top-0 h-96 w-[60%] bg-gradient-to-bl from-[#F58A07] via-[#C86A2A] to-transparent opacity-70" />
+      <div className="pointer-events-none absolute right-0 top-0 h-96 w-[60%] bg-linear-to-bl from-[#F58A07] via-[#C86A2A] to-transparent opacity-70" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-16 md:px-10 md:py-20">
         {/* Top Section - Hero */}
@@ -68,10 +68,22 @@ export default function ContactPage() {
             </p>
           </div>
 
+          {/* Google Sheet Form Button */}
+          <div className="flex justify-center mt-8">
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSeF9SveVvynnjsPA_ZTeJiA3tcGexYOAqiuHOYqbSDV_bPTVw/viewform?usp=publish-editor" // Replace with your actual Google Form link
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#F58A07] hover:bg-[#C86A2A] text-white font-bold py-3 px-8 rounded transition-colors duration-200 shadow-lg text-lg"
+            >
+              Fill the Form (Google Sheet)
+            </a>
+          </div>
+
           {/* Contact Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* <form onSubmit={handleSubmit} className="space-y-6"> */}
             {/* Name, Email, Phone Row */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div>
                 <label className="mb-2 block text-xs text-white/60">
                   Name*
@@ -115,7 +127,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Subject */}
+            {/* Subject 
             <div>
               <label className="mb-2 block text-xs text-white/60">
                 Subject
@@ -130,7 +142,7 @@ export default function ContactPage() {
               />
             </div>
 
-            {/* Message */}
+            {/* Message
             <div>
               <label className="mb-2 block text-xs text-white/60">
                 Message
@@ -145,7 +157,7 @@ export default function ContactPage() {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button 
             <div className="pt-4">
               <button
                 type="submit"
@@ -155,6 +167,7 @@ export default function ContactPage() {
               </button>
             </div>
           </form>
+          </form> */}
         </div>
       </div>
     </div>

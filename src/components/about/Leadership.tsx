@@ -51,7 +51,7 @@ export default function Leadership() {
         </div>
 
 
-        {/* Logo Strip - Box Layout with Edge Borders */}
+        {/* Logo Strip - Box Layout with Edge Borders 
         <div className="grid grid-cols-5 w-full border-t border-b border-l border-r border-white/10 mt-8">
           {LOGOS.map((logo, index) => (
             <div
@@ -67,7 +67,7 @@ export default function Leadership() {
               />
             </div>
           ))}
-        </div>
+        </div>*/}
       </div>
     </section>
   );

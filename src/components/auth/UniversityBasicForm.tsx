@@ -10,6 +10,7 @@ interface UniversityBasicFormProps {
 
 export default function UniversityBasicForm({ onNext }: UniversityBasicFormProps) {
   const [formData, setFormData] = useState({
+    businessType: "b2b" as "b2b" | "b2c",
     universityName: "",
     email: "",
     password: "",
@@ -37,6 +38,40 @@ export default function UniversityBasicForm({ onNext }: UniversityBasicFormProps
             2
           </div>
           <span className="text-xs text-white/60">Upload your Documents</span>
+        </div>
+      </div>
+
+      {/* Business Type */}
+      <div>
+        <label className="mb-3 block text-xs text-white/70">Business Type*</label>
+        <div className="grid grid-cols-2 gap-6">
+          <label className="flex cursor-pointer items-center gap-2 text-white">
+            <input
+              type="radio"
+              name="businessType"
+              value="b2b"
+              checked={formData.businessType === "b2b"}
+              onChange={(e) =>
+                setFormData({ ...formData, businessType: e.target.value as "b2b" | "b2c" })
+              }
+              className="h-4 w-4 accent-[#F58A07]"
+              required
+            />
+            <span className="text-sm">B2B Owner</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-white">
+            <input
+              type="radio"
+              name="businessType"
+              value="b2c"
+              checked={formData.businessType === "b2c"}
+              onChange={(e) =>
+                setFormData({ ...formData, businessType: e.target.value as "b2b" | "b2c" })
+              }
+              className="h-4 w-4 accent-[#F58A07]"
+            />
+            <span className="text-sm">B2C Owner</span>
+          </label>
         </div>
       </div>
 

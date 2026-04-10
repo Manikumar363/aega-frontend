@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function Testimonials() {
+export default function Leadership1() {
   const LOGOS = [
     { src: "/logo-1.png" },
     { src: "/logo-5.png" },
@@ -20,45 +20,47 @@ export default function Testimonials() {
         </div>
 
 
-       {/* Reviews Grid - Two Columns */}
+        {/* Reviews Grid - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
           {/* First Review Card */}
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                 Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.
+                  Peter Yetton’s guidance has been invaluable in strengthening our international recruitment and compliance operations. His collaborative approach helped us apply the principles of “safe growth,” improve audit readiness, enhance transparency, and build stronger agent relationships enabling us to confidently sustain recruitment even in higher-risk markets.
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
-              <div className="relative h-12 w-55 overflow-hidden rounded-full border border-white/20">
+              <div className="relative h-15 w-15 overflow-hidden rounded-full border border-white/40">
                 <Image
-                  src="/unsw.png"
-                  alt="University of Stirling"
+                  src="/University_of_London.png"
+                  alt="University_of_London"
                   fill
                   className="object-cover"
                 />
               </div>
-                <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
+              <div className="text-left">
+                <p className="text-base text-white/60">Director of UKVI Compliance</p>
+              </div>
             </div>
           </div>
           {/* Second Review Card */}
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                Pete took the time to understand our business and people, ensuring we developed a truly joined-up, end-to-end approach to UKVI compliance. By engaging widely across teams, he identified what needed to change and helped us implement clear, tailored improvements that strengthened our processes, systems, and overall readiness.
+               Pete’s guidance was instrumental in helping our team achieve confident compliance and deliver a very positive audit outcome. Through clear strategic direction, thorough process reviews, and practical support, he strengthened our operations and upskilled our wider institution enabling a capable, collaborative team and reducing reliance on single points of failure.
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
-              <div className="relative h-17 w-20 overflow-hidden rounded-full border border-white/20">
+              <div className="relative h-15 w-15 overflow-hidden rounded-full border border-white/40">
                 <Image
-                  src="/Birmingham_City_University.jpg"
-                  alt="Birmingham_City_University"
+                  src="/University_of_Stirling.png"
+                  alt="University of Stirling"
                   fill
                   className="object-cover"
                 />
-              </div>            
+              </div>
               <div className="text-left">
-                <p className="text-base text-white/60">Chief Financial Officer/Executive Board member</p>
+                <p className="text-base text-white/60">Director of International Recruitment and Admissions</p>
               </div>
             </div>
           </div>

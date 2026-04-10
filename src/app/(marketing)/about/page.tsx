@@ -2,7 +2,7 @@ import AboutHero from "@/components/about/AboutHero";
 import AboutIntro from "@/components/about/AboutIntro";
 import OurStory from "@/components/about/OurStory";
 import CoreValues from "@/components/about/CoreValues";
-import Leadership from "@/components/about/Leadership";
+import Leadership1 from "@/components/about/Leadership1";
 import JoinCTA from "@/components/about/JoinCTA";
 import OurMission from "@/components/about/OurMission";
 import OurVision from "@/components/about/OurVision";
@@ -20,7 +20,7 @@ export default function AboutPage() {
       <OurJourney />
       <GlobalImpact />
       <CoreValues />
-      <Leadership />
+      <Leadership1 />
       {/* <JoinCTA /> */}
     </main>
   );

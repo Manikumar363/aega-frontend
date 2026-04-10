@@ -30,6 +30,14 @@ export default function Leadership() {
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
+              <div className="relative h-17 w-17 overflow-hidden rounded-full border border-white/20">
+                <Image
+                  src="/Birmingham_City_University.jpg"
+                  alt="Birmingham_City_University"
+                  fill
+                  className="object-cover"
+                />
+              </div>
               <div className="text-left">
                 <p className="text-base text-white/60">Director of UKVI Compliance</p>
               </div>
@@ -43,6 +51,14 @@ export default function Leadership() {
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
+              <div className="relative h-17 w-17 overflow-hidden rounded-full border border-white/20">
+                <Image
+                  src="/SOAS_Crest.png"
+                  alt="SOAS Crest"
+                  fill
+                  className="object-cover"
+                />
+              </div>
               <div className="text-left">
                 <p className="text-base text-white/60">Director of International Recruitment and Admissions</p>
               </div>

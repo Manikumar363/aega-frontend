@@ -30,6 +30,14 @@ export default function Testimonials() {
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
+              <div className="relative h-15 w-17 overflow-hidden rounded-full border border-white/40">
+                              <Image
+                                src="/King's_College_London.png"
+                                alt="King's College London"
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
                 <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
             </div>
           </div>
@@ -40,7 +48,15 @@ export default function Testimonials() {
                 Pete took the time to understand our business and people, ensuring we developed a truly joined-up, end-to-end approach to UKVI compliance. By engaging widely across teams, he identified what needed to change and helped us implement clear, tailored improvements that strengthened our processes, systems, and overall readiness.
               </p>
             </blockquote>
-            <div className="flex items-center gap-4">            
+            <div className="flex items-center gap-4">
+              <div className="relative h-15 w-15 overflow-hidden rounded-full border border-white/40">
+                  <Image
+                                src="/KingstonUniLogo.png"
+                                alt="Kingston University"
+                                fill
+                                className="object-cover"
+                              />
+                </div>            
               <div className="text-left">
                 <p className="text-base text-white/60">Chief Financial Officer/Executive Board member</p>
               </div>

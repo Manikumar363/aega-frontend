@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import AddAgent from "./addAgent";
-import ViewAgent from "./viewAgent";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
+import { getAuthToken } from "@/lib/api";
+import AddAgent, { EditableAgent } from "./addAgent";
+import ViewAgent from "./viewAgent";
 
 type Agent = {
   id: number;
+  apiId: string;
   name: string;
   designation: string;
   mobile: string;
@@ -15,20 +18,27 @@ type Agent = {
   avatar: string;
   verified: "blue" | "orange" | "red";
   online: boolean;
+  source: EditableAgent;
 };
 
-const agents: Agent[] = [
-  { id: 1, name: "Liam", designation: "Managing Director", mobile: "5506556340", email: "liam@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 2, name: "Mason", designation: "Chief Operating Officer", mobile: "9876543210", email: "mason@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "orange", online: true },
-  { id: 3, name: "Liam", designation: "Chief Marketing Officer", mobile: "6543217890", email: "liam@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: false },
-  { id: 4, name: "Liam", designation: "Chief Financial Officer", mobile: "7890123456", email: "liam@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "blue", online: false },
-  { id: 5, name: "Mason", designation: "Education Counselor", mobile: "1234567890", email: "mason@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "orange", online: true },
-  { id: 6, name: "Mason", designation: "Student Counselor", mobile: "4567890123", email: "mason@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "orange", online: true },
-  { id: 7, name: "Liam", designation: "Career Counselor", mobile: "9876504321", email: "liam@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 8, name: "James", designation: "Academic Advisor", mobile: "2345678901", email: "james@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 9, name: "Sarah", designation: "Admissions Counselor", mobile: "3456789012", email: "sarah@email.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 10, name: "Michael", designation: "Visa Counselor", mobile: "4567890123", email: "michael@domain.com", location: "Noida", avatar: "/avatar.jpg", verified: "blue", online: true },
-];
+type AgentApiItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  emailId: string;
+  mobileNumber: string;
+  designation: string;
+  office: string;
+  country: string;
+  authorization?: EditableAgent["authorization"];
+  createdAt?: string;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+    name: string;
+  };
+};
 
 const verifiedColors: Record<string, string> = {
   blue: "#3B82F6",
@@ -37,7 +47,30 @@ const verifiedColors: Record<string, string> = {
 };
 
 const ENTRIES_OPTIONS = [8, 16, 24];
-const TOTAL = 50;
+
+const mapApiAgentToUi = (agent: AgentApiItem, index: number): Agent => ({
+  id: index + 1,
+  apiId: agent.id,
+  name: `${agent.firstName} ${agent.lastName}`.trim(),
+  designation: agent.designation,
+  mobile: agent.mobileNumber,
+  email: agent.emailId,
+  location: agent.office,
+  avatar: "/avatar.jpg",
+  verified: "blue",
+  online: true,
+  source: {
+    id: agent.id,
+    firstName: agent.firstName,
+    lastName: agent.lastName,
+    emailId: agent.emailId,
+    mobileNumber: agent.mobileNumber,
+    designation: agent.designation,
+    office: agent.office,
+    country: agent.country,
+    authorization: agent.authorization,
+  },
+});
 
 const AgentManagementHome: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -45,20 +78,164 @@ const AgentManagementHome: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showEntriesDropdown, setShowEntriesDropdown] = useState(false);
   const [showAddAgent, setShowAddAgent] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<EditableAgent | null>(null);
   const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
-  const filtered = agents.filter(
-    (a) =>
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.email.toLowerCase().includes(search.toLowerCase()) ||
-      a.designation.toLowerCase().includes(search.toLowerCase())
-  );
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const totalPages = 10;
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadAgents = async () => {
+      if (!API_BASE_URL) {
+        setErrorMessage("API base URL is not configured.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const token = getAuthToken();
+        const response = await fetch(`${API_BASE_URL}/api/agent-management`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          signal: controller.signal,
+        });
+
+        const data = (await response.json().catch(() => null)) as AgentApiItem[] | { message?: string } | null;
+
+        if (!response.ok) {
+          const message = !Array.isArray(data) && data?.message ? data.message : `Request failed with status ${response.status}`;
+          throw new Error(message);
+        }
+
+        const rows = Array.isArray(data) ? data.map(mapApiAgentToUi) : [];
+        setAgents(rows);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : "Failed to load agents";
+        setErrorMessage(message);
+        setAgents([]);
+        toast.error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAgents();
+
+    return () => controller.abort();
+  }, [API_BASE_URL, refreshCounter]);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return agents;
+
+    return agents.filter(
+      (agent) =>
+        agent.name.toLowerCase().includes(query) ||
+        agent.email.toLowerCase().includes(query) ||
+        agent.designation.toLowerCase().includes(query),
+    );
+  }, [agents, search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, entriesPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / entriesPerPage));
+  const paginatedAgents = filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
   const getPageNumbers = () => {
-    const pages: (number | string)[] = [1, 2, 3, "...", 10];
+    const pages: (number | string)[] = [];
+
+    if (totalPages <= 5) {
+      for (let page = 1; page <= totalPages; page += 1) {
+        pages.push(page);
+      }
+      return pages;
+    }
+
+    pages.push(1);
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    if (start > 2) {
+      pages.push("...");
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    if (end < totalPages - 1) {
+      pages.push("...");
+    }
+
+    pages.push(totalPages);
     return pages;
+  };
+
+  const handleDeleteAgent = async (agent: Agent) => {
+    if (!API_BASE_URL) {
+      toast.error("API base URL is not configured.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${agent.name}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const loadingToastId = toast.loading("Deleting agent...");
+
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/agent-management/${agent.apiId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message = data?.message || `Request failed with status ${response.status}`;
+        throw new Error(message);
+      }
+
+      toast.update(loadingToastId, {
+        render: data?.message || "Agent deleted successfully.",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      setRefreshCounter((prev) => prev + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete agent";
+      toast.update(loadingToastId, {
+        render: message,
+        type: "error",
+        isLoading: false,
+        autoClose: 4000,
+      });
+    }
   };
 
   if (showAddAgent) {
@@ -71,7 +248,33 @@ const AgentManagementHome: React.FC = () => {
         >
           ← Back to Agent Management
         </button>
-        <AddAgent />
+        <AddAgent
+          onSuccess={() => {
+            setShowAddAgent(false);
+            setRefreshCounter((prev) => prev + 1);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (editingAgent) {
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => setEditingAgent(null)}
+          className="text-white/80 hover:text-white text-sm"
+        >
+          ← Back to Agent Management
+        </button>
+        <AddAgent
+          editAgent={editingAgent}
+          onSuccess={() => {
+            setEditingAgent(null);
+            setRefreshCounter((prev) => prev + 1);
+          }}
+        />
       </div>
     );
   }
@@ -93,7 +296,6 @@ const AgentManagementHome: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Search + Filters */}
       <div className="flex items-center gap-3">
         <div className="flex-1 relative">
           <input
@@ -123,7 +325,6 @@ const AgentManagementHome: React.FC = () => {
         </button>
       </div>
 
-      {/* Table */}
       <div className="bg-[#14112E] border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -139,89 +340,106 @@ const AgentManagementHome: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, entriesPerPage).map((agent, index) => (
-                <tr
-                  key={agent.id}
-                  className={`border-b border-gray-800 hover:bg-[#1a1640] transition-colors ${
-                    index === filtered.slice(0, entriesPerPage).length - 1 ? "border-b-0" : ""
-                  }`}
-                >
-                  {/* Avatar */}
-                  <td className="px-6 py-4">
-                    <div className="relative w-10 h-10">
-                      <img
-                        src={agent.avatar}
-                        alt={agent.name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
-                      />
-                      <span
-                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#14112E] ${
-                          agent.online ? "bg-green-500" : "bg-red-500"
-                        }`}
-                      />
-                    </div>
-                  </td>
-
-                  {/* Name */}
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1 text-white">
-                      {agent.name}
-                      <span
-                        className="w-4 h-4 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: verifiedColors[agent.verified] }}
-                      >
-                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8 15.414l-4.707-4.707a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* Designation */}
-                  <td className="px-6 py-4 text-white text-center whitespace-nowrap">{agent.designation}</td>
-
-                  {/* Mobile */}
-                  <td className="px-6 py-4 text-white text-center">{agent.mobile}</td>
-
-                  {/* Email */}
-                  <td className="px-6 py-4 text-white text-center">{agent.email}</td>
-
-                  {/* Location */}
-                  <td className="px-6 py-4 text-white text-center">{agent.location}</td>
-
-                  {/* Actions */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* View */}
-                      <button
-                        onClick={() => setViewingAgent(agent)}
-                        className="w-8 h-8 bg-[#F68E2D] hover:bg-[#e57d1f] rounded-lg flex items-center justify-center transition-colors"
-                        aria-label="View"
-                      >
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                      {/* Edit and Delete buttons... */}
-                      <button className="w-7 h-7 rounded-md bg-[#3B49DF] hover:bg-[#3340c9] flex items-center justify-center" aria-label="Edit preference">
-										<Pencil className="w-3.5 h-3.5 text-white" />
-									</button>
-									<button className="w-7 h-7 rounded-md bg-[#E03137] hover:bg-[#c82a30] flex items-center justify-center" aria-label="Delete preference">
-										<Trash2 className="w-3.5 h-3.5 text-white" />
-									</button>
-                    </div>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-white/70">
+                    Loading agents...
                   </td>
                 </tr>
-              ))}
+              ) : errorMessage ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-red-300">
+                    {errorMessage}
+                  </td>
+                </tr>
+              ) : paginatedAgents.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-white/70">
+                    No agents found.
+                  </td>
+                </tr>
+              ) : (
+                paginatedAgents.map((agent, index) => (
+                  <tr
+                    key={agent.id}
+                    className={`border-b border-gray-800 hover:bg-[#1a1640] transition-colors ${
+                      index === paginatedAgents.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="relative w-10 h-10">
+                        <img
+                          src={agent.avatar}
+                          alt={agent.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
+                        />
+                        <span
+                          className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#14112E] ${
+                            agent.online ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        />
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1 text-white">
+                        {agent.name}
+                        <span
+                          className="w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: verifiedColors[agent.verified] }}
+                        >
+                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8 15.414l-4.707-4.707a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-white text-center whitespace-nowrap">{agent.designation}</td>
+
+                    <td className="px-6 py-4 text-white text-center">{agent.mobile}</td>
+
+                    <td className="px-6 py-4 text-white text-center">{agent.email}</td>
+
+                    <td className="px-6 py-4 text-white text-center">{agent.location}</td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setViewingAgent(agent)}
+                          className="w-8 h-8 bg-[#F68E2D] hover:bg-[#e57d1f] rounded-lg flex items-center justify-center transition-colors"
+                          aria-label="View"
+                        >
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setEditingAgent(agent.source)}
+                          className="w-7 h-7 rounded-md bg-[#3B49DF] hover:bg-[#3340c9] flex items-center justify-center"
+                          aria-label="Edit preference"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-white" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAgent(agent)}
+                          className="w-7 h-7 rounded-md bg-[#E03137] hover:bg-[#c82a30] flex items-center justify-center"
+                          aria-label="Delete preference"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-between">
-        {/* Page Numbers */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -256,11 +474,9 @@ const AgentManagementHome: React.FC = () => {
           </button>
         </div>
 
-        {/* Entries Info + Show Dropdown */}
         <div className="flex items-center gap-3">
           <span className="text-gray-400 text-sm">
-            Showing {(currentPage - 1) * entriesPerPage + 1} to{" "}
-            {Math.min(currentPage * entriesPerPage, TOTAL)} of {TOTAL} entries
+            Showing {(currentPage - 1) * entriesPerPage + 1} to {Math.min(currentPage * entriesPerPage, filtered.length)} of {filtered.length} entries
           </span>
           <div className="relative">
             <button
@@ -277,7 +493,10 @@ const AgentManagementHome: React.FC = () => {
                 {ENTRIES_OPTIONS.map((opt) => (
                   <button
                     key={opt}
-                    onClick={() => { setEntriesPerPage(opt); setShowEntriesDropdown(false); }}
+                    onClick={() => {
+                      setEntriesPerPage(opt);
+                      setShowEntriesDropdown(false);
+                    }}
                     className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
                       entriesPerPage === opt ? "bg-[#F68E2D] text-white" : "text-white hover:bg-[#1a1640]"
                     }`}

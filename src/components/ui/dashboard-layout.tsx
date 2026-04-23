@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { getStoredUserData, getAuthToken } from "@/lib/api";
 
 import {
   ComplianceIcon,
@@ -39,6 +40,10 @@ type DashboardLayoutProps = {
   role: "agent" | "university";
 };
 
+type StoredUser = {
+  businessType?: "b2b" | "b2c" | null;
+} | null;
+
 const resolveIcon = (icon: IconLike): SvgIcon => {
   // Supports both:
   // 1) (props) => <svg .../>
@@ -57,6 +62,7 @@ const resolveIcon = (icon: IconLike): SvgIcon => {
 // ✅ Define role-based nav items for AGENT & UNIVERSITY
 const agentTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/agent/dashboard" },
+  { icon: OfficeIcon, label: "Company Management", href: "/agent/company-management" },
   {icon: StudentManagementIcon, label: "Student Management", href: "/agent/student-management" },
   {icon: AgentManagementIcon, label: "Agent Management", href: "/agent/agent-management" },
   {icon: UniManagementIcon, label: "Uni Management", href: "/agent/university-management" },
@@ -66,8 +72,6 @@ const agentTopNav: NavItem[] = [
   { icon: CDPIcon, label: "CDP Training", href: "/agent/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/agent/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/agent/audits" },
-  { icon: CertificateIcon, label: "Certifications", href: "/agent/certifications" },
-  { icon: ProfileIcon, label: "Profile", href: "/agent/profile" },
 ];
 
 const universityTopNav: NavItem[] = [
@@ -76,8 +80,7 @@ const universityTopNav: NavItem[] = [
   { icon: CDPIcon, label: "CDP Training", href: "/university/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/university/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/university/audits" },
-  {icon: CertificateIcon, label: "Certifications", href: "/university/certifications" },
-  { icon: ProfileIcon, label: "Profile", href: "/university/profile" },
+ 
 ];
 
 const agentBottomNav: NavItem[] = [
@@ -90,14 +93,42 @@ const universityBottomNav: NavItem[] = [
 //   { icon: LogoutIcon, label: "Logout", href: "/university/logout" },
 ];
 
+const parseBusinessTypeFromToken = (token: string | null): "b2b" | "b2c" | null => {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) {
+      return null;
+    }
+
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      "=",
+    );
+    const decodedPayload = atob(paddedPayload);
+    const parsed = JSON.parse(decodedPayload) as { businessType?: "b2b" | "b2c" };
+    return parsed.businessType ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [userState, setUserState] = useState<StoredUser>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const topNavigationItems = role === "agent" ? agentTopNav : universityTopNav;
+  const businessType = userState?.businessType ?? null;
+  const topNavigationItems = role === "agent"
+    ? agentTopNav.filter((item) => !(businessType === "b2c" && item.label === "Company Management"))
+    : universityTopNav;
   const bottomNavigationItems = role === "agent" ? agentBottomNav : universityBottomNav;
 
   const handleLogout = () => {
@@ -146,6 +177,20 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     const closeMenu = () => setIsProfileMenuOpen(false);
     window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedUser = getStoredUserData();
+    if (storedUser) {
+      setUserState(storedUser);
+      return;
+    }
+
+    setUserState({ businessType: parseBusinessTypeFromToken(getAuthToken()) });
   }, []);
 
   const searchEnabledRoutes = [
@@ -336,6 +381,15 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                     }}
                   >
                     Profile
+                  </button>
+                   <button
+                    className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      router.push(`/${role}/certifications`);
+                    }}
+                  >
+                    certifications
                   </button>
                   <button
                     className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"

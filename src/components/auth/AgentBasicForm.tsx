@@ -4,24 +4,49 @@
 import { useState } from "react";
 import Link from "next/link";
 
+interface AgentFormData {
+  businessType: "b2b" | "b2c";
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 interface AgentBasicFormProps {
+  formData: AgentFormData;
+  setFormData: (data: AgentFormData) => void;
   onNext: () => void;
 }
 
-export default function AgentBasicForm({ onNext }: AgentBasicFormProps) {
-  const [formData, setFormData] = useState({
-    businessType: "b2b" as "b2b" | "b2c",
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    retypePassword: "",
-  });
+export default function AgentBasicForm({ formData, setFormData, onNext }: AgentBasicFormProps) {
+  const [error, setError] = useState("");
+
+  const validateForm = (): boolean => {
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return false;
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return false;
+    }
+
+    if (!formData.firstName || !formData.lastName || !formData.email) {
+      setError("Please fill in all required fields");
+      return false;
+    }
+
+    setError("");
+    return true;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Agent Basic:", formData);
-    onNext();
+    if (validateForm()) {
+      onNext();
+    }
   };
 
   return (
@@ -41,6 +66,13 @@ export default function AgentBasicForm({ onNext }: AgentBasicFormProps) {
           <span className="text-xs text-white/60">Upload your Documents</span>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded bg-red-500/20 border border-red-500 px-4 py-2 text-sm text-red-200">
+          {error}
+        </div>
+      )}
 
       {/* Business Type */}
       <div>
@@ -134,8 +166,8 @@ export default function AgentBasicForm({ onNext }: AgentBasicFormProps) {
         <input
           type="password"
           placeholder="••••••••••••"
-          value={formData.retypePassword}
-          onChange={(e) => setFormData({ ...formData, retypePassword: e.target.value })}
+          value={formData.confirmPassword}
+          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
           required
           className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
         />

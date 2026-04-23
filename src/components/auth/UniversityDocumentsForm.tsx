@@ -1,18 +1,173 @@
 // src/components/auth/UniversityDocumentsForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { signup, storeAuthToken } from "@/lib/api/authService";
+import { uploadFile } from "@/lib/api/fileService";
+import { UniversitySignupRequest } from "@/lib/api/types";
 
-export default function UniversityDocumentsForm() {
-  const [files, setFiles] = useState({
-    document1: null,
-    document2: null,
+interface UniversityFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface UniversityDocumentsFormProps {
+  formData: UniversityFormData;
+}
+
+export default function UniversityDocumentsForm({ formData }: UniversityDocumentsFormProps) {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<{ doc1: File | null; doc2: File | null }>({
+    doc1: null,
+    doc2: null,
   });
+  const [uploadProgress, setUploadProgress] = useState({
+    doc1: false,
+    doc2: false,
+  });
+  const fileInputRef1 = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, docNum: "doc1" | "doc2") => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ["application/pdf", "image/jpeg", "image/png"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Only PDF, JPG, and PNG files are allowed");
+        return;
+      }
+
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [docNum]: file,
+      }));
+      toast.success(`File ${docNum === "doc1" ? "1" : "2"} selected`);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    console.log("University Documents:", files);
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, docNum: "doc1" | "doc2") => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [docNum]: file,
+      }));
+      toast.success(`File ${docNum === "doc1" ? "1" : "2"} selected`);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Validate files
+      if (!uploadedFiles.doc1 || !uploadedFiles.doc2) {
+        toast.error("Please upload both documents");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("📋 Starting upload process with files:", {
+        doc1: uploadedFiles.doc1.name,
+        doc2: uploadedFiles.doc2.name,
+      });
+
+      // Upload files
+      toast.loading("Uploading document 1...");
+      setUploadProgress({ doc1: true, doc2: false });
+
+      let doc1Path: string;
+      try {
+        doc1Path = await uploadFile(uploadedFiles.doc1);
+        console.log("✅ Document 1 uploaded:", doc1Path);
+        toast.loading("Uploading document 2...");
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Failed to upload document 1";
+        console.error("❌ Document 1 upload failed:", msg);
+        toast.error("Document 1 upload failed: " + msg);
+        throw error;
+      }
+
+      setUploadProgress({ doc1: false, doc2: true });
+
+      let doc2Path: string;
+      try {
+        doc2Path = await uploadFile(uploadedFiles.doc2);
+        console.log("✅ Document 2 uploaded:", doc2Path);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Failed to upload document 2";
+        console.error("❌ Document 2 upload failed:", msg);
+        toast.error("Document 2 upload failed: " + msg);
+        throw error;
+      }
+
+      setUploadProgress({ doc1: false, doc2: false });
+
+      console.log("✅ Both documents uploaded successfully");
+
+      // Prepare signup data
+      const signupData: UniversitySignupRequest = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        role: "university",
+        supportingDocument1: doc1Path,
+        supportingDocument2: doc2Path,
+      };
+
+      console.log("📝 Signup data prepared:", signupData);
+
+      // Call signup API
+      toast.loading("Creating account...");
+      const response = await signup(signupData);
+
+      console.log("✅ Signup successful:", response);
+
+      // Store auth token
+      storeAuthToken(response.token);
+
+      // Show success message
+      toast.dismiss();
+      toast.success("Signup successful!");
+
+      // Redirect to university sign in page
+      setTimeout(() => {
+        router.push(`/university/login`);
+      }, 1500);
+    } catch (error) {
+      toast.dismiss();
+      const errorMessage = error instanceof Error ? error.message : "Signup failed";
+      console.error("🔴 Signup error:", errorMessage);
+      console.error("Full error:", error);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,20 +191,56 @@ export default function UniversityDocumentsForm() {
       {/* Supporting Document 1 */}
       <div>
         <label className="mb-2 block text-xs text-white/70">Supporting Document 1*</label>
-        <div className="border-2 border-dashed border-white/30 bg-white/5 p-8 text-center transition-colors hover:border-[#F58A07]">
+        <div
+          className="border-2 border-dashed border-white/30 bg-white/5 p-8 text-center transition-colors hover:border-[#F58A07] cursor-pointer"
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, "doc1")}
+          onClick={() => fileInputRef1.current?.click()}
+        >
           <Upload className="mx-auto mb-2 h-8 w-8 text-white/40" />
-          <p className="text-sm text-white/70">Drop files here or click to upload</p>
-          <p className="text-xs text-white/40">Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)</p>
+          <p className="text-sm text-white/70">
+            {uploadedFiles.doc1 ? uploadedFiles.doc1.name : "Drop files here or click to upload"}
+          </p>
+          <p className="text-xs text-white/40">
+            {uploadedFiles.doc1
+              ? "File selected"
+              : "Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)"}
+          </p>
+          <input
+            ref={fileInputRef1}
+            type="file"
+            className="hidden"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={(e) => handleFileSelect(e, "doc1")}
+          />
         </div>
       </div>
 
       {/* Supporting Document 2 */}
       <div>
         <label className="mb-2 block text-xs text-white/70">Supporting Document 2*</label>
-        <div className="border-2 border-dashed border-white/30 bg-white/5 p-8 text-center transition-colors hover:border-[#F58A07]">
+        <div
+          className="border-2 border-dashed border-white/30 bg-white/5 p-8 text-center transition-colors hover:border-[#F58A07] cursor-pointer"
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, "doc2")}
+          onClick={() => fileInputRef2.current?.click()}
+        >
           <Upload className="mx-auto mb-2 h-8 w-8 text-white/40" />
-          <p className="text-sm text-white/70">Drop files here or click to upload</p>
-          <p className="text-xs text-white/40">Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)</p>
+          <p className="text-sm text-white/70">
+            {uploadedFiles.doc2 ? uploadedFiles.doc2.name : "Drop files here or click to upload"}
+          </p>
+          <p className="text-xs text-white/40">
+            {uploadedFiles.doc2
+              ? "File selected"
+              : "Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)"}
+          </p>
+          <input
+            ref={fileInputRef2}
+            type="file"
+            className="hidden"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={(e) => handleFileSelect(e, "doc2")}
+          />
         </div>
       </div>
 
@@ -63,14 +254,12 @@ export default function UniversityDocumentsForm() {
       </div>
 
       {/* Sign Up Button */}
-      
       <button
         type="submit"
-        className="bg-[#F58A07] cursor-pointer px-12 py-4 text-sm font-bold uppercase text-white hover:bg-[#e07b06]"
+        disabled={isLoading}
+        className="bg-[#F58A07] px-12 py-4 text-sm font-bold uppercase text-white hover:bg-[#e07b06] disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <a href="/university/dashboard">
-        SIGN UP
-        </a>
+        {isLoading ? "SIGNING UP..." : "SIGN UP"}
       </button>
     </form>
   );

@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getAuthToken } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 type AuthorizationKey =
   | "addAgent"
@@ -24,29 +27,76 @@ type FormState = {
   auth: Record<AuthorizationKey, boolean>;
 };
 
+export type EditableAgent = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  emailId: string;
+  mobileNumber: string;
+  designation: string;
+  office: string;
+  country: string;
+  authorization?: Partial<Record<AuthorizationKey, boolean>>;
+};
+
+type AddAgentProps = {
+  editAgent?: EditableAgent | null;
+  onSuccess?: () => void;
+};
+
 const initialState: FormState = {
-  firstName: "Jane",
-  lastName: "Lorence",
-  email: "jane@gmail.com",
-  mobile: "+1 123 589 6740",
-  designation: "Designation Name",
-  office: "Location",
-  country: "Region Name",
+  firstName: "",
+  lastName: "",
+  email: "",
+  mobile: "",
+  designation: "",
+  office: "",
+  country: "",
   auth: {
-    addAgent: true,
-    editAgent: true,
-    assignUni: true,
-    addOffice: true,
-    editOffice: true,
-    removeOffice: true,
-    assignRegion: true,
-    assignCourse: true,
+    addAgent: false,
+    editAgent: false,
+    assignUni: false,
+    addOffice: false,
+    editOffice: false,
+    removeOffice: false,
+    assignRegion: false,
+    assignCourse: false,
     removeAgent: false,
   },
 };
 
-const AddAgent: React.FC = () => {
-  const [form, setForm] = useState<FormState>(initialState);
+const toFormState = (agent: EditableAgent): FormState => ({
+  firstName: agent.firstName ?? "",
+  lastName: agent.lastName ?? "",
+  email: agent.emailId ?? "",
+  mobile: agent.mobileNumber ?? "",
+  designation: agent.designation ?? "",
+  office: agent.office ?? "",
+  country: agent.country ?? "",
+  auth: {
+    addAgent: agent.authorization?.addAgent ?? false,
+    editAgent: agent.authorization?.editAgent ?? false,
+    assignUni: agent.authorization?.assignUni ?? false,
+    addOffice: agent.authorization?.addOffice ?? false,
+    editOffice: agent.authorization?.editOffice ?? false,
+    removeOffice: agent.authorization?.removeOffice ?? false,
+    assignRegion: agent.authorization?.assignRegion ?? false,
+    assignCourse: agent.authorization?.assignCourse ?? false,
+    removeAgent: agent.authorization?.removeAgent ?? false,
+  },
+});
+
+const AddAgent: React.FC<AddAgentProps> = ({ editAgent, onSuccess }) => {
+  const router = useRouter();
+  const isEditMode = Boolean(editAgent?.id);
+  const [form, setForm] = useState<FormState>(() => (editAgent ? toFormState(editAgent) : initialState));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setForm(editAgent ? toFormState(editAgent) : initialState);
+  }, [editAgent]);
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -59,22 +109,98 @@ const AddAgent: React.FC = () => {
     }));
   };
 
-  const onDiscard = () => setForm(initialState);
+  const onDiscard = () => setForm(editAgent ? toFormState(editAgent) : initialState);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: integrate API
-    console.log("Add Agent payload:", form);
+
+    if (!API_BASE_URL) {
+      toast.error("API base URL is not configured.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const payload = {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      emailId: form.email.trim(),
+      mobileNumber: form.mobile.trim(),
+      designation: form.designation,
+      office: form.office,
+      country: form.country,
+      authorization: {
+        addAgent: form.auth.addAgent,
+        editAgent: form.auth.editAgent,
+        assignUni: form.auth.assignUni,
+        addOffice: form.auth.addOffice,
+        editOffice: form.auth.editOffice,
+        removeOffice: form.auth.removeOffice,
+        assignRegion: form.auth.assignRegion,
+        assignCourse: form.auth.assignCourse,
+        removeAgent: form.auth.removeAgent,
+      },
+    };
+
+    const loadingToastId = toast.loading(isEditMode ? "Updating agent..." : "Creating agent...");
+
+    try {
+      const token = getAuthToken();
+      const endpoint = isEditMode
+        ? `${API_BASE_URL}/api/agent-management/${editAgent?.id}`
+        : `${API_BASE_URL}/api/agent-management`;
+
+      const response = await fetch(endpoint, {
+        method: isEditMode ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const errorMessage = data?.message || `Request failed with status ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      toast.update(loadingToastId, {
+        render: data?.message || (isEditMode ? "Agent updated successfully." : "Agent created successfully."),
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      if (isEditMode) {
+        onSuccess?.();
+      } else {
+        setForm(initialState);
+        onSuccess?.();
+        router.push("/agent/agent-management");
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : isEditMode ? "Failed to update agent" : "Failed to create agent";
+      toast.update(loadingToastId, {
+        render: errorMessage,
+        type: "error",
+        isLoading: false,
+        autoClose: 4000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <form onSubmit={onSubmit} className="text-white">
       <div className="mb-3 text-xs text-white/70">
         <span>Audits </span>
-        <span className="text-[#F68E2D]">&gt; Add Agent</span>
+        <span className="text-[#F68E2D]">&gt; {isEditMode ? "Edit Agent" : "Add Agent"}</span>
       </div>
 
-      <h1 className="text-2xl font-bold mb-6">Add Agent</h1>
+      <h1 className="text-2xl font-bold mb-6">{isEditMode ? "Edit Agent" : "Add Agent"}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Field
@@ -117,14 +243,16 @@ const AddAgent: React.FC = () => {
           required
           value={form.designation}
           onChange={(v) => setField("designation", v)}
-          options={["Designation Name", "Managing Director", "Chief Operating Officer", "Counselor"]}
+          options={["", "Managing Director", "Chief Operating Officer", "Counselor"]}
+          emptyLabel="Select Designation"
         />
         <SelectField
           label="Office"
           required
           value={form.office}
           onChange={(v) => setField("office", v)}
-          options={["Location", "Hyderabad", "Bangalore", "Noida"]}
+          options={["", "Hyderabad", "Bangalore", "Noida"]}
+          emptyLabel="Select Office"
         />
       </div>
 
@@ -134,7 +262,8 @@ const AddAgent: React.FC = () => {
           required
           value={form.country}
           onChange={(v) => setField("country", v)}
-          options={["Region Name", "India", "UK", "USA", "UAE"]}
+          options={["", "India", "UK", "USA", "UAE"]}
+          emptyLabel="Select Country"
           fullWidth
         />
       </div>
@@ -199,15 +328,17 @@ const AddAgent: React.FC = () => {
         <button
           type="button"
           onClick={onDiscard}
+          disabled={isSubmitting}
           className="w-60 h-12 bg-[#E8E8E8] text-[#9AA0A6] text-xl font-semibold rounded border border-[#2FD3C8]"
         >
           Discard
         </button>
         <button
           type="submit"
+          disabled={isSubmitting}
           className="w-60 h-12 bg-[#F68E2D] hover:bg-[#e57d1f] text-white text-xl font-semibold rounded transition-colors"
         >
-          Add Agent
+          {isSubmitting ? "Saving..." : isEditMode ? "Update Agent" : "Add Agent"}
         </button>
       </div>
     </form>
@@ -254,6 +385,7 @@ function SelectField({
   value,
   onChange,
   options,
+  emptyLabel,
   fullWidth,
 }: {
   label: string;
@@ -261,6 +393,7 @@ function SelectField({
   value: string;
   onChange: (v: string) => void;
   options: string[];
+  emptyLabel?: string;
   fullWidth?: boolean;
 }) {
   return (
@@ -277,7 +410,7 @@ function SelectField({
         >
           {options.map((opt) => (
             <option key={opt} value={opt} className="bg-[#14112E] text-white">
-              {opt}
+              {opt === "" ? (emptyLabel || "Select") : opt}
             </option>
           ))}
         </select>

@@ -4,23 +4,52 @@
 import { useState } from "react";
 import Link from "next/link";
 
+interface UniversityFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 interface UniversityBasicFormProps {
+  formData: UniversityFormData;
+  setFormData: (data: UniversityFormData) => void;
   onNext: () => void;
 }
 
-export default function UniversityBasicForm({ onNext }: UniversityBasicFormProps) {
-  const [formData, setFormData] = useState({
-    businessType: "b2b" as "b2b" | "b2c",
-    universityName: "",
-    email: "",
-    password: "",
-    retypePassword: "",
-  });
+export default function UniversityBasicForm({
+  formData,
+  setFormData,
+  onNext,
+}: UniversityBasicFormProps) {
+  const [error, setError] = useState("");
+
+  const validateForm = (): boolean => {
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return false;
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return false;
+    }
+
+    if (!formData.firstName || !formData.lastName || !formData.email) {
+      setError("Please fill in all required fields");
+      return false;
+    }
+
+    setError("");
+    return true;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("University Basic:", formData);
-    onNext();
+    if (validateForm()) {
+      onNext();
+    }
   };
 
   return (
@@ -41,51 +70,37 @@ export default function UniversityBasicForm({ onNext }: UniversityBasicFormProps
         </div>
       </div>
 
-      {/* Business Type */}
-      <div>
-        <label className="mb-3 block text-xs text-white/70">Business Type*</label>
-        <div className="grid grid-cols-2 gap-6">
-          <label className="flex cursor-pointer items-center gap-2 text-white">
-            <input
-              type="radio"
-              name="businessType"
-              value="b2b"
-              checked={formData.businessType === "b2b"}
-              onChange={(e) =>
-                setFormData({ ...formData, businessType: e.target.value as "b2b" | "b2c" })
-              }
-              className="h-4 w-4 accent-[#F58A07]"
-              required
-            />
-            <span className="text-sm">B2B Owner</span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-white">
-            <input
-              type="radio"
-              name="businessType"
-              value="b2c"
-              checked={formData.businessType === "b2c"}
-              onChange={(e) =>
-                setFormData({ ...formData, businessType: e.target.value as "b2b" | "b2c" })
-              }
-              className="h-4 w-4 accent-[#F58A07]"
-            />
-            <span className="text-sm">B2C Owner</span>
-          </label>
+      {/* Error Message */}
+      {error && (
+        <div className="rounded bg-red-500/20 border border-red-500 px-4 py-2 text-sm text-red-200">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* University Name */}
-      <div>
-        <label className="mb-2 block text-xs text-white/70">University Name*</label>
-        <input
-          type="text"
-          placeholder="University Name"
-          value={formData.universityName}
-          onChange={(e) => setFormData({ ...formData, universityName: e.target.value })}
-          required
-          className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
-        />
+      {/* First & Last Name */}
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <label className="mb-2 block text-xs text-white/70">First Name*</label>
+          <input
+            type="text"
+            placeholder="First Name"
+            value={formData.firstName}
+            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            required
+            className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="mb-2 block text-xs text-white/70">Last Name*</label>
+          <input
+            type="text"
+            placeholder="Last Name"
+            value={formData.lastName}
+            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            required
+            className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+          />
+        </div>
       </div>
 
       {/* Email */}
@@ -120,8 +135,8 @@ export default function UniversityBasicForm({ onNext }: UniversityBasicFormProps
         <input
           type="password"
           placeholder="••••••••••••"
-          value={formData.retypePassword}
-          onChange={(e) => setFormData({ ...formData, retypePassword: e.target.value })}
+          value={formData.confirmPassword}
+          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
           required
           className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
         />

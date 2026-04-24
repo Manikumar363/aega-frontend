@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 interface UniversityFormData {
   firstName: string;
@@ -28,16 +29,19 @@ export default function UniversityBasicForm({
   const validateForm = (): boolean => {
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return false;
     }
 
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters long");
+      toast.error("Password must be at least 8 characters long");
       return false;
     }
 
     if (!formData.firstName || !formData.lastName || !formData.email) {
       setError("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return false;
     }
 
@@ -48,6 +52,7 @@ export default function UniversityBasicForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      toast.success("Basic details saved!");
       onNext();
     }
   };

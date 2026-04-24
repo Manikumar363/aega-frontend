@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { login, storeAuthToken, storeUserData } from "@/lib/api";
 import type { LoginRequest } from "@/lib/api/types";
 
@@ -21,6 +21,7 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    let loadingToastId: string | number | undefined;
 
     try {
       if (!email || !password) {
@@ -37,23 +38,35 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
 
       const loginData: LoginRequest = { email, password };
 
-      toast.loading("Signing in...");
+      loadingToastId = toast.loading("Signing in...");
       const response = await login(loginData);
 
       storeAuthToken(response.token);
       storeUserData(response.user);
 
-      toast.dismiss();
-      toast.success("Login successful!");
+      toast.update(loadingToastId, {
+        render: "Login successful!",
+        type: "success",
+        isLoading: false,
+        autoClose: 2500,
+      });
 
       const targetRole = fixedRole ?? activeRole;
       setTimeout(() => {
         router.push(targetRole === "agent" ? "/agent/dashboard" : "/university/dashboard");
       }, 1500);
     } catch (error) {
-      toast.dismiss();
       const errorMessage = error instanceof Error ? error.message : "Login failed";
-      toast.error(errorMessage);
+      if (loadingToastId !== undefined) {
+        toast.update(loadingToastId, {
+          render: errorMessage,
+          type: "error",
+          isLoading: false,
+          autoClose: 4000,
+        });
+      } else {
+        toast.error(errorMessage);
+      }
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);

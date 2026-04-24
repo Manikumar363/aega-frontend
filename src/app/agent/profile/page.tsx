@@ -1,35 +1,133 @@
 "use client";
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { uploadFile } from "@/lib/api/fileService";
+
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  companyName?: string;
+  dateOfBirth?: string;
+  buildingNumber?: string;
+  streetName?: string;
+  streetAddress?: string;
+  state?: string;
+  city?: string;
+  postCode?: string;
+}
 
 export default function AgentProfilePage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"profile" | "edit">("edit");
-  const [profileData, setProfileData] = useState({
-    firstName: "Jane",
-    lastName: "Lorence",
-    email: "jane@gmail.com",
-    phone: "+1 123 589 6740",
-    companyName: "Company Name",
-    dateOfBirth: "3 Jan 2002",
-    buildingNumber: "111",
-    streetName: "5th Avenue SW",
-    streetAddress: "The Bow",
-    state: "Alberta",
-    city: "Calgary",
-    postCode: "T2P 3Y6",
+  const [activeTab, setActiveTab] = useState<"profile" | "edit">("profile");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+
+  const [profileData, setProfileData] = useState<ProfileData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    companyName: "",
+    dateOfBirth: "",
+    buildingNumber: "",
+    streetName: "",
+    streetAddress: "",
+    state: "",
+    city: "",
+    postCode: "",
   });
 
+  const [originalData, setOriginalData] = useState<ProfileData>(profileData);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+
+  // Fetch profile data on component mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          toast.error("Please login first");
+          router.push("/agent/login");
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await response.json();
+        console.log("Profile data:", data);
+
+        const profileInfo: ProfileData = {
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          companyName: data.companyName || "",
+          dateOfBirth: data.dateOfBirth || "",
+          buildingNumber: data.buildingNumber || "",
+          streetName: data.streetName || "",
+          streetAddress: data.streetAddress || "",
+          state: data.state || "",
+          city: data.city || "",
+          postCode: data.postCode || "",
+        };
+
+        setUserId(data.id);
+        setProfileData(profileInfo);
+        setOriginalData(profileInfo);
+
+        // Load profile image if it exists
+        if (data.profileImage) {
+          setProfileImage(`${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${data.profileImage}`);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load profile"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size must be less than 5MB");
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Only JPG, PNG, GIF, and WebP images are allowed");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImage(reader.result as string);
+        setProfileImageFile(file);
+        toast.success("Image selected");
       };
       reader.readAsDataURL(file);
     }
@@ -37,7 +135,143 @@ export default function AgentProfilePage() {
 
   const handleDeleteImage = () => {
     setProfileImage(null);
+    setProfileImageFile(null);
+    toast.success("Image removed");
   };
+
+  const handleSaveProfile = async () => {
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    // Validate required fields
+    if (!profileData.firstName || !profileData.lastName || !profileData.email) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Please login first");
+        return;
+      }
+
+      let profileImagePath = null;
+
+      // Upload profile image if changed
+      if (profileImageFile) {
+        try {
+          toast.loading("Uploading profile image...");
+          profileImagePath = await uploadFile(profileImageFile);
+          toast.dismiss();
+          console.log("Profile image uploaded:", profileImagePath);
+        } catch (error) {
+          toast.dismiss();
+          toast.error("Failed to upload profile image");
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      // Prepare update data
+      const updateData = {
+        ...profileData,
+        ...(profileImagePath && { profileImage: profileImagePath }),
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile");
+      }
+
+      const updatedProfile = await response.json();
+      console.log("Profile updated:", updatedProfile);
+
+      setOriginalData(profileData);
+      setProfileImageFile(null);
+      toast.success("Profile updated successfully!");
+      setActiveTab("profile");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update profile"
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setProfileData(originalData);
+    setProfileImage(null);
+    setProfileImageFile(null);
+    toast.success("Changes discarded");
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you absolutely sure? This action cannot be undone. All your data will be permanently deleted."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Please login first");
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me/${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete account");
+      }
+
+      toast.success("Account deleted successfully");
+      localStorage.removeItem("authToken");
+      router.push("/");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete account"
+      );
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="agent">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-white text-lg">Loading profile...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="agent">
@@ -130,39 +364,64 @@ export default function AgentProfilePage() {
               <div>
                 <label className="block text-white text-sm mb-2">Phone</label>
                 <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.phone}
+                  {profileData.phone || "N/A"}
                 </div>
               </div>
 
               <div>
-                <label className="block text-white text-sm mb-2">Company Name</label>
+                <label className="block text-white text-sm mb-2">
+                  Company Name
+                </label>
                 <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.companyName}
+                  {profileData.companyName || "N/A"}
                 </div>
               </div>
 
               <div>
-                <label className="block text-white text-sm mb-2">Date of Birth</label>
+                <label className="block text-white text-sm mb-2">
+                  Date of Birth
+                </label>
                 <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.dateOfBirth}
+                  {profileData.dateOfBirth || "N/A"}
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-white text-sm mb-2">Address</label>
-              <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
-                <p>
-                  Building Number: {profileData.buildingNumber}, Street Name:{" "}
-                  {profileData.streetName}, Street Address:{" "}
-                  {profileData.streetAddress}
-                </p>
-                <p>
-                  State: {profileData.state}, City: {profileData.city}
-                </p>
-                <p>Post Code: {profileData.postCode}</p>
+            {(profileData.buildingNumber ||
+              profileData.streetName ||
+              profileData.streetAddress ||
+              profileData.state ||
+              profileData.city ||
+              profileData.postCode) && (
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  Address
+                </label>
+                <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
+                  {profileData.buildingNumber && (
+                    <p>Building Number: {profileData.buildingNumber}</p>
+                  )}
+                  {profileData.streetName && (
+                    <p>Street Name: {profileData.streetName}</p>
+                  )}
+                  {profileData.streetAddress && (
+                    <p>Street Address: {profileData.streetAddress}</p>
+                  )}
+                  {(profileData.state ||
+                    profileData.city ||
+                    profileData.postCode) && (
+                    <p>
+                      {profileData.state && `State: ${profileData.state}`}
+                      {profileData.state && profileData.city && ", "}
+                      {profileData.city && `City: ${profileData.city}`}
+                    </p>
+                  )}
+                  {profileData.postCode && (
+                    <p>Post Code: {profileData.postCode}</p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -345,26 +604,97 @@ export default function AgentProfilePage() {
               <label className="block text-white text-sm mb-2">
                 Address <span className="text-red-500">*</span>
               </label>
-              <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
-                <p>
-                  Building Number: {profileData.buildingNumber}, Street Name:{" "}
-                  {profileData.streetName}, Street Address:{" "}
-                  {profileData.streetAddress}
-                </p>
-                <p>
-                  State: {profileData.state}, City: {profileData.city}
-                </p>
-                <p>Post Code: {profileData.postCode}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input
+                  type="text"
+                  placeholder="Building Number"
+                  value={profileData.buildingNumber}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      buildingNumber: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                />
+                <input
+                  type="text"
+                  placeholder="Street Name"
+                  value={profileData.streetName}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      streetName: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                />
+                <input
+                  type="text"
+                  placeholder="Street Address"
+                  value={profileData.streetAddress}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      streetAddress: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                />
+                <input
+                  type="text"
+                  placeholder="State"
+                  value={profileData.state}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      state: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                />
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={profileData.city}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      city: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                />
+                <input
+                  type="text"
+                  placeholder="Post Code"
+                  value={profileData.postCode}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      postCode: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                />
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
-              <button className="bg-transparent hover:bg-gray-800 border border-gray-600 text-white px-12 py-3 rounded-md text-base transition-colors">
+              <button
+                onClick={handleDiscardChanges}
+                disabled={isSaving}
+                className="bg-transparent hover:bg-gray-800 border border-gray-600 text-white px-12 py-3 rounded-md text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Discard
               </button>
-              <button className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-12 py-3 rounded-md text-base transition-colors">
-                Save Details
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-12 py-3 rounded-md text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? "Saving..." : "Save Details"}
               </button>
             </div>
 
@@ -386,7 +716,10 @@ export default function AgentProfilePage() {
                 <button className="bg-white hover:bg-gray-100 text-gray-700 px-8 py-2.5 rounded-md text-sm transition-colors">
                   Cancel
                 </button>
-                <button className="bg-[#E03137] hover:bg-[#c41e24] text-white px-8 py-2.5 rounded-md text-sm transition-colors">
+                <button
+                  onClick={handleDeleteAccount}
+                  className="bg-[#E03137] hover:bg-[#c41e24] text-white px-8 py-2.5 rounded-md text-sm transition-colors"
+                >
                   Delete Account
                 </button>
               </div>

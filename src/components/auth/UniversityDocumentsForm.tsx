@@ -70,6 +70,19 @@ export default function UniversityDocumentsForm({ formData }: UniversityDocument
 
     const file = e.dataTransfer.files?.[0];
     if (file) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ["application/pdf", "image/jpeg", "image/png"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Only PDF, JPG, and PNG files are allowed");
+        return;
+      }
+
       setUploadedFiles((prev) => ({
         ...prev,
         [docNum]: file,
@@ -80,91 +93,82 @@ export default function UniversityDocumentsForm({ formData }: UniversityDocument
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      // Validate files
-      if (!uploadedFiles.doc1 || !uploadedFiles.doc2) {
-        toast.error("Please upload both documents");
-        setIsLoading(false);
-        return;
-      }
+    // Validate files
+    if (!uploadedFiles.doc1 || !uploadedFiles.doc2) {
+      toast.error("Please upload both documents");
+      return;
+    }
 
-      console.log("📋 Starting upload process with files:", {
-        doc1: uploadedFiles.doc1.name,
-        doc2: uploadedFiles.doc2.name,
-      });
+    // Capture files to avoid stale closure
+    const doc1 = uploadedFiles.doc1;
+    const doc2 = uploadedFiles.doc2;
 
-      // Upload files
-      toast.loading("Uploading document 1...");
-      setUploadProgress({ doc1: true, doc2: false });
-
-      let doc1Path: string;
+    const uploadAndSignup = async () => {
       try {
-        doc1Path = await uploadFile(uploadedFiles.doc1);
+        console.log("📋 Starting upload process with files:", {
+          doc1: doc1.name,
+          doc2: doc2.name,
+        });
+
+        // Upload first document
+        setUploadProgress({ doc1: true, doc2: false });
+        const doc1Path = await uploadFile(doc1);
         console.log("✅ Document 1 uploaded:", doc1Path);
-        toast.loading("Uploading document 2...");
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : "Failed to upload document 1";
-        console.error("❌ Document 1 upload failed:", msg);
-        toast.error("Document 1 upload failed: " + msg);
-        throw error;
-      }
 
-      setUploadProgress({ doc1: false, doc2: true });
-
-      let doc2Path: string;
-      try {
-        doc2Path = await uploadFile(uploadedFiles.doc2);
+        // Upload second document
+        setUploadProgress({ doc1: false, doc2: true });
+        const doc2Path = await uploadFile(doc2);
         console.log("✅ Document 2 uploaded:", doc2Path);
+
+        setUploadProgress({ doc1: false, doc2: false });
+        console.log("✅ Both documents uploaded successfully");
+
+        // Prepare signup data
+        const signupData: UniversitySignupRequest = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          role: "university",
+          supportingDocument1: doc1Path,
+          supportingDocument2: doc2Path,
+        };
+
+        console.log("📝 Signup data prepared:", signupData);
+
+        // Call signup API
+        const response = await signup(signupData);
+        console.log("✅ Signup successful:", response);
+
+        // Store auth token
+        storeAuthToken(response.token);
+
+        // Redirect after a brief delay
+        setTimeout(() => {
+          router.push("/university/login");
+        }, 1000);
+
+        return "Account created successfully!";
       } catch (error) {
-        const msg = error instanceof Error ? error.message : "Failed to upload document 2";
-        console.error("❌ Document 2 upload failed:", msg);
-        toast.error("Document 2 upload failed: " + msg);
-        throw error;
+        const errorMessage = error instanceof Error ? error.message : "Signup failed";
+        console.error("🔴 Signup error:", errorMessage);
+        console.error("Full error:", error);
+        throw new Error(errorMessage);
       }
+    };
 
-      setUploadProgress({ doc1: false, doc2: false });
-
-      console.log("✅ Both documents uploaded successfully");
-
-      // Prepare signup data
-      const signupData: UniversitySignupRequest = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        role: "university",
-        supportingDocument1: doc1Path,
-        supportingDocument2: doc2Path,
-      };
-
-      console.log("📝 Signup data prepared:", signupData);
-
-      // Call signup API
-      toast.loading("Creating account...");
-      const response = await signup(signupData);
-
-      console.log("✅ Signup successful:", response);
-
-      // Store auth token
-      storeAuthToken(response.token);
-
-      // Show success message
-      toast.dismiss();
-      toast.success("Signup successful!");
-
-      // Redirect to university sign in page
-      setTimeout(() => {
-        router.push(`/university/login`);
-      }, 1500);
+    setIsLoading(true);
+    try {
+      await toast.promise(uploadAndSignup(), {
+        loading: "Setting up your account...",
+        success: "Account created successfully!",
+        error: (err) => `${err.message}`,
+      });
     } catch (error) {
-      toast.dismiss();
-      const errorMessage = error instanceof Error ? error.message : "Signup failed";
-      console.error("🔴 Signup error:", errorMessage);
-      console.error("Full error:", error);
-      toast.error(errorMessage);
+      // Error already handled by toast.promise
+      console.error("Toast promise error:", error);
     } finally {
       setIsLoading(false);
     }

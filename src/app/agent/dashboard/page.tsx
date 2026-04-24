@@ -2,8 +2,51 @@
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
 import { ComplianceIcon } from "@/components/ui/icons";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function AgentDashboardPage() {
+  const router = useRouter();
+  const [userName, setUserName] = useState<string>("Agent");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          toast.error("Please login first");
+          router.push("/agent/login");
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await response.json();
+        
+        // Extract first name or full name
+        const name = data.firstName || data.fullName || "Agent";
+        setUserName(name);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        // Keep default name if error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [router]);
   const statsData = [
     { icon: <ComplianceIcon />, label: "Compliance Score", value: "95%", color: "#F68E2D" },
     { icon: <ComplianceIcon />, label: "CDP Hours", value: "85/120", color: "#F68E2D" },
@@ -45,7 +88,7 @@ export default function AgentDashboardPage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-semibold text-white mb-2">Hi, Jane</h1>
+          <h1 className="text-3xl font-semibold text-white mb-2">Hi, {userName}</h1>
           <p className="text-white/80 text-lg">
             Your compliance score is excellent. Keep up the great work!
           </p>

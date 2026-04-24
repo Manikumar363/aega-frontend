@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Upload, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { uploadFile } from "@/lib/api/fileService";
 
 export default function ComplaintPage() {
   const [formData, setFormData] = useState({
@@ -19,6 +21,7 @@ export default function ComplaintPage() {
   });
 
   const [files, setFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -44,15 +47,133 @@ export default function ComplaintPage() {
     setFiles(files.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    if (!formData.firstName.trim()) {
+      toast.error("First name is required");
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      toast.error("Last name is required");
+      return false;
+    }
+    if (!formData.email.trim()) {
+      toast.error("Email address is required");
+      return false;
+    }
+    if (!formData.phoneNumber.trim()) {
+      toast.error("Phone number is required");
+      return false;
+    }
+    if (!formData.countryOfResidence.trim()) {
+      toast.error("Country of residence is required");
+      return false;
+    }
+    if (!formData.agentName.trim()) {
+      toast.error("Agent name or company is required");
+      return false;
+    }
+    if (!formData.typeOfComplaint) {
+      toast.error("Type of complaint is required");
+      return false;
+    }
+    if (!formData.complaintDescription.trim()) {
+      toast.error("Complaint description is required");
+      return false;
+    }
+    if (!formData.termsAccepted) {
+      toast.error("You must accept the declaration to proceed");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData, files);
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Upload evidence files
+      const evidenceFiles = [];
+      for (const file of files) {
+        try {
+          const fileKey = await uploadFile(file);
+          evidenceFiles.push({
+            fileUrl: fileKey,
+            fileName: file.name,
+          });
+        } catch (error) {
+          throw new Error(`Failed to upload file ${file.name}`);
+        }
+      }
+
+      // Prepare complaint data
+      const complaintData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        emailAddress: formData.email,
+        phoneNumber: formData.phoneNumber,
+        countryOfResidence: formData.countryOfResidence,
+        agentNameOrCompany: formData.agentName,
+        aegaReferenceNumber: formData.agentReference || "",
+        typeOfComplaint: formData.typeOfComplaint,
+        description: formData.complaintDescription,
+        evidenceFiles: evidenceFiles,
+        acceptedDeclaration: formData.termsAccepted,
+      };
+
+      // Submit complaint
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complaints/public`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(complaintData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit complaint");
+      }
+
+      const result = await response.json();
+
+      // Success
+      toast.success(`Complaint submitted successfully! ID: ${result.complaintId}`);
+
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        countryOfResidence: "",
+        agentName: "",
+        agentReference: "",
+        typeOfComplaint: "",
+        complaintDescription: "",
+        supportingEvidence: "",
+        termsAccepted: false,
+      });
+      setFiles([]);
+    } catch (error) {
+      console.error("Error submitting complaint:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit complaint"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="relative w-full overflow-hidden bg-[#0A1628] py-20">
       {/* Orange gradient accent - top right */}
-      <div className="pointer-events-none absolute right-0 top-0 h-96 w-[50%] bg-gradient-to-bl from-[#F58A07]/20 via-[#C86A2A]/10 to-transparent" />
+      <div className="pointer-events-none absolute right-0 top-0 h-96 w-[50%] bg-linear-to-bl from-[#F58A07]/20 via-[#C86A2A]/10 to-transparent" />
 
       <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-10">
         {/* Page Header */}
@@ -321,10 +442,10 @@ export default function ComplaintPage() {
 
               <button
                 type="submit"
-                disabled={!formData.termsAccepted}
+                disabled={!formData.termsAccepted || isSubmitting}
                 className="w-full bg-[#F58A07] px-8 py-4 text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-[#e07b06] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 md:w-auto"
               >
-                Submit Complaint
+                {isSubmitting ? "Submitting..." : "Submit Complaint"}
               </button>
             </div>
           </form>

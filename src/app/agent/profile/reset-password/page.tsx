@@ -3,18 +3,105 @@
 import DashboardLayout from "@/components/ui/dashboard-layout";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
     confirm: "",
   });
+
+  // Validate form
+  const validateForm = (): boolean => {
+    if (!passwords.current.trim()) {
+      toast.error("Current password is required");
+      return false;
+    }
+    if (!passwords.new.trim()) {
+      toast.error("New password is required");
+      return false;
+    }
+    if (!passwords.confirm.trim()) {
+      toast.error("Confirm password is required");
+      return false;
+    }
+    if (passwords.new.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return false;
+    }
+    if (passwords.new !== passwords.confirm) {
+      toast.error("New password and confirm password do not match");
+      return false;
+    }
+    if (passwords.current === passwords.new) {
+      toast.error("New password must be different from current password");
+      return false;
+    }
+    return true;
+  };
+
+  // Handle password update
+  const handleUpdatePassword = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        toast.error("Please login first");
+        router.push("/agent/login");
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/reset-password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: passwords.current,
+            newPassword: passwords.new,
+            confirmPassword: passwords.confirm,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update password");
+      }
+
+      toast.success("Password updated successfully!");
+      setPasswords({ current: "", new: "", confirm: "" });
+      // Optionally redirect after success
+      setTimeout(() => {
+        router.push("/agent/profile");
+      }, 1500);
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update password"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle cancel
+  const handleCancel = () => {
+    setPasswords({ current: "", new: "", confirm: "" });
+    router.push("/agent/profile");
+  };
 
   return (
     <DashboardLayout role="agent">
@@ -230,11 +317,19 @@ export default function ResetPasswordPage() {
 
           {/* Action Buttons */}
           <div className="flex justify-center gap-4 pt-4">
-            <button className="bg-transparent hover:bg-gray-800 border border-gray-600 text-white px-12 py-3 rounded-md text-base transition-colors">
+            <button 
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="bg-transparent hover:bg-gray-800 border border-gray-600 text-white px-12 py-3 rounded-md text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Cancel
             </button>
-            <button className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-12 py-3 rounded-md text-base transition-colors">
-              Update Password
+            <button 
+              onClick={handleUpdatePassword}
+              disabled={isLoading}
+              className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-12 py-3 rounded-md text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Updating..." : "Update Password"}
             </button>
           </div>
         </div>

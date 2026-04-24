@@ -5,6 +5,53 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const SIGNUP_ENDPOINT = "/auth/signup";
 const LOGIN_ENDPOINT = "/auth/login";
 
+type ApiErrorLike = {
+  message?: string;
+  error?: string;
+  errors?: unknown;
+};
+
+async function parseResponseBody(response: Response): Promise<unknown> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return response.json().catch(() => null);
+  }
+
+  return response.text().catch(() => "");
+}
+
+function extractApiErrorMessage(body: unknown, fallback: string): string {
+  if (typeof body === "string") {
+    const trimmed = body.trim();
+    return trimmed || fallback;
+  }
+
+  if (body && typeof body === "object") {
+    const apiError = body as ApiErrorLike;
+    if (typeof apiError.message === "string" && apiError.message.trim()) {
+      return apiError.message;
+    }
+    if (typeof apiError.error === "string" && apiError.error.trim()) {
+      return apiError.error;
+    }
+    if (Array.isArray(apiError.errors) && apiError.errors.length > 0) {
+      const firstError = apiError.errors[0];
+      if (typeof firstError === "string" && firstError.trim()) {
+        return firstError;
+      }
+      if (firstError && typeof firstError === "object" && "message" in firstError) {
+        const msg = (firstError as { message?: unknown }).message;
+        if (typeof msg === "string" && msg.trim()) {
+          return msg;
+        }
+      }
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Handles user signup (both agent and university)
  * @param signupData - The signup request data
@@ -26,14 +73,11 @@ export async function signup(signupData: SignupRequest): Promise<SignupResponse>
       body: JSON.stringify(signupData),
     });
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
 
     if (!response.ok) {
-      // Handle error response
-      const errorData = data as ApiErrorResponse;
-      throw new Error(
-        errorData.message || `Signup failed with status ${response.status}`
-      );
+      const fallback = `Signup failed with status ${response.status}`;
+      throw new Error(extractApiErrorMessage(data, fallback));
     }
 
     return data as SignupResponse;
@@ -66,14 +110,11 @@ export async function login(loginData: LoginRequest): Promise<LoginResponse> {
       body: JSON.stringify(loginData),
     });
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
 
     if (!response.ok) {
-      // Handle error response
-      const errorData = data as ApiErrorResponse;
-      throw new Error(
-        errorData.message || `Login failed with status ${response.status}`
-      );
+      const fallback = `Login failed with status ${response.status}`;
+      throw new Error(extractApiErrorMessage(data, fallback));
     }
 
     return data as LoginResponse;

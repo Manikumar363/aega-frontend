@@ -3,6 +3,7 @@
 import { PlusIcon, Trash2, Pencil } from "lucide-react";
 import React, { useState } from "react";
 import StudentInfo from "./info";
+import AddStudent from "./addStudent";
 
 
 type Agent = {
@@ -69,9 +70,9 @@ const StudentManagementHome: React.FC = () => {
           onClick={() => setShowAddAgent(false)}
           className="text-white/80 hover:text-white text-sm"
         >
-          ← Back to Agent Management
+          ← Back to Student Management
         </button>
-        {/* <AddAgent /> */}
+        <AddStudent onClose={() => setShowAddAgent(false)} />
       </div>
     );
   }
@@ -84,7 +85,7 @@ const StudentManagementHome: React.FC = () => {
           onClick={() => setViewingAgent(null)}
           className="text-white/80 hover:text-white text-sm"
         >
-          ← Back to Agent Management
+          ← Back to Student Management
         </button>
         <StudentInfo student={viewingAgent} />
       </div>

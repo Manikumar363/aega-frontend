@@ -1,5 +1,6 @@
-import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
-import React from "react";
+import { Eye, Pencil, Plus, Trash2, X } from "lucide-react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type PreferenceItem = {
 	id: number;
@@ -9,10 +10,16 @@ type PreferenceItem = {
 	applicationStatus: "On-Going" | "Conditional Offer" | "Accepted" | "Rejected";
 	shortCode: string;
 	logoColor: string;
+	location?: string;
+	intake?: string;
+	startDate?: string;
+	endDate?: string;
+	tuitionFee?: string;
+	termFee?: string;
 };
 
 const preferences: PreferenceItem[] = [
-	{ id: 1, name: "Loughborough University", courseName: "MSC Human-Computer Interaction", eligibilityStatus: "Hostile", applicationStatus: "On-Going", shortCode: "LU", logoColor: "#5A2EA6" },
+	{ id: 1, name: "Loughborough University", courseName: "MSC User Experience Design and Experience", eligibilityStatus: "Eligible", applicationStatus: "Conditional Offer", shortCode: "LU", logoColor: "#5A2EA6", location: "Loughborough", intake: "September 2026", startDate: "21st September 2026", endDate: "21st September 2027", tuitionFee: "£27,300", termFee: "£4,300" },
 	{ id: 2, name: "Kingston University", courseName: "MSC Digital Design", eligibilityStatus: "Eligible", applicationStatus: "Conditional Offer", shortCode: "KU", logoColor: "#1F2937" },
 	{ id: 3, name: "City College London", courseName: "MSC User Experience and Service Design", eligibilityStatus: "Eligible", applicationStatus: "Conditional Offer", shortCode: "CC", logoColor: "#D9363E" },
 	{ id: 4, name: "KAIST", courseName: "MSC Human-Centred Interactive Technologies", eligibilityStatus: "Hostile", applicationStatus: "On-Going", shortCode: "KS", logoColor: "#0E7490" },
@@ -38,6 +45,38 @@ const appStatusClasses: Record<PreferenceItem["applicationStatus"], string> = {
 };
 
 const Preferences: React.FC = () => {
+	const router = useRouter();
+	const [editingId, setEditingId] = useState<number | null>(null);
+	const [editData, setEditData] = useState<PreferenceItem | null>(null);
+
+	const handleViewPreference = (id: number) => {
+		router.push(`/agent/student-management/preference/${id}`);
+	};
+
+	const handleEditPreference = (item: PreferenceItem) => {
+		setEditingId(item.id);
+		setEditData({ ...item });
+	};
+
+	const handleDiscardEdit = () => {
+		setEditingId(null);
+		setEditData(null);
+	};
+
+	const handleUpdatePreference = () => {
+		if (editData) {
+			// Here you would typically make an API call to update
+			console.log("Updating preference:", editData);
+			setEditingId(null);
+			setEditData(null);
+		}
+	};
+
+	const handleEditFieldChange = (field: keyof PreferenceItem, value: any) => {
+		if (editData) {
+			setEditData({ ...editData, [field]: value });
+		}
+	};
 	return (
 		<div className="border border-[#2D2A50] bg-[#0F0D2B] overflow-x-auto">
 			<table className="min-w-[980px] w-full">

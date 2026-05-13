@@ -1,26 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CDPTraining from "./cdpTraining";
 import Audits from "./audits";
 import Compliances from "./compliances";
 import Employee from "./employee";
+import toast from "react-hot-toast";
 
-
-type Agent = {  
-  id: number;
-  name: string;
-  designation: string;
-  mobile: string;
-  email: string;
+type OfficeData = {
+  _id: string;
+  agentId: string;
   location: string;
-  avatar: string;
-  verified: "blue" | "orange" | "red";
-  online: boolean;
+  fullAddress: string;
+  email: string;
+  mobileNumber: string;
+  employees: any[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 };
 
 type ViewAgentProps = {
-  agent: Agent;
+  officeId: string;
   onClose?: () => void;
 };
 
@@ -35,9 +36,64 @@ const performance = [
   { label: "Student Output Unsatisfactory( Below 60%)", value: 30, max: 75, color: "#10b981" },
 ];
 
-const Info: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
+const Info: React.FC<ViewAgentProps> = ({ officeId, onClose }) => {
+  const [office, setOffice] = useState<OfficeData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [timePeriod, setTimePeriod] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [activeTab, setActiveTab] = useState<"info" | "cdp" | "compliances" | "audits" | "employee">("info");
+
+  useEffect(() => {
+    const fetchOfficeDetails = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("authToken");
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/offices/${officeId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch office details");
+        }
+
+        const data: OfficeData = await response.json();
+        setOffice(data);
+      } catch (error) {
+        console.error("Error fetching office details:", error);
+        toast.error("Failed to load office details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (officeId) {
+      fetchOfficeDetails();
+    }
+  }, [officeId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-white text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#F68E2D]"></div>
+          <p className="mt-4">Loading office details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!office) {
+    return (
+      <div className="text-white text-center py-12">
+        <p>No office details found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -90,40 +146,40 @@ const Info: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
         <Employee />
       ) : (
         <>
-          {/* AGENT INFORMATION */}
+          {/* OFFICE INFORMATION */}
           <div className="bg-[#14112E] rounded-lg p-6 border border-[#2C2A45]">
-            <h2 className="text-white text-lg font-semibold mb-4">AGENT INFORMATION</h2>
+            <h2 className="text-white text-lg font-semibold mb-4">OFFICE INFORMATION</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white text-sm">
               <div>
                 <div className="mb-3">
-                  <span className="font-semibold text-gray-400">First Name :</span>
-                  <span className="ml-2">{agent.name}</span>
+                  <span className="font-semibold text-gray-400">Location :</span>
+                  <span className="ml-2">{office.location}</span>
                 </div>
                 <div>
                   <span className="font-semibold text-gray-400">Email ID :</span>
-                  <span className="ml-2">{agent.email}</span>
+                  <span className="ml-2">{office.email}</span>
                 </div>
               </div>
               <div>
                 <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Last Name :</span>
-                  <span className="ml-2">Decker</span>
+                  <span className="font-semibold text-gray-400">Full Address :</span>
+                  <span className="ml-2">{office.fullAddress}</span>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-400">Phone Number :</span>
-                  <span className="ml-2">{agent.mobile}</span>
+                  <span className="font-semibold text-gray-400">Mobile Number :</span>
+                  <span className="ml-2">{office.mobileNumber}</span>
                 </div>
               </div>
               <div>
                 <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Designation :</span>
-                  <span className="ml-2">{agent.designation}</span>
+                  <span className="font-semibold text-gray-400">Total Employees :</span>
+                  <span className="ml-2">{office.employees.length}</span>
                 </div>
               </div>
               <div>
                 <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Office :</span>
-                  <span className="ml-2">{agent.location}</span>
+                  <span className="font-semibold text-gray-400">Office ID :</span>
+                  <span className="ml-2 text-xs font-mono">{office._id}</span>
                 </div>
               </div>
             </div>

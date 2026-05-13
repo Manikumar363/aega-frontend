@@ -184,6 +184,82 @@ export default function AddStudent({ onClose, onSubmit }: { onClose: () => void;
     return true;
   };
 
+  const transformDataForAPI = () => {
+    // Transform form data to match API request structure
+    const graduationInformation = formData.graduationEducation.school || formData.graduationEducation.board || formData.graduationEducation.percentage || formData.graduationEducation.yearOfPassing
+      ? [{
+          schoolOrCollege: formData.graduationEducation.school,
+          boardOrUniversity: "",
+          streamOrSpecialization: formData.graduationEducation.board,
+          cgpaOrPercentage: formData.graduationEducation.percentage,
+          yearOfPassing: formData.graduationEducation.yearOfPassing,
+        }]
+      : [];
+
+    const postGraduationInformation = formData.postGraduationEducation.school || formData.postGraduationEducation.board || formData.postGraduationEducation.percentage || formData.postGraduationEducation.yearOfPassing
+      ? [{
+          schoolOrCollege: formData.postGraduationEducation.school,
+          boardOrUniversity: "",
+          streamOrSpecialization: formData.postGraduationEducation.board,
+          cgpaOrPercentage: formData.postGraduationEducation.percentage,
+          yearOfPassing: formData.postGraduationEducation.yearOfPassing,
+        }]
+      : [];
+
+    const tenthInformation = formData.tenthEducation.school || formData.tenthEducation.board || formData.tenthEducation.percentage || formData.tenthEducation.yearOfPassing
+      ? [{
+          schoolOrCollege: formData.tenthEducation.school,
+          boardOrUniversity: formData.tenthEducation.board,
+          streamOrSpecialization: "",
+          cgpaOrPercentage: formData.tenthEducation.percentage,
+          yearOfPassing: formData.tenthEducation.yearOfPassing,
+        }]
+      : [];
+
+    const twelfthInformation = formData.twelfthEducation.school || formData.twelfthEducation.board || formData.twelfthEducation.percentage || formData.twelfthEducation.yearOfPassing
+      ? [{
+          schoolOrCollege: formData.twelfthEducation.school,
+          boardOrUniversity: formData.twelfthEducation.board,
+          streamOrSpecialization: "",
+          cgpaOrPercentage: formData.twelfthEducation.percentage,
+          yearOfPassing: formData.twelfthEducation.yearOfPassing,
+        }]
+      : [];
+
+    const employmentInformation = experiences
+      .filter(exp => exp.companyName || exp.role || exp.emailId || exp.phoneNumber)
+      .map(exp => ({
+        companyName: exp.companyName,
+        role: exp.role,
+        emailId: exp.emailId,
+        phoneNumber: exp.phoneNumber,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        currentlyWorkingHere: exp.currentlyWorking,
+      }));
+
+    const preferredRegionAndCollege = preferences
+      .filter(pref => pref.region || pref.country || pref.collegeName)
+      .map(pref => ({
+        region: pref.region,
+        country: pref.country,
+        collegeName: pref.collegeName,
+      }));
+
+    return {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      emailId: formData.emailId,
+      mobileNumber: formData.mobileNumber,
+      tenthInformation,
+      twelfthInformation,
+      graduationInformation,
+      postGraduationInformation,
+      employmentInformation,
+      preferredRegionAndCollege,
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -191,16 +267,28 @@ export default function AddStudent({ onClose, onSubmit }: { onClose: () => void;
 
     setIsSubmitting(true);
     try {
-      const completeData = {
-        ...formData,
-        experiences,
-        preferences,
-      };
+      const apiData = transformDataForAPI();
+      const token = localStorage.getItem("authToken");
 
-      console.log("Student data:", completeData);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/students`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add student");
+      }
+
+      const result = await response.json();
+      console.log("Student created:", result);
 
       if (onSubmit) {
-        await onSubmit(completeData);
+        await onSubmit(result.student);
       }
 
       toast.success("Student added successfully!");

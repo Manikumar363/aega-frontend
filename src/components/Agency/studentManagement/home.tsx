@@ -1,13 +1,15 @@
 "use client";
 
 import { PlusIcon, Trash2, Pencil } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import StudentInfo from "./info";
 import AddStudent from "./addStudent";
+import DeleteConfirmDialog from "./DeleteConfirmDialog";
+import toast from "react-hot-toast";
 
 
 type Agent = {
-  id: number;
+  id: string;
   name: string;
   designation: string;
   mobile: string;
@@ -18,35 +20,87 @@ type Agent = {
   online: boolean;
 };
 
-const agents: Agent[] = [
-  { id: 1, name: "Liam", designation: "Managing Director", mobile: "5506556340", email: "liam@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 2, name: "Mason", designation: "Chief Operating Officer", mobile: "9876543210", email: "mason@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "orange", online: true },
-  { id: 3, name: "Liam", designation: "Chief Marketing Officer", mobile: "6543217890", email: "liam@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: false },
-  { id: 4, name: "Liam", designation: "Chief Financial Officer", mobile: "7890123456", email: "liam@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "blue", online: false },
-  { id: 5, name: "Mason", designation: "Education Counselor", mobile: "1234567890", email: "mason@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "orange", online: true },
-  { id: 6, name: "Mason", designation: "Student Counselor", mobile: "4567890123", email: "mason@gmail.com", location: "Hyderabad", avatar: "/avatar.jpg", verified: "orange", online: true },
-  { id: 7, name: "Liam", designation: "Career Counselor", mobile: "9876504321", email: "liam@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 8, name: "James", designation: "Academic Advisor", mobile: "2345678901", email: "james@gmail.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 9, name: "Sarah", designation: "Admissions Counselor", mobile: "3456789012", email: "sarah@email.com", location: "Bangalore", avatar: "/avatar.jpg", verified: "blue", online: true },
-  { id: 10, name: "Michael", designation: "Visa Counselor", mobile: "4567890123", email: "michael@domain.com", location: "Noida", avatar: "/avatar.jpg", verified: "blue", online: true },
-];
-
-const verifiedColors: Record<string, string> = {
-  blue: "#3B82F6",
-  orange: "#F68E2D",
-  red: "#E03137",
+type StudentApiResponse = {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  emailId: string;
+  mobileNumber: string;
+  employmentInformation?: Array<{
+    companyName: string;
+    role: string;
+  }>;
+  agentId?: {
+    firstName: string;
+    lastName: string;
+  };
 };
 
 const ENTRIES_OPTIONS = [8, 16, 24];
 const TOTAL = 50;
 
+const mapStudentToAgent = (student: StudentApiResponse): Agent => {
+  const latestJob = student.employmentInformation?.[student.employmentInformation.length - 1];
+  const designation = latestJob?.role || "Student";
+
+  return {
+    id: student._id,
+    name: `${student.firstName} ${student.lastName}`,
+    designation: designation,
+    mobile: student.mobileNumber,
+    email: student.emailId,
+    location: "Not Specified",
+    avatar: "/avatar.jpg",
+    verified: "blue",
+    online: true,
+  };
+};
+
 const StudentManagementHome: React.FC = () => {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
   const [showEntriesDropdown, setShowEntriesDropdown] = useState(false);
   const [showAddAgent, setShowAddAgent] = useState(false);
   const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
+  const [failedAvatars, setFailedAvatars] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
+  const [deleteStudentName, setDeleteStudentName] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("authToken");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/students`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch students");
+        }
+
+        const data: StudentApiResponse[] = await response.json();
+        const mappedAgents = data.map(mapStudentToAgent);
+        setAgents(mappedAgents);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+        toast.error("Failed to load students");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const filtered = agents.filter(
     (a) =>
@@ -55,12 +109,97 @@ const StudentManagementHome: React.FC = () => {
       a.designation.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalPages = 10;
+  const verifiedColors: Record<string, string> = {
+    blue: "#3B82F6",
+    orange: "#F68E2D",
+    red: "#E03137",
+  };
+
+  const handleAvatarError = (studentId: string) => {
+    setFailedAvatars((prev) => new Set(prev).add(studentId));
+  };
+
+  const getAvatarSrc = (studentId: string, defaultSrc: string) => {
+    return failedAvatars.has(studentId) ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E" : defaultSrc;
+  };
+
+  const openDeleteDialog = (studentId: string, studentName: string) => {
+    setDeleteStudentId(studentId);
+    setDeleteStudentName(studentName);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteStudentId || !deleteStudentName) return;
+
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/students/${deleteStudentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete student");
+      }
+
+      // Remove the student from the list
+      setAgents(agents.filter((agent) => agent.id !== deleteStudentId));
+      toast.success(`${deleteStudentName} has been deleted successfully`);
+      setDeleteDialogOpen(false);
+      setDeleteStudentId(null);
+      setDeleteStudentName(null);
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete student");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDeleteStudentId(null);
+    setDeleteStudentName(null);
+  };
+
+  const totalPages = Math.ceil(agents.length / entriesPerPage) || 1;
 
   const getPageNumbers = () => {
-    const pages: (number | string)[] = [1, 2, 3, "...", 10];
+    const pages: (number | string)[] = [];
+    const maxPagesToShow = 3;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1, 2, 3);
+      if (totalPages > maxPagesToShow) {
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
     return pages;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-white text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#F68E2D]"></div>
+          <p className="mt-4">Loading students...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showAddAgent) {
     return (
@@ -87,7 +226,7 @@ const StudentManagementHome: React.FC = () => {
         >
           ← Back to Student Management
         </button>
-        <StudentInfo student={viewingAgent} />
+        <StudentInfo studentId={viewingAgent.id} onClose={() => setViewingAgent(null)} />
       </div>
     );
   }
@@ -128,96 +267,111 @@ const StudentManagementHome: React.FC = () => {
       {/* Table */}
       <div className="bg-[#14112E] border border-gray-800 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="px-6 py-4 text-white text-left font-semibold">Image</th>
-                <th className="px-6 py-4 text-white text-center font-semibold">Name</th>
-                <th className="px-6 py-4 text-white text-center font-semibold">Designation</th>
-                <th className="px-6 py-4 text-white text-center font-semibold">Mobile Number</th>
-                <th className="px-6 py-4 text-white text-center font-semibold">Email</th>
-                <th className="px-6 py-4 text-white text-center font-semibold">Location</th>
-                <th className="px-6 py-4 text-white text-center font-semibold">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.slice(0, entriesPerPage).map((agent, index) => (
-                <tr
-                  key={agent.id}
-                  className={`border-b border-gray-800 hover:bg-[#1a1640] transition-colors ${
-                    index === filtered.slice(0, entriesPerPage).length - 1 ? "border-b-0" : ""
-                  }`}
-                >
-                  {/* Avatar */}
-                  <td className="px-6 py-4">
-                    <div className="relative w-10 h-10">
-                      <img
-                        src={agent.avatar}
-                        alt={agent.name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
-                      />
-                      <span
-                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#14112E] ${
-                          agent.online ? "bg-green-500" : "bg-red-500"
-                        }`}
-                      />
-                    </div>
-                  </td>
-
-                  {/* Name */}
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1 text-white">
-                      {agent.name}
-                      <span
-                        className="w-4 h-4 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: verifiedColors[agent.verified] }}
-                      >
-                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8 15.414l-4.707-4.707a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* Designation */}
-                  <td className="px-6 py-4 text-white text-center whitespace-nowrap">{agent.designation}</td>
-
-                  {/* Mobile */}
-                  <td className="px-6 py-4 text-white text-center">{agent.mobile}</td>
-
-                  {/* Email */}
-                  <td className="px-6 py-4 text-white text-center">{agent.email}</td>
-
-                  {/* Location */}
-                  <td className="px-6 py-4 text-white text-center">{agent.location}</td>
-
-                  {/* Actions */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* View */}
-                      <button
-                        onClick={() => setViewingAgent(agent)}
-                        className="w-8 h-8 bg-[#F68E2D] hover:bg-[#e57d1f] rounded-lg flex items-center justify-center transition-colors"
-                        aria-label="View"
-                      >
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                      {/* Edit and Delete buttons... */}
-                      <button className="w-7 h-7 rounded-md bg-[#3B49DF] hover:bg-[#3340c9] flex items-center justify-center" aria-label="Edit preference">
-										<Pencil className="w-3.5 h-3.5 text-white" />
-									</button>
-									<button className="w-7 h-7 rounded-md bg-[#E03137] hover:bg-[#c82a30] flex items-center justify-center" aria-label="Delete preference">
-										<Trash2 className="w-3.5 h-3.5 text-white" />
-					</button>
-                    </div>
-                  </td>
+          {filtered.length === 0 ? (
+            <div className="p-8 text-center text-white/60">
+              <p>No students found. {search ? "Try adjusting your search." : "Add your first student!"}</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="px-6 py-4 text-white text-left font-semibold">Image</th>
+                  <th className="px-6 py-4 text-white text-center font-semibold">Name</th>
+                  <th className="px-6 py-4 text-white text-center font-semibold">Designation</th>
+                  <th className="px-6 py-4 text-white text-center font-semibold">Mobile Number</th>
+                  <th className="px-6 py-4 text-white text-center font-semibold">Email</th>
+                  <th className="px-6 py-4 text-white text-center font-semibold">Location</th>
+                  <th className="px-6 py-4 text-white text-center font-semibold">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage).map((agent, index) => (
+                  <tr
+                    key={agent.id}
+                    className={`border-b border-gray-800 hover:bg-[#1a1640] transition-colors ${
+                      index === filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage).length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    {/* Avatar */}
+                    <td className="px-6 py-4">
+                      <div className="relative w-10 h-10">
+                        <img
+                          src={getAvatarSrc(agent.id, agent.avatar)}
+                          alt={agent.name}
+                          onError={() => handleAvatarError(agent.id)}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-600 bg-gray-700"
+                        />
+                        <span
+                          className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#14112E] ${
+                            agent.online ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        />
+                      </div>
+                    </td>
+
+                    {/* Name */}
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1 text-white">
+                        {agent.name}
+                        <span
+                          className="w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: verifiedColors[agent.verified] }}
+                        >
+                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8 15.414l-4.707-4.707a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Designation */}
+                    <td className="px-6 py-4 text-white text-center whitespace-nowrap">{agent.designation}</td>
+
+                    {/* Mobile */}
+                    <td className="px-6 py-4 text-white text-center">{agent.mobile}</td>
+
+                    {/* Email */}
+                    <td className="px-6 py-4 text-white text-center">{agent.email}</td>
+
+                    {/* Location */}
+                    <td className="px-6 py-4 text-white text-center">{agent.location}</td>
+
+                    {/* Actions */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* View */}
+                        <button
+                          onClick={() => setViewingAgent({...agent, id: agent.id})}
+                          className="w-8 h-8 bg-[#F68E2D] hover:bg-[#e57d1f] rounded-lg flex items-center justify-center transition-colors"
+                          aria-label="View"
+                        >
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        {/* Edit and Delete buttons... */}
+                        <button 
+                          onClick={() => setViewingAgent({...agent, id: agent.id})}
+                          className="w-7 h-7 rounded-md bg-[#3B49DF] hover:bg-[#3340c9] flex items-center justify-center transition-colors" 
+                          aria-label="Edit preference"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-white" />
+                        </button>
+                        <button 
+                          onClick={() => openDeleteDialog(agent.id, agent.name)}
+                          className="w-7 h-7 rounded-md bg-[#E03137] hover:bg-[#c82a30] flex items-center justify-center transition-colors" 
+                          aria-label="Delete student"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -261,8 +415,8 @@ const StudentManagementHome: React.FC = () => {
         {/* Entries Info + Show Dropdown */}
         <div className="flex items-center gap-3">
           <span className="text-gray-400 text-sm">
-            Showing {(currentPage - 1) * entriesPerPage + 1} to{" "}
-            {Math.min(currentPage * entriesPerPage, TOTAL)} of {TOTAL} entries
+            Showing {filtered.length === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1} to{" "}
+            {Math.min(currentPage * entriesPerPage, filtered.length)} of {filtered.length} entries
           </span>
           <div className="relative">
             <button
@@ -292,6 +446,15 @@ const StudentManagementHome: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirm Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialogOpen}
+        studentName={deleteStudentName || ""}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

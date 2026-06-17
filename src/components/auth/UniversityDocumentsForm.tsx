@@ -10,8 +10,7 @@ import { uploadFile } from "@/lib/api/fileService";
 import { UniversitySignupRequest } from "@/lib/api/types";
 
 interface UniversityFormData {
-  firstName: string;
-  lastName: string;
+  universityName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -126,8 +125,7 @@ export default function UniversityDocumentsForm({ formData }: UniversityDocument
 
         // Prepare signup data
         const signupData: UniversitySignupRequest = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          universityName: formData.universityName,
           email: formData.email,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
@@ -147,7 +145,7 @@ export default function UniversityDocumentsForm({ formData }: UniversityDocument
 
         // Redirect after a brief delay
         setTimeout(() => {
-          router.push("/university/login");
+          router.push("/login");
         }, 1000);
 
         return "Account created successfully!";

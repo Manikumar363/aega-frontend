@@ -1,21 +1,62 @@
 import React from "react";
+import { type AgentRequest } from "@/lib/api";
 
 interface Agent {
-    id: number;
-    name: string;
-    verified: "blue" | "orange" | "red";
-    mobile: string;
-    email: string;
-    agency: string;
-    avatar: string;
-    online: boolean;
+    id?: number;
+    name?: string;
+    verified?: "blue" | "orange" | "red";
+    mobile?: string;
+    email?: string;
+    agency?: string;
+    avatar?: string;
+    online?: boolean;
 }
 
 interface ViewAgentProps {
-    agent: Agent;
+    agent: Agent | AgentRequest;
 }
 
 const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
+    // Helper function to get agent name from either type
+    const getAgentName = () => {
+        if ('universityName' in agent) {
+            return agent.universityName || 'Unknown';
+        }
+        return (agent as Agent).name || 'Unknown';
+    };
+
+    // Helper function to get agent email from either type
+    const getAgentEmail = () => {
+        if ('universityEmail' in agent) {
+            return agent.universityEmail || 'N/A';
+        }
+        return (agent as Agent).email || 'N/A';
+    };
+
+    // Helper function to get agent message/description
+    const getAgentMessage = () => {
+        if ('message' in agent) {
+            return agent.message || 'No message provided';
+        }
+        return 'N/A';
+    };
+
+    // Helper function to get agent business type
+    const getBusinessType = () => {
+        if ('agentBusinessType' in agent) {
+            return agent.agentBusinessType?.replace(/_/g, ' ') || 'N/A';
+        }
+        return 'N/A';
+    };
+
+    // Helper function to get agent role
+    const getAgentRole = () => {
+        if ('agentRole' in agent) {
+            return agent.agentRole || 'N/A';
+        }
+        return 'N/A';
+    };
+
     const performance = [
         { label: "Visa refusal (85% - 100%)", value: 75, max: 75, color: "#F68E2D" },
         { label: "Enrollment (50% - 84%)", value: 24, max: 75, color: "#2563eb" },
@@ -29,33 +70,82 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
         <div className="space-y-6">
             {/* AGENT INFORMATION */}
             <div className="bg-[#181537] rounded-lg p-6">
-                <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">AGENT INFORMATION</h2>
+                <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">
+                    {'universityName' in agent ? 'UNIVERSITY INFORMATION' : 'AGENT INFORMATION'}
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
                     <div>
-                        <div className="mb-2"><span className="font-semibold">First Name :</span> {agent.name}</div>
-                        <div><span className="font-semibold">Email ID :</span> {agent.email}</div>
+                        <div className="mb-2">
+                            <span className="font-semibold">
+                                {'universityName' in agent ? 'University Name' : 'First Name'}
+                            </span>
+                            : {getAgentName()}
+                        </div>
+                        <div>
+                            <span className="font-semibold">Email ID :</span> {getAgentEmail()}
+                        </div>
                     </div>
                     <div>
-                        <div className="mb-2"><span className="font-semibold">Last Name :</span> Decker</div>
-                        <div><span className="font-semibold">Phone Number :</span> {agent.mobile || "Decker"}</div>
+                        <div className="mb-2">
+                            <span className="font-semibold">
+                                {'universityName' in agent ? 'Agent Role' : 'Last Name'}
+                            </span>
+                            : {getAgentRole()}
+                        </div>
+                        <div>
+                            <span className="font-semibold">
+                                {'agentBusinessType' in agent ? 'Business Type' : 'Phone Number'}
+                            </span>
+                            : {getBusinessType() || (agent as Agent).mobile || 'N/A'}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* AGENCY INFORMATION */}
-            <div className="bg-[#181537] rounded-lg p-6">
-                <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">AGENCY INFORMATION</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-                    <div>
-                        <div className="mb-2"><span className="font-semibold">Agency Name :</span> {agent.agency}</div>
-                        <div><span className="font-semibold">Email ID :</span> {agent.email}</div>
-                    </div>
-                    <div>
-                        <div className="mb-2"><span className="font-semibold">Branch :</span> Decker</div>
-                        <div><span className="font-semibold">Phone Number :</span> {agent.mobile || "Decker"}</div>
+            {/* REQUEST MESSAGE */}
+            {'message' in agent && agent.message && (
+                <div className="bg-[#181537] rounded-lg p-6">
+                    <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">REQUEST MESSAGE</h2>
+                    <p className="text-gray-300">{agent.message}</p>
+                </div>
+            )}
+
+            {/* REVIEW INFORMATION */}
+            {'reviewNote' in agent && agent.reviewNote && (
+                <div className="bg-[#181537] rounded-lg p-6">
+                    <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">REVIEW INFORMATION</h2>
+                    <div className="space-y-2 text-gray-300">
+                        <div>
+                            <span className="font-semibold">Status:</span> {('status' in agent ? agent.status : 'N/A')}
+                        </div>
+                        <div>
+                            <span className="font-semibold">Review Note:</span> {agent.reviewNote}
+                        </div>
+                        {'reviewedAt' in agent && agent.reviewedAt && (
+                            <div>
+                                <span className="font-semibold">Reviewed At:</span> {new Date(agent.reviewedAt).toLocaleDateString()}
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* AGENCY INFORMATION (for old Agent type) */}
+            {!('universityName' in agent) && (
+                <div className="bg-[#181537] rounded-lg p-6">
+                    <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">AGENCY INFORMATION</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                        <div>
+                            <div className="mb-2"><span className="font-semibold">Agency Name :</span> {(agent as Agent).agency || 'N/A'}</div>
+                            <div><span className="font-semibold">Email ID :</span> {(agent as Agent).email || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <div className="mb-2"><span className="font-semibold">Branch :</span> N/A</div>
+                            <div><span className="font-semibold">Phone Number :</span> {(agent as Agent).mobile || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* PERFORMANCE MATRIX */}
             <div className="bg-[#181537] rounded-lg p-6">

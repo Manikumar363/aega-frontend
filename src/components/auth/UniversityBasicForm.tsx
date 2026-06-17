@@ -6,8 +6,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 
 interface UniversityFormData {
-  firstName: string;
-  lastName: string;
+  universityName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -39,7 +38,7 @@ export default function UniversityBasicForm({
       return false;
     }
 
-    if (!formData.firstName || !formData.lastName || !formData.email) {
+    if (!formData.universityName || !formData.email) {
       setError("Please fill in all required fields");
       toast.error("Please fill in all required fields");
       return false;
@@ -82,30 +81,17 @@ export default function UniversityBasicForm({
         </div>
       )}
 
-      {/* First & Last Name */}
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <label className="mb-2 block text-xs text-white/70">First Name*</label>
-          <input
-            type="text"
-            placeholder="First Name"
-            value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-            required
-            className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="mb-2 block text-xs text-white/70">Last Name*</label>
-          <input
-            type="text"
-            placeholder="Last Name"
-            value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-            required
-            className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
-          />
-        </div>
+      {/* University Name */}
+      <div>
+        <label className="mb-2 block text-xs text-white/70">University Name*</label>
+        <input
+          type="text"
+          placeholder="Aega Global University"
+          value={formData.universityName}
+          onChange={(e) => setFormData({ ...formData, universityName: e.target.value })}
+          required
+          className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+        />
       </div>
 
       {/* Email */}

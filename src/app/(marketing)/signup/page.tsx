@@ -18,8 +18,7 @@ interface AgentFormData {
 }
 
 interface UniversityFormData {
-  firstName: string;
-  lastName: string;
+  universityName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -39,8 +38,7 @@ export default function SignUpPage() {
   });
 
   const [universityData, setUniversityData] = useState<UniversityFormData>({
-    firstName: "",
-    lastName: "",
+    universityName: "",
     email: "",
     password: "",
     confirmPassword: "",

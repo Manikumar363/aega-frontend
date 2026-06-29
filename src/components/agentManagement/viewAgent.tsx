@@ -17,8 +17,13 @@ interface ViewAgentProps {
 }
 
 const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
+    const isAgentRequest = 'universityName' in agent && 'agentId' in agent;
+
     // Helper function to get agent name from either type
     const getAgentName = () => {
+        if ('agentId' in agent && typeof agent.agentId === 'object' && agent.agentId !== null && 'name' in agent.agentId) {
+            return (agent.agentId as any).name || 'Unknown';
+        }
         if ('universityName' in agent) {
             return agent.universityName || 'Unknown';
         }
@@ -27,6 +32,9 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
 
     // Helper function to get agent email from either type
     const getAgentEmail = () => {
+        if ('agentId' in agent && typeof agent.agentId === 'object' && agent.agentId !== null && 'email' in agent.agentId) {
+            return (agent.agentId as any).email || 'N/A';
+        }
         if ('universityEmail' in agent) {
             return agent.universityEmail || 'N/A';
         }
@@ -71,13 +79,13 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
             {/* AGENT INFORMATION */}
             <div className="bg-[#181537] rounded-lg p-6">
                 <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">
-                    {'universityName' in agent ? 'UNIVERSITY INFORMATION' : 'AGENT INFORMATION'}
+                    {isAgentRequest ? 'AGENT INFORMATION' : ('universityName' in agent ? 'UNIVERSITY INFORMATION' : 'AGENT INFORMATION')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
                     <div>
                         <div className="mb-2">
                             <span className="font-semibold">
-                                {'universityName' in agent ? 'University Name' : 'First Name'}
+                                {isAgentRequest ? 'Agent Name' : ('universityName' in agent ? 'University Name' : 'First Name')}
                             </span>
                             : {getAgentName()}
                         </div>

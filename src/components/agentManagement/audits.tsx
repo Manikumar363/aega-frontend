@@ -1,114 +1,316 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { ShieldAlert, Calendar, Loader2 } from "lucide-react";
 
-const auditCards = [
-  { title: "BUSINESS HEALTH CHECK", date: "2025-01-15", status: "Passed" },
-  { title: "COMPLIANCE AUDIT", date: "2025-01-15", status: "Failed" },
-  { title: "DOCUMENTATION REVIEW", date: "2025-01-15", status: "Passed" },
-  { title: "DESIGN APPROVAL", date: "2025-02-10", status: "Passed" },
-  { title: "USER FEEDBACK SESSION", date: "2025-03-05", status: "Pending" },
-  { title: "FINAL IMPLEMENTATION", date: "2025-03-20", status: "Scheduled" },
-  { title: "INTERNAL TESTING", date: "2025-04-01", status: "In Progress" },
-  { title: "PRODUCT LAUNCH", date: "2025-04-15", status: "Scheduled" },
-];
+interface AuditsProps {
+  targetId?: string;
+  targetType?: "agent" | "company" | "university";
+}
 
-const statusStyles: Record<string, string> = {
-  Passed: "bg-green-200 text-green-800",
-  Failed: "bg-red-200 text-red-800",
-  Pending: "bg-yellow-200 text-yellow-800",
-  "In Progress": "bg-blue-200 text-blue-800",
-  Scheduled: "bg-green-100 text-green-700",
-};
+interface AuditSummary {
+  complianceScore: number;
+  numberOfAudits: number;
+  activeAlerts: number;
+  riskLevel: string;
+}
 
-const statusDot: Record<string, string> = {
-  Passed: "bg-green-500",
-  Failed: "bg-red-500",
-  Pending: "bg-yellow-500",
-  "In Progress": "bg-blue-500",
-  Scheduled: "bg-green-400",
-};
+interface AuditCheck {
+  _id: string;
+  categoryId: string;
+  categoryName: string;
+  complianceScore: number;
+  auditedBy?: {
+    name: string;
+    email: string;
+    role: string;
+  } | string;
+  createdAt: string;
+  answers: {
+    status: string;
+    severity: string;
+    comment?: string;
+  }[];
+}
 
-const Audits: React.FC = () => (
-  <div className="space-y-8">
-    {/* Agent Audit Log Cards */}
-    <div>
-      <div className="text-white text-2xl font-semibold mb-4">Agent Audit Log</div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="bg-[#181537] rounded-lg p-6 flex flex-col items-start">
-          <span className="text-[#F68E2D] mb-2">
-            <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="#F68E2D" strokeWidth="2"/></svg>
-          </span>
-          <div className="text-white text-lg font-bold">1</div>
-          <div className="text-gray-400 text-sm">Active Issue</div>
-        </div>
-        <div className="bg-[#181537] rounded-lg p-6 flex flex-col items-start">
-          <div className="flex justify-between w-full">
-            <span className="text-[#F68E2D]">
-              <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="#F68E2D" strokeWidth="2"/></svg>
+const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
+  const [summary, setSummary] = useState<AuditSummary | null>(null);
+  const [completedChecks, setCompletedChecks] = useState<AuditCheck[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAuditsData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+
+        // Build query string
+        const queryParams = new URLSearchParams();
+        if (targetType) queryParams.append("targetType", targetType);
+        if (targetId) queryParams.append("targetId", targetId);
+        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+        // 1. Fetch Summary KPIs
+        const summaryRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/audits/checks/summary${queryString}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        let summaryData = null;
+        if (summaryRes.ok) {
+          const res = await summaryRes.json();
+          if (res.success) summaryData = res.data;
+        }
+
+        // 2. Fetch Checks list
+        const checksRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/audits/checks/list${queryString}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        let checksData: AuditCheck[] = [];
+        if (checksRes.ok) {
+          const res = await checksRes.json();
+          if (res.success) checksData = res.data;
+        }
+
+        setSummary(summaryData);
+        setCompletedChecks(checksData);
+      } catch (err: any) {
+        console.error("Error fetching audits:", err);
+        setError("Failed to load audit data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditsData();
+  }, [targetId, targetType]);
+
+  const getRiskColor = (level: string) => {
+    switch (level?.toUpperCase()) {
+      case "HIGH":
+        return "text-red-400";
+      case "MEDIUM":
+        return "text-yellow-400";
+      default:
+        return "text-green-400";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12 text-white">
+        <Loader2 className="w-8 h-8 animate-spin text-[#F68E2D]" />
+        <span className="ml-3 text-sm text-white/70">Loading audit log...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded text-sm text-center">
+        {error}
+      </div>
+    );
+  }
+
+  const getPreviousOverallScore = () => {
+    if (!summary || !completedChecks || completedChecks.length <= 1) {
+      return "100.00%";
+    }
+    const latestCheckScore = completedChecks[0].complianceScore;
+    const currentOverall = summary.complianceScore;
+    const prevScore = 2 * currentOverall - latestCheckScore;
+    return `${Math.max(0, Math.min(100, prevScore)).toFixed(2)}%`;
+  };
+
+  // Partition audits into Latest and Previous groups
+  const latestChecks: AuditCheck[] = [];
+  const previousChecks: AuditCheck[] = [];
+  const seenCategories = new Set<string>();
+
+  completedChecks.forEach((check) => {
+    const catIdStr = String(check.categoryId);
+    if (!seenCategories.has(catIdStr)) {
+      seenCategories.add(catIdStr);
+      latestChecks.push(check);
+    } else {
+      previousChecks.push(check);
+    }
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 border border-[#3A3760] bg-[#14123A] divide-y sm:divide-y-0 sm:divide-x divide-[#3A3760]">
+        {/* Current Overall Score */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {summary ? `${summary.complianceScore.toFixed(2)}%` : "100.00%"}
             </span>
-            <span className="text-[#F68E2D] font-bold">99%</span>
           </div>
-          <div className="text-gray-400 text-sm mt-2">Over All Score</div>
+          <span className="text-white/70 text-sm">Current Overall Score</span>
         </div>
-        <div className="bg-[#181537] rounded-lg p-6 flex flex-col items-start">
-          <div className="flex justify-between w-full">
-            <span className="text-[#F68E2D]">
-              <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="#F68E2D" strokeWidth="2"/></svg>
+
+        {/* Previous Overall Score */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {getPreviousOverallScore()}
             </span>
-            <span className="text-yellow-400 font-bold">LOW</span>
           </div>
-          <div className="text-gray-400 text-sm mt-2">Risk Level</div>
+          <span className="text-white/70 text-sm">Previous Overall Score</span>
+        </div>
+
+        {/* Total Audits */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {summary?.numberOfAudits ?? 0}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">No. of Audits</span>
+        </div>
+
+        {/* Active Issues */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {summary?.activeAlerts ?? 0}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">Active Issues</span>
+        </div>
+
+        {/* Risk Level */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className={`font-bold text-base uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
+              {summary?.riskLevel ?? "LOW"}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">Risk Level</span>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#181537] rounded-lg p-6 flex flex-col items-start">
-          <span className="text-[#F68E2D] mb-2">
-            <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="#F68E2D" strokeWidth="2"/></svg>
-          </span>
-          <div className="text-white text-lg font-bold">15</div>
-          <div className="text-gray-400 text-sm">No. of Audits</div>
+
+      {/* Completed History sections */}
+      <div className="space-y-8">
+        {/* Latest Audits Section */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
+            Latest Audits ({latestChecks.length})
+          </h3>
+
+          {latestChecks.length === 0 ? (
+            <div className="text-center py-12 text-white/50 border border-[#3A3760] bg-[#14123A] rounded">
+              No compliance audits recorded for this profile.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {latestChecks.map((item) => {
+                const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
+                return (
+                  <div
+                    key={item._id}
+                    className="bg-[#14123A] border border-[#3A3760] p-5 flex flex-col justify-between h-36 hover:border-[#F68E2D]/40 transition-all rounded"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-white tracking-wide uppercase leading-tight">
+                          {item.categoryName}
+                        </h4>
+                        <span className="text-xs text-white/50">
+                          Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">
+                        <span>{item.complianceScore.toFixed(2)}% Score</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-white/60 mt-2 pt-2 border-t border-[#3A3760]/30">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-white/40" />
+                        <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <span className="text-[11px] text-[#F68E2D]">
+                        {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <div className="bg-[#181537] rounded-lg p-6 flex flex-col items-start">
-          <div className="flex justify-between w-full">
-            <span className="text-[#F68E2D]">
-              <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="#F68E2D" strokeWidth="2"/></svg>
-            </span>
-            <span className="text-[#F68E2D] font-bold">99%</span>
+
+        {/* Previous Audits History Section */}
+        {previousChecks.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase border-t border-[#3A3760]/30 pt-6">
+              Previous Audits History ({previousChecks.length})
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {previousChecks.map((item) => {
+                const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
+                return (
+                  <div
+                    key={item._id}
+                    className="bg-[#14123A]/60 border border-[#3A3760]/60 p-5 flex flex-col justify-between h-36 hover:border-[#F68E2D]/20 transition-all rounded opacity-80"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-white/90 tracking-wide uppercase leading-tight">
+                          {item.categoryName}
+                        </h4>
+                        <span className="text-xs text-white/40">
+                          Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/5 text-green-400/80 border border-green-500/10">
+                        <span>{item.complianceScore.toFixed(2)}% Score</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-white/50 mt-2 pt-2 border-t border-[#3A3760]/20">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-white/30" />
+                        <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <span className="text-[11px] text-[#F68E2D]/80">
+                        {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="text-gray-400 text-sm mt-2">Active Alerts</div>
-        </div>
-        <div className="bg-[#181537] rounded-lg p-6 flex flex-col items-start">
-          <div className="flex justify-between w-full">
-            <span className="text-[#F68E2D]">
-              <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="#F68E2D" strokeWidth="2"/></svg>
-            </span>
-            <span className="text-yellow-400 font-bold">LOW</span>
-          </div>
-          <div className="text-gray-400 text-sm mt-2">Risk Level</div>
-        </div>
+        )}
       </div>
     </div>
-
-    {/* Audit Log Cards */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {auditCards.map((audit, idx) => (
-        <div key={idx} className="bg-[#181537] rounded-lg p-6 flex flex-col gap-2 border border-[#23204a]">
-          <div className="flex justify-between items-center">
-            <div className="text-white font-semibold">{audit.title}</div>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[audit.status]}`}>
-              <span className={`w-2 h-2 rounded-full mr-2 ${statusDot[audit.status]}`}></span>
-              {audit.status}
-            </span>
-          </div>
-          <div className="text-gray-300 text-sm flex items-center gap-2">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Date : {audit.date}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 export default Audits;

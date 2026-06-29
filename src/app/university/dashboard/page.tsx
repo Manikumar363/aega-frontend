@@ -2,15 +2,63 @@
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
 import { ComplianceIcon } from "@/components/ui/icons";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function UniversityDashboardPage() {
+  const router = useRouter();
+  const [userName, setUserName] = useState<string>("University");
+  const [summary, setSummary] = useState({
+    overallScore: 100,
+    numberOfAudits: 0,
+    activeIssues: 0,
+    riskLevel: "LOW"
+  });
+
+  useEffect(() => {
+    const fetchUniversityData = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          router.push("/university/login");
+          return;
+        }
+
+        // Fetch user info for name
+        const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          const name = userData.name || userData.firstName || "University";
+          setUserName(name);
+        }
+
+        // Fetch compliance summary
+        const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-summary`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (summaryRes.ok) {
+          const summaryData = await summaryRes.json();
+          if (summaryData.success) {
+            setSummary(summaryData.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching university data:", error);
+      }
+    };
+
+    fetchUniversityData();
+  }, [router]);
+
   const statsData = [
     { icon: <ComplianceIcon />, label: "Agents", value: "75", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Avg. Compliance", value: "85/120", color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Avg. Compliance", value: `${summary.overallScore}%`, color: "#F68E2D" },
     { icon: <ComplianceIcon />, label: "Total Students", value: "8", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "No. of Audits", value: "15", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Active Alerts", value: "99%", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Risk Level", value: "LOW", color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Active Alerts", value: String(summary.activeIssues), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Risk Level", value: summary.riskLevel, color: summary.riskLevel === 'HIGH' ? '#EF4444' : summary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981' },
   ];
 
   const complianceDistribution = [
@@ -42,7 +90,7 @@ export default function UniversityDashboardPage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-semibold text-white mb-2">Hi, Jane</h1>
+          <h1 className="text-3xl font-semibold text-white mb-2">Hi, {userName}</h1>
           <p className="text-white/80 text-lg">
             Your compliance score is excellent. Keep up the great work!
           </p>

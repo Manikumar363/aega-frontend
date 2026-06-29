@@ -7,6 +7,7 @@ import Audits from "./audits";
 
 type Agent = {
   id: number;
+  apiId: string;
   name: string;
   designation: string;
   mobile: string;
@@ -75,9 +76,9 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
       {activeTab === "cdp" ? (
         <CDPTraining />
       ) : activeTab === "compliances" ? (
-        <Compliances />
+        <Compliances targetId={agent.apiId} targetType="agent" />
       ) : activeTab === "audits" ? (
-        <Audits />
+        <Audits targetId={agent.apiId} targetType="agent" />
       ) : (
         <>
           {/* AGENT INFORMATION */}

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { login, storeAuthToken } from "@/lib/api";
+import { login, storeAuthToken, storeUserData } from "@/lib/api";
 import type { LoginRequest } from "@/lib/api/types";
 
 export default function SignInPage() {
@@ -42,8 +42,9 @@ export default function SignInPage() {
       toast.loading("Signing in...");
       const response = await login(loginData);
 
-      // Store auth token
+      // Store auth token and user data
       storeAuthToken(response.token);
+      storeUserData(response.user);
 
       // Show success message
       toast.dismiss();

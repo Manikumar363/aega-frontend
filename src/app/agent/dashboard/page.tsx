@@ -10,7 +10,13 @@ export default function AgentDashboardPage() {
   const router = useRouter();
   const [userName, setUserName] = useState<string>("Agent");
   const [isLoading, setIsLoading] = useState(true);
-
+  const [summary, setSummary] = useState({
+    overallScore: 100,
+    numberOfAudits: 0,
+    activeIssues: 0,
+    riskLevel: "LOW"
+  });
+ 
   // Fetch user profile data
   useEffect(() => {
     const fetchProfile = async () => {
@@ -21,22 +27,36 @@ export default function AgentDashboardPage() {
           router.push("/agent/login");
           return;
         }
-
+ 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
+ 
         if (!response.ok) {
           throw new Error("Failed to fetch profile");
         }
-
+ 
         const data = await response.json();
-        
+         
         // Extract first name or full name
         const name = data.firstName || data.fullName || "Agent";
         setUserName(name);
+
+        // Fetch compliance summary
+        const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-summary`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (summaryRes.ok) {
+          const summaryData = await summaryRes.json();
+          if (summaryData.success) {
+            setSummary(summaryData.data);
+          }
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
         // Keep default name if error
@@ -44,16 +64,16 @@ export default function AgentDashboardPage() {
         setIsLoading(false);
       }
     };
-
+ 
     fetchProfile();
   }, [router]);
   const statsData = [
-    { icon: <ComplianceIcon />, label: "Compliance Score", value: "95%", color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Compliance Score", value: `${summary.overallScore}%`, color: "#F68E2D" },
     { icon: <ComplianceIcon />, label: "CDP Hours", value: "85/120", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Active Certification", value: "8", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "No. of Audits", value: "15", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Over All Score", value: "99%", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Risk Level", value: "LOW", color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Active Issues", value: String(summary.activeIssues), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Overall Score", value: `${summary.overallScore}%`, color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Risk Level", value: summary.riskLevel, color: summary.riskLevel === 'HIGH' ? '#EF4444' : summary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981' },
   ];
 
   const courses = [

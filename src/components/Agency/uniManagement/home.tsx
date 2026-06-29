@@ -93,7 +93,7 @@ const UniManagementHome: React.FC = () => {
 				</button>
 				<InfoView
 					agent={{
-						id: typeof viewingUniversity.id === 'string' ? parseInt(viewingUniversity.id) : viewingUniversity.id,
+						id: String(viewingUniversity.id),
 						name: viewingUniversity.name,
 						designation: viewingUniversity.location,
 						mobile: viewingUniversity.mobile,

@@ -7,7 +7,7 @@ import Compliances from "./compliances";
 
 
 type Agent = {  
-  id: number;
+  id: string;
   name: string;
   designation: string;
   mobile: string;
@@ -76,9 +76,9 @@ const Info: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
       {activeTab === "cdp" ? (
         <CDPTraining />
       ) : activeTab === "compliances" ? (
-        <Compliances />
+        <Compliances targetId={agent.id} targetType="university" />
       ) : activeTab === "audits" ? (
-        <Audits />
+        <Audits targetId={agent.id} targetType="university" />
       ) : (
         <>
           {/* AGENT INFORMATION */}

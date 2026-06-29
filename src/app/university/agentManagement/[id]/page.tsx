@@ -245,8 +245,8 @@ export default function AgentDetailsPage() {
       <div className="space-y-6">
         {activeTab === "info" && <ViewAgent agent={agent} />}
         {activeTab === "cdp" && <CDPTraining />}
-        {activeTab === "compliances" && <Compliances />}
-        {activeTab === "audits" && <Audits />}
+        {activeTab === "compliances" && <Compliances targetId={agent.agentProfile?.id} targetType="agent" />}
+        {activeTab === "audits" && <Audits targetId={agent.agentProfile?.id} targetType="agent" />}
       </div>
     </DashboardLayout>
   );

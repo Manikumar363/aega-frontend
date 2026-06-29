@@ -1,86 +1,230 @@
-import { ShieldAlert, Calendar } from "lucide-react";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { ShieldAlert, Calendar, Loader2 } from "lucide-react";
 
-const stats = [
-	[
-		{ label: "Active Issue", value: "1" },
-		{ label: "Over All Score", value: "99%" },
-		{ label: "Risk Level", value: "LOW" },
-	],
-	[
-		{ label: "No. of Audits", value: "15" },
-		{ label: "Active Alerts", value: "99%" },
-		{ label: "Risk Level", value: "LOW" },
-	],
-];
+interface AuditsProps {
+  targetId?: string;
+  targetType?: "agent" | "company" | "university";
+}
 
-type AuditStatus = "Passed" | "Failed" | "Pending" | "Scheduled";
+interface AuditSummary {
+  complianceScore: number;
+  numberOfAudits: number;
+  activeAlerts: number;
+  riskLevel: string;
+}
 
-const statusStyles: Record<AuditStatus, { dot: string; text: string; border: string }> = {
-	Passed: { dot: "bg-green-400", text: "text-green-400", border: "border-green-400" },
-	Failed: { dot: "bg-rose-400", text: "text-rose-400", border: "border-rose-400" },
-	Pending: { dot: "bg-green-400", text: "text-green-400", border: "border-green-400" },
-	Scheduled: { dot: "bg-green-400", text: "text-green-400", border: "border-green-400" },
+interface AuditCheck {
+  _id: string;
+  categoryName: string;
+  complianceScore: number;
+  auditedBy?: {
+    name: string;
+    email: string;
+    role: string;
+  } | string;
+  createdAt: string;
+  answers: {
+    status: string;
+    severity: string;
+    comment?: string;
+  }[];
+}
+
+const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
+  const [summary, setSummary] = useState<AuditSummary | null>(null);
+  const [completedChecks, setCompletedChecks] = useState<AuditCheck[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAuditsData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+
+        // Build query string
+        const queryParams = new URLSearchParams();
+        if (targetType) queryParams.append("targetType", targetType);
+        if (targetId) queryParams.append("targetId", targetId);
+        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+        // 1. Fetch Summary KPIs
+        const summaryRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/audits/checks/summary${queryString}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        let summaryData = null;
+        if (summaryRes.ok) {
+          const res = await summaryRes.json();
+          if (res.success) summaryData = res.data;
+        }
+
+        // 2. Fetch Checks list
+        const checksRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/audits/checks/list${queryString}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        let checksData: AuditCheck[] = [];
+        if (checksRes.ok) {
+          const res = await checksRes.json();
+          if (res.success) checksData = res.data;
+        }
+
+        setSummary(summaryData);
+        setCompletedChecks(checksData);
+      } catch (err: any) {
+        console.error("Error fetching audits:", err);
+        setError("Failed to load audit data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditsData();
+  }, [targetId, targetType]);
+
+  const getRiskColor = (level: string) => {
+    switch (level?.toUpperCase()) {
+      case "HIGH":
+        return "text-red-400";
+      case "MEDIUM":
+        return "text-yellow-400";
+      default:
+        return "text-green-400";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12 text-white">
+        <Loader2 className="w-8 h-8 animate-spin text-[#F68E2D]" />
+        <span className="ml-3 text-sm text-white/70">Loading audit log...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded text-sm text-center">
+        {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 border border-[#3A3760] bg-[#14123A] divide-y md:divide-y-0 md:divide-x divide-[#3A3760]">
+        {/* Overall Score */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {summary ? `${summary.complianceScore.toFixed(2)}%` : "100.00%"}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">Overall Score</span>
+        </div>
+
+        {/* Total Audits */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {summary?.numberOfAudits ?? 0}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">No. of Audits</span>
+        </div>
+
+        {/* Active Issues */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className="font-bold text-base text-[#F68E2D]">
+              {summary?.activeAlerts ?? 0}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">Active Issues</span>
+        </div>
+
+        {/* Risk Level */}
+        <div className="px-6 py-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <span className={`font-bold text-base uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
+              {summary?.riskLevel ?? "LOW"}
+            </span>
+          </div>
+          <span className="text-white/70 text-sm">Risk Level</span>
+        </div>
+      </div>
+
+      {/* Completed History */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
+          Completed Audit History ({completedChecks.length})
+        </h3>
+
+        {completedChecks.length === 0 ? (
+          <div className="text-center py-12 text-white/50 border border-[#3A3760] bg-[#14123A] rounded">
+            No compliance audits recorded for this profile.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {completedChecks.map((item) => {
+              const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
+              return (
+                <div
+                  key={item._id}
+                  className="bg-[#14123A] border border-[#3A3760] p-5 flex flex-col justify-between h-36 hover:border-[#F68E2D]/40 transition-all rounded"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-white tracking-wide uppercase leading-tight">
+                        {item.categoryName}
+                      </h4>
+                      <span className="text-xs text-white/50">
+                        Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">
+                      <span>{item.complianceScore.toFixed(2)}% Score</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-white/60 mt-2 pt-2 border-t border-[#3A3760]/30">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-white/40" />
+                      <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <span className="text-[11px] text-[#F68E2D]">
+                      {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
-
-const audits: { title: string; status: AuditStatus; date: string }[] = [
-	{ title: "BUSINESS HEALTH CHECK", status: "Passed", date: "2025-01-15" },
-	{ title: "COMPLIANCE AUDIT", status: "Failed", date: "2025-01-15" },
-	{ title: "DOCUMENTATION REVIEW", status: "Passed", date: "2025-01-15" },
-	{ title: "DESIGN APPROVAL", status: "Passed", date: "2025-02-10" },
-	{ title: "USER FEEDBACK SESSION", status: "Pending", date: "2025-03-05" },
-	{ title: "FINAL IMPLEMENTATION", status: "Scheduled", date: "2025-03-20" },
-];
-
-const Audits: React.FC = () => (
-	<div className="space-y-4">
-		{/* Stat cards */}
-		{stats.map((row, rowIdx) => (
-			<div key={rowIdx} className="grid grid-cols-1 md:grid-cols-3 border border-[#3A3760]">
-				{row.map((card, colIdx) => (
-					<div
-						key={colIdx}
-						className={`bg-[#14123A] px-6 py-5 flex flex-col gap-4 ${
-							colIdx < row.length - 1 ? "border-r border-[#3A3760]" : ""
-						}`}
-					>
-						<div className="flex items-start justify-between">
-							<ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-							<span className="font-bold text-base text-[#F68E2D]">{card.value}</span>
-						</div>
-						<span className="text-white text-sm">{card.label}</span>
-					</div>
-				))}
-			</div>
-		))}
-
-		{/* Audit cards grid */}
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-			{audits.map((audit, idx) => {
-				const s = statusStyles[audit.status];
-				return (
-					<div
-						key={idx}
-						className="bg-[#14123A] border border-[#3A3760] px-6 py-5 flex flex-col gap-3"
-					>
-						<div className="flex items-center justify-between">
-							<span className="text-white font-bold text-sm tracking-wide">{audit.title}</span>
-							<span
-								className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${s.border} ${s.text} text-xs font-semibold bg-transparent`}
-							>
-								<span className={`w-2 h-2 rounded-full ${s.dot}`} />
-								{audit.status}
-							</span>
-						</div>
-						<div className="flex items-center gap-2 text-gray-400 text-sm">
-							<Calendar className="w-4 h-4" />
-							<span>Date : {audit.date}</span>
-						</div>
-					</div>
-				);
-			})}
-		</div>
-	</div>
-);
 
 export default Audits;

@@ -8,6 +8,7 @@ import Agents from "./agents";
 
 type Company = {
   id: number;
+  apiId: string;
   name: string;
   designation: string;
   mobile: string;
@@ -82,9 +83,9 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
       {activeTab === "cdp" ? (
         <CDPTraining />
       ) : activeTab === "compliances" ? (
-        <Compliances />
+        <Compliances targetId={company.apiId} targetType="company" />
       ) : activeTab === "audits" ? (
-        <Audits />
+        <Audits targetId={company.apiId} targetType="company" />
       ) : activeTab === "agent" ? (
         <Agents />
       ) : (

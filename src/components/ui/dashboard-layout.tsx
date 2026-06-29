@@ -184,14 +184,26 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       return;
     }
 
+    const token = getAuthToken();
     const storedUser = getStoredUserData();
-    if (storedUser) {
-      setUserState(storedUser);
+
+    if (!token || !storedUser) {
+      router.push("/login");
       return;
     }
 
-    setUserState({ businessType: parseBusinessTypeFromToken(getAuthToken()) });
-  }, []);
+    const storedUserRole = storedUser.role as string;
+    const isRoleMatch = storedUserRole === role || 
+      (role === 'agent' && storedUserRole === 'counsellor');
+
+    if (!isRoleMatch) {
+      const targetRole = storedUserRole === 'counsellor' ? 'agent' : (storedUserRole === 'admin' ? 'agent' : storedUserRole);
+      router.push(`/${targetRole}/dashboard`);
+      return;
+    }
+
+    setUserState(storedUser);
+  }, [role, router]);
 
   const searchEnabledRoutes = [
     `/${role}/dashboard`,

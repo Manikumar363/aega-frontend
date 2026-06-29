@@ -73,7 +73,13 @@ export type AgentBusinessType = "recruitment" | "education_consultancy";
 
 export interface AgentRequest {
   _id: string;
-  agentId: string;
+  agentId: string | {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    businessType?: string;
+  };
   agentRole: AgentRole;
   agentBusinessType: AgentBusinessType;
   universityId: string;
@@ -86,6 +92,13 @@ export interface AgentRequest {
   reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
+  agentProfile?: {
+    id: string;
+    complianceScore: number;
+    numberOfAudits: number;
+    activeAlerts: number;
+    riskLevel: string;
+  } | null;
 }
 
 export interface AgentRequestResponse {

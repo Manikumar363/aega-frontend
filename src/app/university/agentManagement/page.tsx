@@ -49,9 +49,11 @@ export default function UniversityAgentManagementPage() {
   useEffect(() => {
     const filtered = agents.filter((agent) => {
       const searchLower = searchQuery.toLowerCase();
+      const agentName = typeof agent.agentId === "object" && agent.agentId ? agent.agentId.name : "";
+      const agentEmail = typeof agent.agentId === "object" && agent.agentId ? agent.agentId.email : "";
       return (
-        agent.universityName?.toLowerCase().includes(searchLower) ||
-        agent.universityEmail?.toLowerCase().includes(searchLower) ||
+        agentName.toLowerCase().includes(searchLower) ||
+        agentEmail.toLowerCase().includes(searchLower) ||
         agent.agentRole?.toLowerCase().includes(searchLower) ||
         agent.agentBusinessType?.toLowerCase().includes(searchLower)
       );
@@ -208,8 +210,8 @@ export default function UniversityAgentManagementPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-[#0a0820] border-b border-gray-800">
-                      <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">University Name</th>
-                      <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">Email</th>
+                      <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">Agent Name</th>
+                      <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">Agent Email</th>
                       <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">Agent Role</th>
                       <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">Business Type</th>
                       <th className="text-left px-6 py-4 text-white font-semibold whitespace-nowrap">Status</th>
@@ -225,9 +227,13 @@ export default function UniversityAgentManagementPage() {
                         }`}
                       >
                         <td className="px-6 py-4">
-                          <span className="text-white">{agent.universityName}</span>
+                          <span className="text-white">
+                            {typeof agent.agentId === "object" && agent.agentId ? agent.agentId.name : "Unknown"}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-400">{agent.universityEmail}</td>
+                        <td className="px-6 py-4 text-gray-400">
+                          {typeof agent.agentId === "object" && agent.agentId ? agent.agentId.email : "N/A"}
+                        </td>
                         <td className="px-6 py-4 text-gray-300 capitalize">{agent.agentRole}</td>
                         <td className="px-6 py-4 text-gray-300 capitalize">{agent.agentBusinessType?.replace(/_/g, " ")}</td>
                         <td className="px-6 py-4">

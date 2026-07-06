@@ -140,6 +140,8 @@ export interface CdpCourse {
   registrationNote?: string;
   registrationStartDate?: string;
   enrollmentStatus?: "on-going" | "completed" | "due" | string;
+  progressId?: string;
+  certificateUrl?: string | null;
   createdBy?: string;
   createdAt?: string;
   __v?: number;

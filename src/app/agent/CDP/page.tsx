@@ -2,51 +2,63 @@
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
 import { useEffect, useState } from "react";
-import { getCdpCourses, enrollInCourse, getMyEnrolledCourses, getMyStats, type CdpCourse } from "@/lib/api";
+import toast from "react-hot-toast";
+import {
+  getCdpCourses,
+  enrollInCourse,
+  getMyEnrolledCourses,
+  getMyStats,
+  type CdpCourse,
+  uploadFile,
+  updateProgress,
+} from "@/lib/api";
 
 export default function AgentCDPPage() {
   const [courses, setCourses] = useState<CdpCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch and normalize courses
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCdpCourses();
+      // also fetch enrolled courses to flag registered ones
+      const enrolled = await getMyEnrolledCourses().catch(() => []);
+
+      const enrolledById = new Map<string, any>();
+      enrolled.forEach((e: any) => {
+        const cid = e.courseId && (e.courseId._id || e.courseId);
+        if (cid) enrolledById.set(String(cid), e);
+      });
+
+      const normalized = data.map((c) => {
+        const match = enrolledById.get(c._id || c.id);
+        if (match) {
+          return {
+            ...c,
+            registered: true,
+            progressId: match._id || match.id,
+            registrationStartDate: match.startDate || match.enrollmentDate || match.startDate,
+            registrationNote: match.notes || "",
+            enrollmentStatus: match.status || undefined,
+            certificateUrl: match.certificateUrl || null,
+          };
+        }
+        return c;
+      });
+
+      setCourses(normalized);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch courses");
+      console.error("Error fetching CDP courses:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getCdpCourses();
-        // also fetch enrolled courses to flag registered ones
-        const enrolled = await getMyEnrolledCourses().catch(() => []);
-
-        const enrolledById = new Map<string, any>();
-        enrolled.forEach((e: any) => {
-          const cid = e.courseId && (e.courseId._id || e.courseId);
-          if (cid) enrolledById.set(String(cid), e);
-        });
-
-        const normalized = data.map((c) => {
-          const match = enrolledById.get(c._id || c.id);
-          if (match) {
-            return {
-              ...c,
-              registered: true,
-              registrationStartDate: match.startDate || match.enrollmentDate || match.startDate,
-              registrationNote: match.notes || "",
-              enrollmentStatus: match.status || undefined,
-            };
-          }
-          return c;
-        });
-
-        setCourses(normalized);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch courses");
-        console.error("Error fetching CDP courses:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCourses();
   }, []);
 
@@ -58,12 +70,23 @@ export default function AgentCDPPage() {
 
   const [openTypes, setOpenTypes] = useState<Record<string, boolean>>({});
 
-  // Modal / registration state
+  // Registration Modal State
   const [selectedCourse, setSelectedCourse] = useState<CdpCourse | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("Starting from today");
   const [submitting, setSubmitting] = useState(false);
+
+  // Course Completion Modal State
+  const [selectedCompletionCourse, setSelectedCompletionCourse] = useState<CdpCourse | null>(null);
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [completionNote, setCompletionNote] = useState("");
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [completing, setCompleting] = useState(false);
+
+  // View Completed Course Modal State
+  const [selectedViewCourse, setSelectedViewCourse] = useState<CdpCourse | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
   const getImageSrc = (path?: string) => {
@@ -90,13 +113,26 @@ export default function AgentCDPPage() {
       });
       return map;
     });
-  }, [/* run when grouped computed changes */ JSON.stringify(grouped)]);
+  }, [JSON.stringify(grouped)]);
 
-  const openCourseModal = (course: CdpCourse) => {
-    setSelectedCourse(course);
-    setStartDate(new Date().toISOString().slice(0, 10));
-    setNote("Starting from today");
-    setIsModalOpen(true);
+  const handleCourseClick = (course: CdpCourse) => {
+    if (!course.registered) {
+      // Unregistered course -> Open registration modal
+      setSelectedCourse(course);
+      setStartDate(new Date().toISOString().slice(0, 10));
+      setNote("Starting from today");
+      setIsModalOpen(true);
+    } else if (course.enrollmentStatus === "completed") {
+      // Completed course -> Open read-only view details modal
+      setSelectedViewCourse(course);
+      setIsViewModalOpen(true);
+    } else {
+      // On-going or due course -> Open completion modal
+      setSelectedCompletionCourse(course);
+      setCompletionNote("");
+      setCertificateFile(null);
+      setIsCompletionModalOpen(true);
+    }
   };
 
   const closeModal = () => {
@@ -108,20 +144,10 @@ export default function AgentCDPPage() {
     if (!selectedCourse) return;
     setSubmitting(true);
     try {
-      // Call backend enroll endpoint
-      try {
-        await enrollInCourse(selectedCourse.id, { startDate, notes: note });
-      } catch (err) {
-        console.warn("enroll API failed, falling back to local update", err);
-      }
+      await enrollInCourse(selectedCourse.id, { startDate, notes: note });
+      toast.success("Enrolled in course successfully!");
+      fetchCourses();
 
-      setCourses((prev) =>
-        prev.map((c) =>
-          c.id === selectedCourse.id
-            ? { ...c, registered: true, registrationStartDate: startDate, registrationNote: note, enrollmentStatus: "on-going" }
-            : c
-        )
-      );
       // Open course hyperLink in a new tab if provided
       try {
         const href = (selectedCourse.hyperLink || (selectedCourse as any).hyperlink || "").trim();
@@ -132,9 +158,40 @@ export default function AgentCDPPage() {
       } catch (err) {
         console.warn("Failed to open course link:", err);
       }
+    } catch (err: any) {
+      console.error("Error registering course:", err);
+      toast.error(err.message || "Failed to start course");
     } finally {
       setSubmitting(false);
       closeModal();
+    }
+  };
+
+  const submitCompletion = async () => {
+    if (!selectedCompletionCourse || !selectedCompletionCourse.progressId || !certificateFile) {
+      toast.error("Please select a certificate file.");
+      return;
+    }
+    setCompleting(true);
+    try {
+      // 1. Upload file using uploadFile helper
+      const fileKey = await uploadFile(certificateFile);
+      const relativeUrl = `/uploads/${fileKey}`;
+
+      // 2. Call backend update progress API
+      await updateProgress(selectedCompletionCourse.progressId, {
+        certificateUrl: relativeUrl,
+        notes: completionNote,
+      });
+
+      toast.success("Course marked as completed!");
+      setIsCompletionModalOpen(false);
+      fetchCourses();
+    } catch (err: any) {
+      console.error("Error completing course:", err);
+      toast.error(err.message || "Failed to complete course.");
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -205,10 +262,10 @@ export default function AgentCDPPage() {
                       return (
                         <div
                           key={course.id}
-                          onClick={() => openCourseModal(course)}
+                          onClick={() => handleCourseClick(course)}
                           role="button"
                           tabIndex={0}
-                          className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
+                          className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition text-left"
                         >
                           <div className="flex items-center gap-4">
                             <img src={imageSrc} alt={course.courseName} className="w-28 h-16 object-cover rounded-md" />
@@ -260,10 +317,10 @@ export default function AgentCDPPage() {
                             return (
                               <div
                                 key={course.id}
-                                onClick={() => openCourseModal(course)}
+                                onClick={() => handleCourseClick(course)}
                                 role="button"
                                 tabIndex={0}
-                                className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg transition"
+                                className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg transition text-left"
                               >
                                 <img src={imageSrc} alt={course.courseName} className="w-28 h-16 object-cover rounded-md" />
                                 <div className="flex-1">
@@ -285,11 +342,12 @@ export default function AgentCDPPage() {
             </div>
           )}
         </div>
+
         {/* Registration Modal */}
         {isModalOpen && selectedCourse && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="fixed inset-0 bg-black/50" onClick={closeModal} />
-            <div className="relative bg-[#0b0a17] rounded-md p-6 w-full max-w-lg mx-4 z-10">
+            <div className="relative bg-[#0b0a17] border border-gray-800 rounded-md p-6 w-full max-w-lg mx-4 z-10 text-white">
               <div className="flex gap-4 mb-4">
                 <img
                   src={getImageSrc(selectedCourse.coverPicture) || "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80"}
@@ -308,7 +366,7 @@ export default function AgentCDPPage() {
                 </div>
               </div>
 
-                <label className="block text-sm text-gray-400 mb-1">Start Date</label>
+              <label className="block text-sm text-gray-400 mb-1">Start Date</label>
               <input
                 type="date"
                 value={startDate}
@@ -320,7 +378,7 @@ export default function AgentCDPPage() {
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full mb-4 p-2 bg-[#14112E] border border-gray-700 rounded text-white"
+                className="w-full mb-4 p-2 bg-[#14112E] border border-gray-700 rounded text-white resize-none"
                 rows={4}
               />
 
@@ -332,6 +390,124 @@ export default function AgentCDPPage() {
                   className="px-4 py-2 bg-[#F68E2D] text-black rounded font-semibold disabled:opacity-50"
                 >
                   {submitting ? "Starting…" : "Start Course"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Course Completion Modal */}
+        {isCompletionModalOpen && selectedCompletionCourse && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setIsCompletionModalOpen(false)} />
+            <div className="relative bg-[#0b0a17] border border-gray-800 rounded-md p-6 w-full max-w-lg mx-4 z-10 text-white">
+              <h3 className="text-xl font-semibold mb-4 text-[#F68E2D]">Complete Course: {selectedCompletionCourse.courseName}</h3>
+              
+              <form onSubmit={(e) => { e.preventDefault(); submitCompletion(); }}>
+                <div className="space-y-4 mb-6">
+                  {/* File Upload */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Upload Certificate *</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setCertificateFile(file);
+                      }}
+                      className="w-full p-2 bg-[#14112E] border border-gray-700 rounded text-white text-sm"
+                      required
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Allowed formats: PDF, PNG, JPG, JPEG, WEBP. Max size: 10MB.</p>
+                  </div>
+
+                  {/* Description / Notes */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Completion Description / Notes</label>
+                    <textarea
+                      value={completionNote}
+                      onChange={(e) => setCompletionNote(e.target.value)}
+                      placeholder="Enter a description or notes about your learning experience..."
+                      className="w-full p-2 bg-[#14112E] border border-gray-700 rounded text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F68E2D] resize-none"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCompletionModalOpen(false)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition"
+                    disabled={completing}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#F68E2D] hover:bg-[#e57d1f] text-black font-semibold rounded text-sm transition disabled:opacity-50"
+                    disabled={completing || !certificateFile}
+                  >
+                    {completing ? "Submitting..." : "Complete Course"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Completed Details Modal */}
+        {isViewModalOpen && selectedViewCourse && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setIsViewModalOpen(false)} />
+            <div className="relative bg-[#0b0a17] border border-gray-800 rounded-md p-6 w-full max-w-lg mx-4 z-10 text-white">
+              <h3 className="text-xl font-semibold mb-3 text-[#F68E2D]">Course Details: {selectedViewCourse.courseName}</h3>
+              <p className="text-sm text-gray-400 mb-4">Module {selectedViewCourse.modules} • {selectedViewCourse.timeInHr} hrs</p>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <span className="block text-xs text-gray-500 uppercase tracking-wider">Status</span>
+                  <span className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full mt-1">Completed</span>
+                </div>
+                
+                {selectedViewCourse.registrationStartDate && (
+                  <div>
+                    <span className="block text-xs text-gray-500 uppercase tracking-wider">Start Date</span>
+                    <p className="text-sm text-white mt-0.5">{new Date(selectedViewCourse.registrationStartDate).toLocaleDateString()}</p>
+                  </div>
+                )}
+
+                {selectedViewCourse.registrationNote && (
+                  <div>
+                    <span className="block text-xs text-gray-500 uppercase tracking-wider">Notes / Description</span>
+                    <p className="text-sm text-white/90 mt-0.5 whitespace-pre-wrap">{selectedViewCourse.registrationNote}</p>
+                  </div>
+                )}
+
+                {selectedViewCourse.certificateUrl && (
+                  <div>
+                    <span className="block text-xs text-gray-500 uppercase tracking-wider">Certificate</span>
+                    <a
+                      href={getImageSrc(selectedViewCourse.certificateUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-2 text-sm text-[#F68E2D] hover:underline"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v4h16v-4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      View / Download Certificate
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setIsViewModalOpen(false)}
+                  className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition"
+                >
+                  Close
                 </button>
               </div>
             </div>

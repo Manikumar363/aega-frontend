@@ -284,7 +284,7 @@ export default function AgentCDPPage() {
                   </div>
                 </div>
               )}
-
+              
               {/* Grouped courses by type (accordion) */}
               <div className="space-y-3">
                 {Object.entries(grouped).map(([type, list]) => {

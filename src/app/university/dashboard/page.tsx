@@ -4,84 +4,112 @@ import DashboardLayout from "@/components/ui/dashboard-layout";
 import { ComplianceIcon } from "@/components/ui/icons";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
+interface EnrolledCourse {
+  _id: string;
+  status: string;
+  dueDate?: string;
+  courseId: {
+    _id: string;
+    courseName: string;
+    modules: number;
+    timeInHr: number;
+  };
+}
 
 export default function UniversityDashboardPage() {
   const router = useRouter();
   const [userName, setUserName] = useState<string>("University");
+  const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState({
     overallScore: 100,
     numberOfAudits: 0,
     activeIssues: 0,
-    riskLevel: "LOW"
+    riskLevel: "LOW",
+    completedCdpHours: 0,
+    targetCdpHours: 120
   });
-
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+ 
   useEffect(() => {
-    const fetchUniversityData = async () => {
+    const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem("authToken");
         if (!token) {
+          toast.error("Please login first");
           router.push("/university/login");
           return;
         }
-
-        // Fetch user info for name
-        const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
-          headers: { Authorization: `Bearer ${token}` }
+ 
+        // 1. Fetch user profile
+        const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          const name = userData.name || userData.firstName || "University";
+ 
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const name = profileData.firstName || profileData.name || "University";
           setUserName(name);
         }
-
-        // Fetch compliance summary
+ 
+        // 2. Fetch compliance and CDP hours summary
         const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-summary`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+ 
         if (summaryRes.ok) {
           const summaryData = await summaryRes.json();
           if (summaryData.success) {
-            setSummary(summaryData.data);
+            setSummary({
+              overallScore: summaryData.data.overallScore ?? 100,
+              numberOfAudits: summaryData.data.numberOfAudits ?? 0,
+              activeIssues: summaryData.data.activeIssues ?? 0,
+              riskLevel: summaryData.data.riskLevel ?? "LOW",
+              completedCdpHours: summaryData.data.completedCdpHours ?? 0,
+              targetCdpHours: summaryData.data.targetCdpHours ?? 120
+            });
           }
         }
+
+        // 3. Fetch user enrolled courses
+        const coursesRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cdp-courses/me/enrolled`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json();
+          const list = Array.isArray(coursesData)
+            ? coursesData
+            : coursesData.data || coursesData.courses || [];
+          setEnrolledCourses(list);
+        }
       } catch (error) {
-        console.error("Error fetching university data:", error);
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    fetchUniversityData();
+ 
+    fetchDashboardData();
   }, [router]);
 
   const statsData = [
-    { icon: <ComplianceIcon />, label: "Agents", value: "75", color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Avg. Compliance", value: `${summary.overallScore}%`, color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Total Students", value: "8", color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Compliance Score", value: `${summary.overallScore}%`, color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "CDP Hours", value: `${summary.completedCdpHours}/${summary.targetCdpHours}`, color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Active Issues", value: String(summary.activeIssues), color: "#F68E2D" },
     { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Active Alerts", value: String(summary.activeIssues), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Risk Level", value: summary.riskLevel, color: summary.riskLevel === 'HIGH' ? '#EF4444' : summary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981' },
-  ];
-
-  const complianceDistribution = [
-    {
-      label: "Excellent ( 85% - 100% )",
-      current: 50,
-      total: 75,
-      percentage: (50 / 75) * 100,
-      color: "#10B981",
-    },
-    {
-      label: "Good ( 50% - 84% )",
-      current: 24,
-      total: 75,
-      percentage: (24 / 75) * 100,
-      color: "#3B82F6",
-    },
-    {
-      label: "Poor ( 0% - 49% )",
-      current: 1,
-      total: 75,
-      percentage: (1 / 75) * 100,
-      color: "#F68E2D",
+    { icon: <ComplianceIcon />, label: "Overall Score", value: `${summary.overallScore}%`, color: "#F68E2D" },
+    { 
+      icon: <ComplianceIcon />, 
+      label: "Risk Level", 
+      value: summary.riskLevel, 
+      color: summary.riskLevel === 'HIGH' ? '#EF4444' : summary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981' 
     },
   ];
 
@@ -92,7 +120,7 @@ export default function UniversityDashboardPage() {
         <div>
           <h1 className="text-3xl font-semibold text-white mb-2">Hi, {userName}</h1>
           <p className="text-white/80 text-lg">
-            Your compliance score is excellent. Keep up the great work!
+            Your compliance score is {summary.overallScore >= 85 ? "excellent" : "good"}. Keep up the great work!
           </p>
         </div>
 
@@ -108,7 +136,7 @@ export default function UniversityDashboardPage() {
                   {stat.icon}
                 </div>
                 <div>
-                  <p className="text-white text-base">{stat.label}</p>
+                  <p className="text-gray-400 text-sm">{stat.label}</p>
                 </div>
               </div>
               <div>
@@ -123,73 +151,80 @@ export default function UniversityDashboardPage() {
           ))}
         </div>
 
-        {/* Agent Compliances Distribution */}
-        <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-white mb-6">
-            AGENT COMPLIANCES DISTRIBUTION
-          </h2>
+        {/* Your Courses */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-white">Your Courses</h2>
+          
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F68E2D]"></div>
+            </div>
+          ) : enrolledCourses.length > 0 ? (
+            <div className="space-y-4">
+              {enrolledCourses.map((item, index) => {
+                const status = (item.status || "on-going").toLowerCase();
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ");
+                const statusColor =
+                  status === "completed"
+                    ? "bg-green-500"
+                    : status === "due"
+                    ? "bg-[#E03137]"
+                    : "bg-[#4A90E2]";
 
-          <div className="space-y-6">
-            {complianceDistribution.map((item, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-white text-sm">{item.label}</span>
-                  <span className="text-white font-medium">
-                    {String(item.current).padStart(2, '0')}/{item.total}
-                  </span>
-                </div>
-                
-                <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                return (
                   <div
-                    className="h-full transition-all duration-300"
-                    style={{
-                      width: `${item.percentage}%`,
-                      backgroundColor: item.color,
-                    }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Course */}
-        <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold text-white mb-2">
-                UKVI COMPLIANCE UPDATE 2025
-              </h3>
-              <p className="text-gray-400 text-sm mb-3">Module 3</p>
-              
-              <div className="flex items-center gap-6 text-gray-400 text-sm">
-                <div className="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M8 4V8L11 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  <span>3 hours</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M2 6H14" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M5 2V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    <path d="M11 2V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  <span>Due: 2025-01-15</span>
-                </div>
-              </div>
+                    key={item._id || index}
+                    className="bg-[#14112E] border border-gray-800 rounded-lg p-6"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-white mb-2">
+                          {item.courseId?.courseName || "CDP Course"}
+                        </h3>
+                        {item.courseId?.modules && (
+                          <p className="text-gray-400 text-sm mb-3">Module {item.courseId.modules}</p>
+                        )}
+                        <div className="flex items-center gap-6 text-gray-400 text-sm">
+                          {item.courseId?.timeInHr && (
+                            <div className="flex items-center gap-2">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
+                                <path d="M8 4V8L11 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                              </svg>
+                              <span>{item.courseId.timeInHr} hours</span>
+                            </div>
+                          )}
+                          {item.dueDate && (
+                            <div className="flex items-center gap-2">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                                <path d="M2 6H14" stroke="currentColor" strokeWidth="1.5"/>
+                                <path d="M5 2V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                <path d="M11 2V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                              </svg>
+                              <span>Due: {new Date(item.dueDate).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span
+                          className={`${statusColor} text-white text-xs px-4 py-1.5 rounded-full inline-flex items-center gap-2`}
+                        >
+                          <span className="w-2 h-2 bg-white rounded-full"></span>
+                          {statusLabel}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            
-            <div>
-              <span className="bg-[#4A90E2] text-white text-xs px-4 py-1.5 rounded-full inline-flex items-center gap-2">
-                <span className="w-2 h-2 bg-white rounded-full"></span>
-                On going
-              </span>
+          ) : (
+            <div className="border border-gray-800 p-8 text-center rounded-lg bg-[#14112E]">
+              <p className="text-white/60 text-sm">You have not registered for any courses yet.</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

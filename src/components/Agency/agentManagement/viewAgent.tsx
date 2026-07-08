@@ -74,7 +74,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
       </div>
 
       {activeTab === "cdp" ? (
-        <CDPTraining />
+        <CDPTraining targetId={agent.apiId} targetType="agent" />
       ) : activeTab === "compliances" ? (
         <Compliances targetId={agent.apiId} targetType="agent" />
       ) : activeTab === "audits" ? (

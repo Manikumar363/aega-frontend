@@ -17,6 +17,7 @@ export default function AgentCompliancesPage() {
     riskLevel: "LOW"
   });
   const [indicators, setIndicators] = useState<any[]>([]);
+  const [locationData, setLocationData] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const fetchComplianceData = async () => {
@@ -27,7 +28,7 @@ export default function AgentCompliancesPage() {
           return;
         }
 
-        // Fetch compliance summary
+        // 1. Fetch compliance summary (Overall)
         const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-summary`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -40,7 +41,7 @@ export default function AgentCompliancesPage() {
           }
         }
 
-        // Fetch compliance status list
+        // 2. Fetch compliance status list (Overall)
         const statusRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-status`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -50,6 +51,19 @@ export default function AgentCompliancesPage() {
           const statusData = await statusRes.json();
           if (statusData.success) {
             setIndicators(statusData.data);
+          }
+        }
+
+        // 3. Fetch location-based compliance aggregations
+        const locRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-locations`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (locRes.ok) {
+          const locData = await locRes.json();
+          if (locData.success) {
+            setLocationData(locData.data || {});
           }
         }
       } catch (error) {
@@ -62,13 +76,27 @@ export default function AgentCompliancesPage() {
     fetchComplianceData();
   }, [router]);
 
+  const currentSummary = activeTab === "all" ? summary : (locationData[activeTab]?.summary || {
+    overallScore: 100,
+    numberOfAudits: 0,
+    activeIssues: 0,
+    riskLevel: "LOW"
+  });
+
+  const currentIndicators = activeTab === "all" ? indicators : (locationData[activeTab]?.indicators || []);
+
   const statsData = [
-    { icon: <ComplianceIcon />, label: "Active Issues", value: String(summary.activeIssues), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Overall Score", value: `${summary.overallScore}%`, color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Risk Level", value: summary.riskLevel, color: summary.riskLevel === 'HIGH' ? '#EF4444' : summary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981' },
-    { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Categories Audited", value: String(indicators.filter(i => i.status !== 'Pending').length), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Compliant Areas", value: String(indicators.filter(i => i.status === 'Compliant').length), color: "#10B981" },
+    { icon: <ComplianceIcon />, label: "Active Issues", value: String(currentSummary.activeIssues), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Overall Score", value: `${currentSummary.overallScore}%`, color: "#F68E2D" },
+    { 
+      icon: <ComplianceIcon />, 
+      label: "Risk Level", 
+      value: currentSummary.riskLevel, 
+      color: currentSummary.riskLevel === 'HIGH' ? '#EF4444' : currentSummary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981' 
+    },
+    { icon: <ComplianceIcon />, label: "No. of Audits", value: String(currentSummary.numberOfAudits), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Categories Audited", value: String(currentIndicators.filter((i: any) => i.status !== 'Pending').length), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Compliant Areas", value: String(currentIndicators.filter((i: any) => i.status === 'Compliant').length), color: "#10B981" },
   ];
 
   const getStatusBadgeClass = (status: string) => {
@@ -86,7 +114,7 @@ export default function AgentCompliancesPage() {
     <DashboardLayout role="agent">
       <div className="space-y-6">
         {/* Top Tab */}
-        <div className="flex gap-8 border-b border-gray-700">
+        <div className="flex flex-wrap gap-8 border-b border-gray-700">
           <button
             onClick={() => setActiveTab("all")}
             className={`pb-3 text-sm font-semibold transition-colors ${
@@ -97,41 +125,26 @@ export default function AgentCompliancesPage() {
           >
             All
           </button>
-          <button
-            onClick={() => setActiveTab("locations")}
-            className={`pb-3 text-sm font-light transition-colors flex items-center gap-1 ${
-              activeTab === "locations"
-                ? "text-[#F68E2D] border-b-2 border-[#F68E2D]"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            Hyderabad <ChevronDown size={16}/>
-          </button>
-          <button
-            onClick={() => setActiveTab("locations")}
-            className={`pb-3 text-sm font-light transition-colors flex items-center gap-1 ${
-              activeTab === "locations"
-                ? "text-[#F68E2D] border-b-2 border-[#F68E2D]"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            Bangalore <ChevronDown size={16}/>
-          </button>
-          <button
-            onClick={() => setActiveTab("locations")}
-            className={`pb-3 text-sm font-light transition-colors flex items-center gap-1 ${
-              activeTab === "locations"
-                ? "text-[#F68E2D] border-b-2 border-[#F68E2D]"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-           Noida <ChevronDown size={16}/>
-          </button>
+          {Object.entries(locationData).map(([locName, locObj]: [string, any]) => (
+            <button
+              key={locName}
+              onClick={() => setActiveTab(locName)}
+              className={`pb-3 text-sm font-light transition-colors flex items-center gap-1 ${
+                activeTab === locName
+                  ? "text-[#F68E2D] border-b-2 border-[#F68E2D]"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              {locName} ({locObj.agentCount}) <ChevronDown size={16}/>
+            </button>
+          ))}
         </div>
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-white font-medium text-2xl">Compliance Overview</h1>
+          <h1 className="text-white font-medium text-2xl">
+            Compliance Overview {activeTab !== "all" && ` - ${activeTab}`}
+          </h1>
         </div>
 
         {isLoading ? (
@@ -202,10 +215,10 @@ export default function AgentCompliancesPage() {
               <h2 className="text-2xl font-semibold text-white mb-6">Risk Indicator</h2>
               
               <div className="space-y-2">
-                {indicators.length === 0 ? (
+                {currentIndicators.length === 0 ? (
                   <div className="text-white/60 text-sm">No indicators registered.</div>
                 ) : (
-                  indicators.map((indicator, index) => (
+                  currentIndicators.map((indicator: any, index: number) => (
                     <div
                       key={index}
                       className="bg-[#0a0820] border border-gray-800 rounded-lg p-5 flex items-center justify-between hover:bg-[#1a1640] transition-colors"

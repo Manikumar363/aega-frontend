@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CDPTraining from "./cdpTraining";
 import Compliances from "./compliances";
 import Audits from "./audits";
@@ -39,6 +39,49 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
   const [timePeriod, setTimePeriod] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [activeTab, setActiveTab] = useState<"info" | "cdp" | "compliances" | "audits" | "agent">("info");
 
+  const [detailedCompany, setDetailedCompany] = useState<any>(null);
+  const [agentsList, setAgentsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCompanyData = async () => {
+      const cid = company.apiId || String(company.id);
+      if (!cid) return;
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("authToken");
+
+        // 1. Fetch company detailed overview
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/companies/${cid}/overview`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          setDetailedCompany(resData);
+        }
+
+        // 2. Fetch sub-agents/counsellors list
+        const agentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/agent-management`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (agentsRes.ok) {
+          const agentsData = await agentsRes.json();
+          setAgentsList(agentsData || []);
+        }
+      } catch (err) {
+        console.error("Error loading company details or sub-agents:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadCompanyData();
+  }, [company.apiId, company.id]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b border-[#F68E2D] pb-2 mb-6">
@@ -71,7 +114,7 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
             onClick={() => setActiveTab("agent")}
             className={`font-semibold pb-2 border-b-2 ${activeTab === "agent" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent"}`}
           >
-            Agents
+            Agents ({loading ? "..." : agentsList.length})
           </button>
         </div>
 
@@ -81,13 +124,13 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
       </div>
 
       {activeTab === "cdp" ? (
-        <CDPTraining />
+        <CDPTraining targetId={company.apiId} targetType="company" />
       ) : activeTab === "compliances" ? (
         <Compliances targetId={company.apiId} targetType="company" />
       ) : activeTab === "audits" ? (
         <Audits targetId={company.apiId} targetType="company" />
       ) : activeTab === "agent" ? (
-        <Agents />
+        <Agents agentsList={agentsList} />
       ) : (
         <>
           {/* AGENT INFORMATION */}
@@ -101,7 +144,7 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
                 </div>
                 <div>
                   <span className="font-semibold text-gray-400">Email ID :</span>
-                  <span className="ml-2">{company  .email}</span>
+                  <span className="ml-2">{company.email}</span>
                 </div>
               </div>
               <div>
@@ -111,7 +154,7 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
                 </div>
                 <div>
                   <span className="font-semibold text-gray-400">Phone Number :</span>
-                  <span className="ml-2">{company   .mobile}</span>
+                  <span className="ml-2">{company.mobile}</span>
                 </div>
               </div>
               <div>
@@ -124,6 +167,12 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
                 <div className="mb-3">
                   <span className="font-semibold text-gray-400">Office :</span>
                   <span className="ml-2">{company.location}</span>
+                </div>
+              </div>
+              <div>
+                <div className="mb-3">
+                  <span className="font-semibold text-gray-400">Total Agents :</span>
+                  <span className="ml-2">{loading ? "Loading..." : agentsList.length}</span>
                 </div>
               </div>
             </div>

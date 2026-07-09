@@ -39,7 +39,7 @@ const ViewCompany: React.FC<ViewCompanyProps> = ({ company, onClose }) => {
   const [timePeriod, setTimePeriod] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [activeTab, setActiveTab] = useState<"info" | "cdp" | "compliances" | "audits" | "agent">("info");
 
-  const [detailedCompany, setDetailedCompany] = useState<any>(null);
+  const [, setDetailedCompany] = useState<any>(null);
   const [agentsList, setAgentsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

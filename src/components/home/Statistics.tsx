@@ -1,40 +1,29 @@
-export default function OurCoreValues() {
-  const VALUES = [
+interface WhatWeDoItem {
+  heading: string;
+  description: string;
+  numbering: number;
+}
+
+interface StatisticsProps {
+  data?: WhatWeDoItem[];
+}
+
+export default function OurCoreValues({ data }: StatisticsProps) {
+  const values = Array.isArray(data) && data.length > 0 ? data : [
     {
-      number: "01.",
-      title: "INTEGRITY FIRST",
-      description:
-        "We prioritize transparency and non-negotiable ethical standards in every partner and student interaction.",
+      heading: "INTEGRITY FIRST",
+      description: "We prioritize transparency and non-negotiable ethical standards in every partner and student interaction.",
+      numbering: 1
     },
     {
-      number: "02.",
-      title: "ACCOUNTABILITY YOU CAN TRUST",
-      description:
-        "Our business approach is measurable, auditable, and strictly aligned with global regulatory expectations.",
+      heading: "ACCOUNTABILITY YOU CAN TRUST",
+      description: "Our business approach is measurable, auditable, and strictly aligned with global regulatory expectations.",
+      numbering: 2
     },
     {
-      number: "03.",
-      title: "COLLABORATION FOR PROGRESS:",
-      description:
-        "We unite agents, universities, and regulators to solve global recruitment challenges through shared standards.",
-    },
-    {
-      number: "04.",
-      title: "INTEGRITY FIRST",
-      description:
-        "We prioritize transparency and non-negotiable ethical standards in every partner and student interaction.",
-    },
-    {
-      number: "05.",
-      title: "ACCOUNTABILITY YOU CAN TRUST",
-      description:
-        "Our business approach is measurable, auditable, and strictly aligned with global regulatory expectations.",
-    },
-    {
-      number: "06.",
-      title: "COLLABORATION FOR PROGRESS:",
-      description:
-        "We unite agents, universities, and regulators to solve global recruitment challenges through shared standards.",
+      heading: "COLLABORATION FOR PROGRESS",
+      description: "We unite agents, universities, and regulators to solve global recruitment challenges through shared standards.",
+      numbering: 3
     },
   ];
 
@@ -52,26 +41,26 @@ export default function OurCoreValues() {
           WHAT WE DO ?
         </h2>
 
-        {/* Values Grid - 3 columns, 2 rows */}
+        {/* Values Grid - 3 columns */}
         <div className="grid grid-cols-1 gap-px bg-white/10 md:grid-cols-3">
-          {VALUES.map((value, index) => (
+          {values.map((value, index) => (
             <div
               key={index}
-              className="space-y-3 bg-[#0A1628] p-6 md:p-8"
+              className="space-y-3 bg-[#0A1628] p-6 md:p-8 text-left"
             >
               {/* Title */}
               <h3 className="text-sm font-bold uppercase tracking-wide text-white md:text-base">
-                {value.title}
+                {value.heading}
               </h3>
 
               {/* Description */}
-              <p className="text-xs leading-relaxed text-white/70 md:text-sm">
+              <p className="text-xs leading-relaxed text-white/70 md:text-sm min-h-[60px]">
                 {value.description}
               </p>
 
               {/* Number */}
               <p className="text-3xl font-bold text-[#F58A07] md:text-4xl">
-                {value.number}
+                {String(value.numbering || index + 1).padStart(2, '0')}.
               </p>
             </div>
           ))}

@@ -1,5 +1,17 @@
-export default function OurCoreValues() {
-  const VALUES = [
+interface CoreValuesProps {
+  data?: Array<{
+    numbering: number;
+    title: string;
+    description: string;
+  }>;
+}
+
+export default function OurCoreValues({ data }: CoreValuesProps) {
+  const VALUES = Array.isArray(data) && data.length > 0 ? data.map(v => ({
+    number: String(v.numbering).padStart(2, '0') + '.',
+    title: v.title,
+    description: v.description
+  })) : [
     {
       number: "01.",
       title: "INTEGRITY FIRST",
@@ -52,12 +64,12 @@ export default function OurCoreValues() {
           OUR CORE VALUES
         </h2>
 
-        {/* Values Grid - 3 columns, 2 rows */}
+        {/* Values Grid - 3 columns */}
         <div className="grid grid-cols-1 gap-px bg-white/10 md:grid-cols-3">
           {VALUES.map((value, index) => (
             <div
               key={index}
-              className="space-y-3 bg-[#0A1628] p-6 md:p-8"
+              className="space-y-3 bg-[#0A1628] p-6 md:p-8 text-left"
             >
               {/* Title */}
               <h3 className="text-sm font-bold uppercase tracking-wide text-white md:text-base">

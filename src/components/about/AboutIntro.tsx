@@ -12,7 +12,29 @@ const TAGS = [
   { label: "ADVISOR", position: "top-[50%] left-[3%]" },
 ];
 
-export default function AboutIntro() {
+interface AboutIntroProps {
+  data?: {
+    image?: string;
+    title?: string;
+    description?: string;
+    description2?: string;
+  };
+}
+
+export default function AboutIntro({ data }: AboutIntroProps) {
+  const formatImage = (path?: string, fallback: string = "") => {
+    if (!path) return fallback;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
+    const rel = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${rel}`;
+  };
+
+  const imageSrc = formatImage(data?.image, "/aboutPage/peter-portrait.png");
+  const title = data?.title || "PETE YETTON";
+  const description = data?.description || "True recruitment success is not about taking risks—it's about managing them. In a shifting regulatory world, AEGA turns uncertainty into integrity-driven growth.";
+  const description2 = data?.description2 || "Under Pete's leadership, AEGA has transformed international student recruitment through ethical frameworks, compliance excellence, and technology-driven transparency.";
+
   return (
     <section className="relative w-full py-16 overflow-hidden">
       {/* Background Image - Full cover */}
@@ -36,27 +58,22 @@ export default function AboutIntro() {
           {/* White Card */}
           <div className="bg-white px-6 py-6 shadow-2xl">
             {/* Name */}
-            <h2 className="mb-3 text-center text-2xl font-bold tracking-tight text-[#0A1628] md:text-3xl">
-              PETE YETTON
+            <h2 className="mb-3 text-center text-2xl font-bold tracking-tight text-[#0A1628] md:text-3xl uppercase">
+              {title}
             </h2>
 
             {/* Quote */}
             <blockquote className="mb-4 text-center text-xs leading-relaxed text-gray-700 md:text-sm">
-            &ldquo;True recruitment success is not about taking risks—it&apos;s about
-              managing them. In a shifting regulatory world, AEGA turns
-              uncertainty into integrity-driven growth.
+              &ldquo;{description}&rdquo;
             </blockquote>
 
             {/* Portrait Image - Proper aspect ratio */}
-            <div className="relative mx-auto  overflow-hidden bg-[#0A1F3D] shadow-lg">
+            <div className="relative mx-auto overflow-hidden bg-[#0A1F3D] shadow-lg">
               <div className="relative aspect-1/1 w-full">
-                <Image
-                  src="/aboutPage/peter-portrait.png"
-                  alt="peter portrait "
-                  fill
-                  className="object-cover object-[center_20%]"
-                  sizes="(max-width: 768px) 90vw, 400px"
-                  priority
+                <img
+                  src={imageSrc}
+                  alt={title}
+                  className="w-full h-full object-cover object-[center_20%]"
                 />
               </div>
             </div>
@@ -78,10 +95,8 @@ export default function AboutIntro() {
 
         {/* Bottom Text - Compact */}
         <div className="mt-8 text-center">
-          <p className="mx-auto max-w-xl text-xs leading-relaxed text-white/90 md:text-sm">
-            Under Pete&apos;s leadership, AEGA has transformed international student
-            recruitment through ethical frameworks, compliance excellence, and
-            technology-driven transparency.
+          <p className="mx-auto max-w-xl text-xs leading-relaxed text-white/90 md:text-sm whitespace-pre-line">
+            {description2}
           </p>
         </div>
       </div>

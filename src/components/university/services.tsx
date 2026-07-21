@@ -1,13 +1,27 @@
-export default function Services() {
-  const services = [
-    "Access to Verified Agent Database",
-    "Real-Time Compliance Dashboards",
-    "Agent Performance Reporting",
-    "Risk Management Frameworks",
-    "Training and Onboarding Support",
-    "Incident and Complaint Management",
-    "Regulatory Update Notifications",
-    "Partnership Development Resources",
+interface ServicesProps {
+  data?: {
+    title?: string;
+    description?: string;
+    points?: Array<{
+      numbering: string;
+      title: string;
+    }>;
+  };
+}
+
+export default function Services({ data }: ServicesProps) {
+  const title = data?.title || "SERVICES FOR UNIVERSITY PARTNERS";
+  const description = data?.description || "As a university partner, you gain access to comprehensive agent management tools, compliance reporting, and governance support.";
+  
+  const services = Array.isArray(data?.points) && data.points.length > 0 ? data.points : [
+    { numbering: "01.", title: "Access to Verified Agent Database" },
+    { numbering: "02.", title: "Real-Time Compliance Dashboards" },
+    { numbering: "03.", title: "Agent Performance Reporting" },
+    { numbering: "04.", title: "Risk Management Frameworks" },
+    { numbering: "05.", title: "Training and Onboarding Support" },
+    { numbering: "06.", title: "Incident and Complaint Management" },
+    { numbering: "07.", title: "Regulatory Update Notifications" },
+    { numbering: "08.", title: "Partnership Development Resources" },
   ];
 
   return (
@@ -21,11 +35,11 @@ export default function Services() {
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-10">
         {/* Header */}
         <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-            SERVICES FOR UNIVERSITY PARTNERS
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 uppercase">
+            {title}
           </h2>
-          <p className="text-sm md:text-base text-white/70 max-w-2xl mx-auto">
-            As a university partner, you gain access to comprehensive agent management tools, compliance reporting, and governance support.
+          <p className="text-sm md:text-base text-white/70 max-w-2xl mx-auto whitespace-pre-line">
+            {description}
           </p>
         </div>
 
@@ -33,14 +47,14 @@ export default function Services() {
         <div className="grid grid-cols-1 md:grid-cols-2">
           {services.map((service, index) => (
             <div
-              key={service}
-              className="border border-white/10 p-6 md:p-8 bg-[#0A1628]/40"
+              key={index}
+              className="border border-white/10 p-6 md:p-8 bg-[#0A1628]/40 text-left"
             >
               <h3 className="text-white font-semibold text-sm md:text-base uppercase mb-6">
-                {service}
+                {service.title}
               </h3>
               <div className="text-[#F68E2D] text-2xl md:text-3xl font-bold">
-                {String(index + 1).padStart(2, "0")}.
+                {service.numbering || `${String(index + 1).padStart(2, "0")}.`}
               </div>
             </div>
           ))}

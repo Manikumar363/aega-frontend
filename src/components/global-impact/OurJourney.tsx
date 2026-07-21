@@ -1,7 +1,21 @@
-import Image from "next/image";
+interface OurJourneyProps {
+  data?: {
+    image?: string;
+    timeline?: Array<{ year: string; title: string; description: string }>;
+  };
+}
 
-export default function OurJourney() {
-  const TIMELINE = [
+export default function OurJourney({ data }: OurJourneyProps) {
+  const formatImage = (path?: string, fallback: string = "") => {
+    if (!path) return fallback;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
+    const rel = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${rel}`;
+  };
+
+  const imageSrc = formatImage(data?.image, "/peter-journey.png");
+  const TIMELINE = Array.isArray(data?.timeline) && data.timeline.length > 0 ? data.timeline : [
     {
       year: "2020",
       title: "AEGA Founded",
@@ -35,21 +49,18 @@ export default function OurJourney() {
         <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
           {/* Left - Image with orange accent */}
           <div className="relative">
-            <div className="relative overflow-hidden shadow-2xl">
-              <Image
-                src="/peter-journey.png"
+            <div className="relative overflow-hidden shadow-2xl rounded-lg">
+              <img
+                src={imageSrc}
                 alt="AEGA Conference"
-                width={500}
-                height={650}
                 className="h-auto w-full object-cover"
-                priority
               />
             </div>
           </div>
 
           {/* Right - Timeline */}
-          <div className="space-y-6">
-            <h2 className="mb-8 text-3xl  font-bold text-white md:text-4xl">
+          <div className="space-y-6 text-left">
+            <h2 className="mb-8 text-3xl font-bold text-white md:text-4xl">
               OUR JOURNEY
             </h2>
 
@@ -65,7 +76,7 @@ export default function OurJourney() {
                       {item.description}
                     </p>
                   </div>
-                  {index !== TIMELINE.length - 0 && (
+                  {index !== TIMELINE.length - 1 && (
                     <div className="ml-0 mt-1 border-t border-white/20 w-full" />
                   )}
                 </div>

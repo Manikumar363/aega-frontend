@@ -1,12 +1,31 @@
-import Image from "next/image";
+interface TestimonialsProps {
+  data?: Array<{
+    image: string;
+    clientName: string;
+    description: string;
+  }>;
+}
 
-export default function Testimonials() {
-  const LOGOS = [
-    { src: "/logo-1.png" },
-    { src: "/logo-5.png" },
-    { src: "/logo-4.png" },
-    { src: "/logo-4.png" },
-    { src: "/logo-5.png" },
+export default function Testimonials({ data }: TestimonialsProps) {
+  const formatImage = (path?: string, fallback: string = "") => {
+    if (!path) return fallback;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
+    const rel = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${rel}`;
+  };
+
+  const reviews = Array.isArray(data) && data.length > 0 ? data : [
+    {
+      description: "Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.",
+      image: "/King's_College_London.png",
+      clientName: "Academic Registrar and Director of Compliance and Admissions"
+    },
+    {
+      description: "Pete took the time to understand our business and people, ensuring we developed a truly joined-up, end-to-end approach to UKVI compliance. By engaging widely across teams, he identified what needed to change and helped us implement clear, tailored improvements that strengthened our processes, systems, and overall readiness.",
+      image: "/KingstonUniLogo.png",
+      clientName: "Chief Financial Officer/Executive Board member"
+    }
   ];
 
   return (
@@ -19,69 +38,30 @@ export default function Testimonials() {
           </span>
         </div>
 
-
         {/* Reviews Grid - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
-          {/* First Review Card */}
-          <div>
-            <blockquote className="mb-8 text-left">
-              <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                 Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.
-              </p>
-            </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="relative h-15 w-17 overflow-hidden rounded-full border border-white/40">
-                              <Image
-                                src="/King's_College_London.png"
-                                alt="King's College London"
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
-            </div>
-          </div>
-          {/* Second Review Card */}
-          <div>
-            <blockquote className="mb-8 text-left">
-              <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                Pete took the time to understand our business and people, ensuring we developed a truly joined-up, end-to-end approach to UKVI compliance. By engaging widely across teams, he identified what needed to change and helped us implement clear, tailored improvements that strengthened our processes, systems, and overall readiness.
-              </p>
-            </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="relative h-15 w-15 overflow-hidden rounded-full border border-white/40">
-                  <Image
-                                src="/KingstonUniLogo.png"
-                                alt="Kingston University"
-                                fill
-                                className="object-cover"
-                              />
-                </div>            
-              <div className="text-left">
-                <p className="text-base text-white/60">Chief Financial Officer/Executive Board member</p>
+          {reviews.map((item, index) => (
+            <div key={index}>
+              <blockquote className="mb-8 text-left">
+                <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white whitespace-pre-line">
+                  {item.description}
+                </p>
+              </blockquote>
+              <div className="flex items-center gap-4">
+                <div className="relative h-15 w-15 overflow-hidden rounded-full border border-white/40">
+                  <img
+                    src={formatImage(item.image, "/King's_College_London.png")}
+                    alt={item.clientName}
+                    className="w-15 h-15 object-cover rounded-full"
+                  />
+                </div>
+                <div className="text-left">
+                  <p className="text-base text-white/60">{item.clientName}</p>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
-
-        {/* Logo Strip - Box Layout with Edge Borders 
-        <div className="grid grid-cols-5 w-full border-t border-b border-l border-r border-white/10 mt-8">
-          {LOGOS.map((logo, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-center h-24 border-r border-white/10 last:border-r-0 bg-[#0A1628]"
-            >
-              <Image
-                src={logo.src}
-                alt={`Logo ${index + 1}`}
-                width={120}
-                height={40}
-                className="object-contain"
-              />
-            </div>
           ))}
-        </div>*/}
+        </div>
       </div>
     </section>
   );

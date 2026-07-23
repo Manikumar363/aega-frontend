@@ -1,15 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import { Clock, BookOpen, CheckCircle } from 'lucide-react';
 
 interface CourseCard {
-  id: number;
+  id: string;
   image: string;
   category: string;
   categoryColor: string;
   duration: string;
-  durationDays: string;
   title: string;
   hours: string;
   modules: string;
@@ -17,14 +15,27 @@ interface CourseCard {
   accessLevel: string;
 }
 
-const courses: CourseCard[] = [
+interface ComplianceMainProps {
+  initialCourses?: Array<{
+    _id?: string;
+    id?: string;
+    courseName: string;
+    type: string;
+    timeInHr: number;
+    modules: number;
+    hyperLink: string;
+    description: string;
+    coverPicture: string;
+  }>;
+}
+
+const STATIC_COURSES: CourseCard[] = [
   {
-    id: 1,
+    id: "1",
     image: '/presentation-1.png',
     category: 'BEGINNER',
     categoryColor: 'bg-blue-500',
     duration: '2 DAYS',
-    durationDays: '2 Days',
     title: 'Introduction to Compliance',
     hours: '16 Hours',
     modules: '4 Modules',
@@ -32,12 +43,11 @@ const courses: CourseCard[] = [
     accessLevel: 'Member Access',
   },
   {
-    id: 2,
+    id: "2",
     image: '/presentation-1.png',
     category: 'BEGINNER',
     categoryColor: 'bg-blue-500',
     duration: '2 DAYS',
-    durationDays: '2 Days',
     title: 'Compliance Fundamentals',
     hours: '16 Hours',
     modules: '5 Modules',
@@ -45,161 +55,111 @@ const courses: CourseCard[] = [
     accessLevel: 'Member Access',
   },
   {
-    id: 3,
+    id: "3",
     image: '/presentation-1.png',
     category: 'INTERMEDIATE',
     categoryColor: 'bg-purple-500',
     duration: '5 DAYS',
-    durationDays: '5 Days',
     title: 'Advanced Compliance',
     hours: '40 Hours',
     modules: '8 Modules',
     assessment: 'Advanced',
     accessLevel: 'Partner Access',
   },
-  {
-    id: 4,
-    image: '/presentation-1.png',
-    category: 'INTERMEDIATE',
-    categoryColor: 'bg-purple-500',
-    duration: '3 DAYS',
-    durationDays: '3 Days',
-    title: 'Corporate Governance',
-    hours: '24 Hours',
-    modules: '4 Modules',
-    assessment: 'Case Study',
-    accessLevel: 'Member Access',
-  },
-  {
-    id: 5,
-    image: '/presentation-1.png',
-    category: 'INTERMEDIATE',
-    categoryColor: 'bg-purple-500',
-    duration: '5 DAYS',
-    durationDays: '5 Days',
-    title: 'Risk Management',
-    hours: '40 Hours',
-    modules: '8 Modules',
-    assessment: 'Advanced',
-    accessLevel: 'Member Access',
-  },
-  {
-    id: 6,
-    image: '/presentation-1.png',
-    category: 'ADVANCED',
-    categoryColor: 'bg-indigo-500',
-    duration: '7 DAYS',
-    durationDays: '7 Days',
-    title: 'Master Compliance',
-    hours: '56 Hours',
-    modules: '12 Modules',
-    assessment: 'Certification',
-    accessLevel: 'Member Access',
-  },
-  {
-    id: 7,
-    image: '/presentation-1.png',
-    category: 'BEGINNER',
-    categoryColor: 'bg-blue-500',
-    duration: '2 DAYS',
-    durationDays: '2 Days',
-    title: 'Legal Basics',
-    hours: '16 Hours',
-    modules: '5 Modules',
-    assessment: 'Quiz',
-    accessLevel: 'Partner Access',
-  },
-  {
-    id: 8,
-    image: '/presentation-1.png',
-    category: 'BEGINNER',
-    categoryColor: 'bg-blue-500',
-    duration: '3 DAYS',
-    durationDays: '3 Days',
-    title: 'Professional Ethics',
-    hours: '24 Hours',
-    modules: '5 Modules',
-    assessment: 'Certificate',
-    accessLevel: 'Member Access',
-  },
-  {
-    id: 9,
-    image: '/presentation-1.png',
-    category: 'ADVANCED',
-    categoryColor: 'bg-indigo-500',
-    duration: '7 DAYS',
-    durationDays: '7 Days',
-    title: 'Strategic Compliance',
-    hours: '56 Hours',
-    modules: '10 Modules',
-    assessment: 'Advanced',
-    accessLevel: 'Member Access',
-  },
 ];
 
-export default function ComplianceMain() {
+export default function ComplianceMain({ initialCourses }: ComplianceMainProps) {
+  const formatImage = (path?: string, fallback: string = "/presentation-1.png") => {
+    if (!path) return fallback;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
+    const rel = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${rel}`;
+  };
+
+  // Convert initial courses to CourseCard format if present, otherwise fallback to static courses
+  const displayCourses: CourseCard[] = Array.isArray(initialCourses) && initialCourses.length > 0
+    ? initialCourses.map((course, idx) => {
+        const isMandatory = String(course.type).toLowerCase() === 'mandatory';
+        return {
+          id: course._id || course.id || String(idx),
+          image: formatImage(course.coverPicture),
+          category: isMandatory ? 'MANDATORY' : 'OPTIONAL',
+          categoryColor: isMandatory ? 'bg-orange-500' : 'bg-purple-500',
+          duration: `${course.timeInHr} HR${course.timeInHr > 1 ? 'S' : ''}`,
+          title: course.courseName,
+          hours: `${course.timeInHr} Hour${course.timeInHr > 1 ? 's' : ''}`,
+          modules: `${course.modules} Module${course.modules > 1 ? 's' : ''}`,
+          assessment: 'Online Assessment',
+          accessLevel: isMandatory ? 'Core Requirement' : 'Recommended Access',
+        };
+      })
+    : STATIC_COURSES;
+
   return (
     <section className="w-full bg-[#03091F] py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         {/* Grid of Course Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
+          {displayCourses.map((course) => (
             <div
               key={course.id}
-              className="group bg-[#03091F] rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300"
+              className="group bg-[#03091F] rounded-lg overflow-hidden border border-white/10 hover:border-orange-500/50 hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
             >
-              {/* Image Container */}
-              <div className="relative h-48 overflow-hidden bg-gray-100">
-                <Image
-                  src={course.image}
-                  alt={course.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  priority={course.id <= 3}
-                />
+              <div>
+                {/* Image Container */}
+                <div className="relative h-48 overflow-hidden bg-gray-900">
+                  <img
+                    src={course.image}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
 
-                {/* Category Badge */}
-                <div className={`absolute top-4 left-4 ${course.categoryColor} text-white px-3 py-1 rounded text-xs font-semibold`}>
-                  {course.category}
+                  {/* Category Badge */}
+                  <div className={`absolute top-4 left-4 ${course.categoryColor} text-white px-3 py-1 rounded text-xs font-semibold`}>
+                    {course.category}
+                  </div>
+
+                  {/* Duration Badge */}
+                  <div className="absolute top-4 right-4 bg-white/95 text-orange-500 px-3 py-1 rounded text-xs font-semibold">
+                    {course.duration}
+                  </div>
                 </div>
 
-                {/* Duration Badge */}
-                <div className="absolute top-4 right-4 bg-white/95 text-orange-500 px-3 py-1 rounded text-xs font-semibold">
-                  {course.duration}
+                {/* Content */}
+                <div className="p-6 text-left">
+                  {/* Course Title */}
+                  <h3 className="text-lg font-bold text-white mb-4 line-clamp-2 uppercase min-h-[56px]">
+                    {course.title}
+                  </h3>
+
+                  {/* Course Details */}
+                  <div className="space-y-3 mb-6">
+                    {/* Hours */}
+                    <div className="flex items-center gap-2 text-sm text-white/70">
+                      <Clock size={16} className="text-white/40" />
+                      <span>{course.hours}</span>
+                    </div>
+
+                    {/* Modules */}
+                    <div className="flex items-center gap-2 text-sm text-white/70">
+                      <BookOpen size={16} className="text-white/40" />
+                      <span>{course.modules}</span>
+                    </div>
+
+                    {/* Assessment */}
+                    <div className="flex items-center gap-2 text-sm text-white/70">
+                      <CheckCircle size={16} className="text-white/40" />
+                      <span>{course.assessment}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="p-6">
-                {/* Course Title */}
-                <h3 className="text-lg font-bold text-gray-900 mb-4 line-clamp-2">
-                  {course.title}
-                </h3>
-
-                {/* Course Details */}
-                <div className="space-y-3 mb-6">
-                  {/* Hours */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock size={16} className="text-gray-400" />
-                    <span>{course.hours}</span>
-                  </div>
-
-                  {/* Modules */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <BookOpen size={16} className="text-gray-400" />
-                    <span>{course.modules}</span>
-                  </div>
-
-                  {/* Assessment */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle size={16} className="text-gray-400" />
-                    <span>{course.assessment}</span>
-                  </div>
-                </div>
-
+              <div className="p-6 pt-0 text-left">
                 {/* Divider */}
-                <div className="border-t border-gray-200 pt-4 mb-4">
-                  <p className="text-xs text-gray-500 mb-4">{course.accessLevel}</p>
+                <div className="border-t border-white/10 pt-4 mb-4">
+                  <p className="text-xs text-white/55 mb-4">{course.accessLevel}</p>
                 </div>
 
                 {/* Enroll Button */}

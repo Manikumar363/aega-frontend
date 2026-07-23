@@ -2,7 +2,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
-const UKVI_POLICIES = [
+interface PolicyItem {
+  title: string;
+  description: string;
+  link: string;
+}
+
+const DEFAULT_AGENT_POLICIES: PolicyItem[] = [
   {
     title: "Sponsorship Management Policy",
     description: "Defines the rigorous standards for managing the Sponsor Management System (SMS) and issuing CAS to genuine students.",
@@ -35,7 +41,7 @@ const UKVI_POLICIES = [
   },
 ];
 
-const RULES_REGULATIONS = [
+const DEFAULT_UNIVERSITY_POLICIES: PolicyItem[] = [
   {
     title: "Global Ethics Code",
     description: "Defines the rigorous standards for managing the Sponsor Management System (SMS) and issuing CAS to genuine students.",
@@ -68,7 +74,7 @@ const RULES_REGULATIONS = [
   },
 ];
 
-const DOCUMENTATION = [
+const DEFAULT_DOCUMENTATION: PolicyItem[] = [
   {
     title: "Whole Business Health Check Framework",
     description: "A comprehensive assessment tool for auditing an agency's operational readiness and process gaps.",
@@ -101,7 +107,42 @@ const DOCUMENTATION = [
   },
 ];
 
-export default function PolicyPage() {
+async function getPublicCompliances() {
+  try {
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    const res = await fetch(`${base.replace(/\/$/, '')}/api/public-compliances`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.success ? json.data : [];
+  } catch (err) {
+    console.error('Error fetching public compliances:', err);
+    return [];
+  }
+}
+
+export default async function PolicyPage() {
+  const compliances = await getPublicCompliances();
+
+  // Filter dynamic compliance items by target audience
+  const agentCompliances = compliances.filter((item: any) => item.target === 'agent');
+  const universityCompliances = compliances.filter((item: any) => item.target === 'university');
+
+  const agentPolicies = agentCompliances.length > 0
+    ? agentCompliances.map((item: any) => ({
+        title: item.name,
+        description: item.description,
+        link: "#",
+      }))
+    : DEFAULT_AGENT_POLICIES;
+
+  const universityPolicies = universityCompliances.length > 0
+    ? universityCompliances.map((item: any) => ({
+        title: item.name,
+        description: item.description,
+        link: "#",
+      }))
+    : DEFAULT_UNIVERSITY_POLICIES;
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#050B1F]">
       {/* Background Image - Top Right Gradient */}
@@ -118,7 +159,7 @@ export default function PolicyPage() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 md:px-10">
         {/* Hero Section */}
-        <div className="mb-16">
+        <div className="mb-16 text-left">
           <p className="mb-3 text-[10px] tracking-[0.3em] uppercase text-white/60">
             POLICY
           </p>
@@ -130,18 +171,18 @@ export default function PolicyPage() {
           </p>
         </div>
 
-        {/* Section 1: UKVi Compliance Policies */}
+        {/* Section 1: Agent Compliance Policies */}
         <section className="mb-12 border border-white/20 p-8 md:p-10">
-          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
-            UKVI COMPLIANCE POLICIES
+          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl text-left">
+            AGENT COMPLIANCE POLICIES
           </h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {UKVI_POLICIES.map((policy, index) => (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 text-left">
+            {agentPolicies.map((policy: PolicyItem, index: number) => (
               <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6">
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
                   {policy.title}
                 </h3>
-                <p className="text-xs leading-relaxed text-white/60">
+                <p className="text-xs leading-relaxed text-white/60 min-h-[64px]">
                   {policy.description}
                 </p>
                 <Link
@@ -158,16 +199,16 @@ export default function PolicyPage() {
 
         {/* Section 2: Rules & Regulations */}
         <section className="mb-12 border border-white/20 p-8 md:p-10">
-          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
+          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl text-left">
             RULES & REGULATIONS
           </h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {RULES_REGULATIONS.map((rule, index) => (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 text-left">
+            {universityPolicies.map((rule: PolicyItem, index: number) => (
               <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6">
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
                   {rule.title}
                 </h3>
-                <p className="text-xs leading-relaxed text-white/60">
+                <p className="text-xs leading-relaxed text-white/60 min-h-[64px]">
                   {rule.description}
                 </p>
                 <Link
@@ -182,18 +223,18 @@ export default function PolicyPage() {
           </div>
         </section>
 
-        {/* Section 3: Documentation & Frameworks */}
+        {/* Section 3: Documentation & Frameworks
         <section className="border border-white/20 p-8 md:p-10">
-          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
+          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl text-left">
             DOCUMENTATION & FRAMEWORKS
           </h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {DOCUMENTATION.map((doc, index) => (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 text-left">
+            {DEFAULT_DOCUMENTATION.map((doc, index) => (
               <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6">
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
                   {doc.title}
                 </h3>
-                <p className="text-xs leading-relaxed text-white/60">
+                <p className="text-xs leading-relaxed text-white/60 min-h-[64px]">
                   {doc.description}
                 </p>
                 <Link
@@ -207,6 +248,7 @@ export default function PolicyPage() {
             ))}
           </div>
         </section>
+        */}
       </div>
     </div>
   );

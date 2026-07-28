@@ -1,7 +1,8 @@
-// src/app/(auth)/sign-up/page.tsx
+// src/app/(marketing)/signup/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import SignUpLayout from "@/components/auth/SignUpLayout";
 import AgentBasicForm from "@/components/auth/AgentBasicForm";
 import AgentDocumentsForm from "@/components/auth/AgentDocumentsForm";
@@ -24,10 +25,12 @@ interface UniversityFormData {
   confirmPassword: string;
 }
 
-export default function SignUpPage() {
+function SignUpContent() {
   const [userType, setUserType] = useState<"agent" | "university">("agent");
   const [step, setStep] = useState<"basic" | "documents">("basic");
-  
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role");
+
   const [agentData, setAgentData] = useState<AgentFormData>({
     businessType: "b2b",
     firstName: "",
@@ -44,9 +47,33 @@ export default function SignUpPage() {
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    document.title = "AEGA - Sign Up";
+    if (roleParam === "university" || roleParam === "agent") {
+      setUserType(roleParam);
+      setStep("basic");
+    }
+  }, [roleParam]);
+
   const handleUserTypeToggle = (type: "agent" | "university") => {
     setUserType(type);
-    setStep("basic"); // Reset to basic step when toggling user type
+    setStep("basic");
+    
+    // Clear all previously prefilled details on toggle!
+    setAgentData({
+      businessType: "b2b",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+    setUniversityData({
+      universityName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
   };
 
   const renderForm = () => {
@@ -58,7 +85,7 @@ export default function SignUpPage() {
           onNext={() => setStep("documents")}
         />
       ) : (
-        <AgentDocumentsForm formData={agentData} />
+        <AgentDocumentsForm formData={agentData} onBack={() => setStep("basic")} />
       );
     } else {
       return step === "basic" ? (
@@ -68,7 +95,7 @@ export default function SignUpPage() {
           onNext={() => setStep("documents")}
         />
       ) : (
-        <UniversityDocumentsForm formData={universityData} />
+        <UniversityDocumentsForm formData={universityData} onBack={() => setStep("basic")} />
       );
     }
   };
@@ -77,5 +104,17 @@ export default function SignUpPage() {
     <SignUpLayout userType={userType} onToggle={handleUserTypeToggle}>
       {renderForm()}
     </SignUpLayout>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="relative flex min-h-screen w-full bg-[#0A1628] items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <SignUpContent />
+    </Suspense>
   );
 }

@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { signup, storeAuthToken } from "@/lib/api/authService";
 import { uploadFile } from "@/lib/api/fileService";
 import { AgentSignupRequest } from "@/lib/api/types";
+import Captcha from "./Captcha";
 
 interface AgentFormData {
   businessType: "b2b" | "b2c";
@@ -20,9 +21,10 @@ interface AgentFormData {
 
 interface AgentDocumentsFormProps {
   formData: AgentFormData;
+  onBack?: () => void;
 }
 
-export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps) {
+export default function AgentDocumentsForm({ formData, onBack }: AgentDocumentsFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{ doc1: File | null; doc2: File | null }>({
@@ -35,6 +37,8 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
   });
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
+  const [captchaCode, setCaptchaCode] = useState("");
+  const [captchaInput, setCaptchaInput] = useState("");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, docNum: "doc1" | "doc2") => {
     const file = e.target.files?.[0];
@@ -95,6 +99,13 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate Captcha
+    if (captchaInput.trim().toUpperCase() !== captchaCode.trim().toUpperCase()) {
+      toast.error("Invalid Captcha code. Please try again.");
+      setCaptchaInput("");
+      return;
+    }
+
     // Validate files
     if (!uploadedFiles.doc1 || !uploadedFiles.doc2) {
       toast.error("Please upload both documents");
@@ -147,9 +158,9 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
         // Store auth token
         storeAuthToken(response.token);
 
-        // Redirect after a brief delay
+        // Redirect after a brief delay to role-based login route!
         setTimeout(() => {
-          router.push("/agent/login");
+          router.push("/login?role=agent");
         }, 1000);
 
         return "Account created successfully!";
@@ -177,15 +188,20 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 text-left">
       {/* Progress Indicator */}
       <div className="mb-8 flex items-center gap-6">
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={isLoading}
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity outline-none"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
             1
           </div>
-          <span className="text-xs text-white/60">Provide your Basic Details</span>
-        </div>
+          <span className="text-xs text-white/60 hover:text-[#F58A07] underline">Provide your Basic Details</span>
+        </button>
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F58A07] text-sm font-bold text-white">
             2
@@ -194,23 +210,23 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
         </div>
       </div>
 
-      {/* Supporting Document 1 */}
+      {/* Document 1 */}
       <div>
         <label className="mb-2 block text-xs text-white/70">Supporting Document 1*</label>
         <div
-          className="border-2 border-dashed border-white/30 bg-white/5 p-8 text-center transition-colors hover:border-[#F58A07] cursor-pointer"
+          onClick={() => !isLoading && fileInputRef1.current?.click()}
           onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, "doc1")}
-          onClick={() => fileInputRef1.current?.click()}
+          onDrop={(e) => !isLoading && handleDrop(e, "doc1")}
+          className="flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
         >
-          <Upload className="mx-auto mb-2 h-8 w-8 text-white/40" />
-          <p className="text-sm text-white/70">
-            {uploadedFiles.doc1 ? uploadedFiles.doc1.name : "Drop files here or click to upload"}
-          </p>
-          <p className="text-xs text-white/40">
+          <Upload className="mb-2 h-8 w-8 text-white/55" />
+          <span className="text-sm text-white/80">
+            {uploadedFiles.doc1 ? uploadedFiles.doc1.name : "Choose file or drag & drop here"}
+          </span>
+          <p className="mt-1 text-xs text-white/40">
             {uploadedFiles.doc1
               ? "File selected"
-              : "Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)"}
+              : "Business license, registration proof (PDF, JPG, PNG - max 10MB)"}
           </p>
           <input
             ref={fileInputRef1}
@@ -222,20 +238,20 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
         </div>
       </div>
 
-      {/* Supporting Document 2 */}
+      {/* Document 2 */}
       <div>
         <label className="mb-2 block text-xs text-white/70">Supporting Document 2*</label>
         <div
-          className="border-2 border-dashed border-white/30 bg-white/5 p-8 text-center transition-colors hover:border-[#F58A07] cursor-pointer"
+          onClick={() => !isLoading && fileInputRef2.current?.click()}
           onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, "doc2")}
-          onClick={() => fileInputRef2.current?.click()}
+          onDrop={(e) => !isLoading && handleDrop(e, "doc2")}
+          className="flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
         >
-          <Upload className="mx-auto mb-2 h-8 w-8 text-white/40" />
-          <p className="text-sm text-white/70">
-            {uploadedFiles.doc2 ? uploadedFiles.doc2.name : "Drop files here or click to upload"}
-          </p>
-          <p className="text-xs text-white/40">
+          <Upload className="mb-2 h-8 w-8 text-white/55" />
+          <span className="text-sm text-white/80">
+            {uploadedFiles.doc2 ? uploadedFiles.doc2.name : "Choose file or drag & drop here"}
+          </span>
+          <p className="mt-1 text-xs text-white/40">
             {uploadedFiles.doc2
               ? "File selected"
               : "Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)"}
@@ -250,23 +266,23 @@ export default function AgentDocumentsForm({ formData }: AgentDocumentsFormProps
         </div>
       </div>
 
-      {/* reCAPTCHA */}
-      <div className="flex items-center justify-between border border-white/20 bg-white px-4 py-3">
-        <label className="flex items-center gap-3">
-          <input type="checkbox" required className="h-5 w-5" />
-          <span className="text-sm text-gray-800">I'm not a robot</span>
-        </label>
-        <span className="text-xs text-gray-500">reCAPTCHA</span>
-      </div>
+      {/* Captcha */}
+      <Captcha
+        onChange={setCaptchaCode}
+        onUserInputChange={setCaptchaInput}
+        userInput={captchaInput}
+      />
 
       {/* Sign Up Button */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="bg-[#F58A07] px-12 py-4 text-sm font-bold uppercase text-white hover:bg-[#e07b06] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? "SIGNING UP..." : "SIGN UP"}
-      </button>
+      <div className="text-left">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="bg-[#F58A07] px-12 py-4 text-sm font-bold uppercase text-white hover:bg-[#e07b06] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {isLoading ? "SIGNING UP..." : "SIGN UP"}
+        </button>
+      </div>
     </form>
   );
 }

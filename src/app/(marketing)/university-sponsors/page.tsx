@@ -4,6 +4,11 @@ import TrustCompliance from "@/components/university/TrustCompliance";
 import Compliance from "@/components/university/compliance";
 import Services from "@/components/university/services";
 import Testimonials from "@/components/university/testimonials";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "For University & Sponsors",
+};
 
 async function getUniversityData() {
   try {

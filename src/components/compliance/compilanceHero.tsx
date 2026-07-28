@@ -1,7 +1,29 @@
-import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function ComplianceHero() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [category, setCategory] = useState("");
+  const [duration, setDuration] = useState("");
+
+  // Sync state with URL search params on mount or param change
+  useEffect(() => {
+    setCategory(searchParams.get("category") || "");
+    setDuration(searchParams.get("duration") || "");
+  }, [searchParams]);
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (duration) params.set("duration", duration);
+
+    router.push(`/compliance?${params.toString()}`);
+  };
+
   return (
     <section className="relative w-full bg-[#03091F] py-16 md:py-24 overflow-hidden">
       {/* Background diagonal shape */}
@@ -30,10 +52,15 @@ export default function ComplianceHero() {
             <label className="text-sm font-semibold text-white/80 block mb-3">
               Training Category
             </label>
-            <button className="w-full bg-transparent border border-white/20 rounded px-4 py-3 text-white/80 flex items-center justify-between hover:border-white/40 transition">
-              Training Category
-              <ChevronRight size={18} className="opacity-60" />
-            </button>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
+            >
+              <option value="">All Categories</option>
+              <option value="mandatory">Mandatory</option>
+              <option value="optional">Optional</option>
+            </select>
           </div>
 
           {/* Participation Type */}
@@ -41,10 +68,12 @@ export default function ComplianceHero() {
             <label className="text-sm font-semibold text-white/80 block mb-3">
               Participation Type
             </label>
-            <button className="w-full bg-transparent border border-white/20 rounded px-4 py-3 text-white/80 flex items-center justify-between hover:border-white/40 transition">
-              Participation Type
-              <ChevronRight size={18} className="opacity-60" />
-            </button>
+            <select
+              disabled
+              className="w-full bg-[#03091F] border border-white/10 rounded px-4 py-3 text-white/40 cursor-not-allowed focus:outline-none"
+            >
+              <option value="">All Types</option>
+            </select>
           </div>
 
           {/* Training Format */}
@@ -52,10 +81,12 @@ export default function ComplianceHero() {
             <label className="text-sm font-semibold text-white/80 block mb-3">
               Training Format
             </label>
-            <button className="w-full bg-transparent border border-white/20 rounded px-4 py-3 text-white/80 flex items-center justify-between hover:border-white/40 transition">
-              Training Format
-              <ChevronRight size={18} className="opacity-60" />
-            </button>
+            <select
+              disabled
+              className="w-full bg-[#03091F] border border-white/10 rounded px-4 py-3 text-white/40 cursor-not-allowed focus:outline-none"
+            >
+              <option value="">All Formats</option>
+            </select>
           </div>
 
           {/* Training Duration */}
@@ -63,16 +94,25 @@ export default function ComplianceHero() {
             <label className="text-sm font-semibold text-white/80 block mb-3">
               Training Duration
             </label>
-            <button className="w-full bg-transparent border border-white/20 rounded px-4 py-3 text-white/80 flex items-center justify-between hover:border-white/40 transition">
-              Training Duration
-              <ChevronRight size={18} className="opacity-60" />
-            </button>
+            <select
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
+            >
+              <option value="">All Durations</option>
+              <option value="short">Short (&lt; 5 Hours)</option>
+              <option value="medium">Medium (5 - 20 Hours)</option>
+              <option value="long">Long (&gt; 20 Hours)</option>
+            </select>
           </div>
         </div>
 
         {/* Search Button */}
         <div className="mt-6 flex justify-start md:justify-start">
-          <button className="bg-[#F68E2D] hover:bg-[#E87A1F] text-white font-semibold px-8 py-3 rounded transition">
+          <button
+            onClick={handleSearch}
+            className="bg-[#F68E2D] hover:bg-[#E87A1F] text-white font-semibold px-8 py-3 rounded transition cursor-pointer"
+          >
             SEARCH
           </button>
         </div>

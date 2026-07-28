@@ -1,6 +1,7 @@
 'use client';
 
 import { Clock, BookOpen, CheckCircle } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface CourseCard {
   id: string;
@@ -69,6 +70,9 @@ const STATIC_COURSES: CourseCard[] = [
 ];
 
 export default function ComplianceMain({ initialCourses }: ComplianceMainProps) {
+  const searchParams = useSearchParams();
+  const hasFilters = searchParams.get('category') || searchParams.get('duration');
+
   const formatImage = (path?: string, fallback: string = "/presentation-1.png") => {
     if (!path) return fallback;
     if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -78,7 +82,7 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
   };
 
   // Convert initial courses to CourseCard format if present, otherwise fallback to static courses
-  const displayCourses: CourseCard[] = Array.isArray(initialCourses) && initialCourses.length > 0
+  const displayCourses: CourseCard[] = Array.isArray(initialCourses) && (initialCourses.length > 0 || hasFilters)
     ? initialCourses.map((course, idx) => {
         const isMandatory = String(course.type).toLowerCase() === 'mandatory';
         return {
@@ -99,8 +103,14 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
   return (
     <section className="w-full bg-[#03091F] py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
-        {/* Grid of Course Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {displayCourses.length === 0 ? (
+          <div className="text-center py-12 border border-white/10 rounded-lg bg-[#0F1A3A]/30">
+            <p className="text-lg text-white/60 mb-2">No courses found matching your criteria.</p>
+            <p className="text-sm text-white/40">Try adjusting your filters or search terms.</p>
+          </div>
+        ) : (
+          /* Grid of Course Cards */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {displayCourses.map((course) => (
             <div
               key={course.id}
@@ -170,6 +180,7 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );

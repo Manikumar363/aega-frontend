@@ -9,8 +9,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AEGA - Agents & Educators Global Alliance",
+  title: {
+    default: "AEGA - Agents & Educators Global Alliance",
+    template: "AEGA - %s",
+  },
   description: "Elevating Standards in International Student Recruitment",
+  icons: {
+    icon: "/logo/AEGA Logo.svg",
+  },
 };
 
 export default function RootLayout({

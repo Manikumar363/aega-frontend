@@ -20,7 +20,7 @@ export const WhyAEGA = ({ data }: WhyAEGAProps) => {
   };
 
   const imageSrc = formatImage(data?.image, "/landingPage/why-aega.png");
-  
+
   const description = data?.description || "The first global alliance built specifically for the student recruitment sector. Where traditional organisations stop, AEGA steps in bridging operational gaps, improving compliance, and ensuring safer, more sustainable international mobility.";
   const bottomTitles = Array.isArray(data?.bottomTitles)
     ? [...data.bottomTitles, '', '', ''].slice(0, 3)
@@ -36,7 +36,7 @@ export const WhyAEGA = ({ data }: WhyAEGAProps) => {
           className="w-full h-full object-cover"
         />
       </div>
-      
+
       {/* Content */}
       <div className="relative z-10 text-center max-w-4xl px-4">
         <h2 className="text-5xl font-light text-white/90 mb-8 drop-shadow-lg">WHY AEGA</h2>
@@ -44,12 +44,14 @@ export const WhyAEGA = ({ data }: WhyAEGAProps) => {
           {description}
         </p>
         <div className="pt-6 items-center justify-center flex">
-          <button className="bg-[#F58A07] hover:bg-[#d67806] text-white text-[13px] font-bold px-4 py-3 flex items-center gap-2 transition-all shadow-lg shadow-orange-900/20 uppercase">
-            Join Us Now
-            <ArrowDownRight className="w-6 h-6" />
-          </button>
+          <a href={"/signup"}>
+            <button className="bg-[#F58A07] hover:bg-[#d67806] text-white text-[13px] font-bold px-4 py-3 flex items-center gap-2 transition-all shadow-lg shadow-orange-900/20 uppercase">
+              Join Us Now
+              <ArrowDownRight className="w-6 h-6" />
+            </button>
+          </a>
         </div>
-        
+
         {/* Three Steps with Check Icons - now directly under button */}
         <div className="w-full flex flex-col md:flex-row items-center justify-center gap-12 mt-20 px-4">
           {bottomTitles.map((title, idx) => (

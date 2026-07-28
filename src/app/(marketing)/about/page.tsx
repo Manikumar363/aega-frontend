@@ -7,6 +7,11 @@ import OurMission from "@/components/about/OurMission";
 import OurVision from "@/components/about/OurVision";
 import OurJourney from "@/components/global-impact/OurJourney";
 import GlobalImpact from "@/components/about/GlobalImpact";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Us",
+};
 
 async function getAboutData() {
   try {

@@ -180,6 +180,46 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   }, []);
 
   useEffect(() => {
+    const allItems = [...topNavigationItems, ...bottomNavigationItems];
+    const match = allItems.find(item => item.href === pathname);
+    
+    let label = "Dashboard";
+    if (match) {
+      label = match.label;
+    } else {
+      if (pathname.includes("/profile")) {
+        label = "Profile";
+      } else if (pathname.includes("/certifications")) {
+        label = "Certifications";
+      } else if (pathname.includes("/password")) {
+        label = "Password & Security";
+      } else if (pathname.includes("/help-center")) {
+        label = "Help Center";
+      } else if (pathname.includes("/agent-management") || pathname.includes("/agentManagement")) {
+        label = "Agent Management";
+      } else if (pathname.includes("/student-management")) {
+        label = "Student Management";
+      } else if (pathname.includes("/office-management")) {
+        label = "Office Management";
+      } else if (pathname.includes("/revenue")) {
+        label = "Revenue";
+      } else if (pathname.includes("/leave-management")) {
+        label = "Leave Management";
+      } else if (pathname.includes("/university-management")) {
+        label = "University Management";
+      } else if (pathname.includes("/CDP")) {
+        label = "CDP Training";
+      } else if (pathname.includes("/compliances")) {
+        label = "Compliances";
+      } else if (pathname.includes("/audits")) {
+        label = "Audits";
+      }
+    }
+    
+    document.title = `AEGA - ${label}`;
+  }, [pathname, topNavigationItems, bottomNavigationItems]);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }

@@ -187,9 +187,50 @@ export function removeAuthToken(): void {
 }
 
 /**
- * Checks if user is authenticated
- * @returns True if auth token exists
+ * Checks if the user is authenticated (token exists)
  */
 export function isAuthenticated(): boolean {
-  return getAuthToken() !== null;
+  return !!getAuthToken();
+}
+
+export async function requestPasswordReset(email: string): Promise<{ success: boolean; message: string; otp?: string }> {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+  const response = await fetch(`${base.replace(/\/$/, '')}/api/password/request-reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to request password reset");
+  }
+  return data;
+}
+
+export async function verifyOtp(email: string, otp: string): Promise<{ success: boolean; message: string; resetToken?: string }> {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+  const response = await fetch(`${base.replace(/\/$/, '')}/api/password/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Invalid OTP");
+  }
+  return data;
+}
+
+export async function resetPassword(passwordData: any): Promise<{ success: boolean; message: string }> {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+  const response = await fetch(`${base.replace(/\/$/, '')}/api/password/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(passwordData),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to reset password");
+  }
+  return data;
 }

@@ -5,6 +5,11 @@ import Membership from "@/components/members/membership";
 import Professional from "@/components/members/professional";
 import PreCase from "@/components/members/PreCase";
 import Testimonials from "@/components/members/testimonials";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "For Members",
+};
 
 async function getMembersData() {
   try {

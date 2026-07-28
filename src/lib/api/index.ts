@@ -9,6 +9,9 @@ export {
   getStoredUserData,
   removeAuthToken,
   isAuthenticated,
+  requestPasswordReset,
+  verifyOtp,
+  resetPassword,
 } from "./authService";
 
 // File Service

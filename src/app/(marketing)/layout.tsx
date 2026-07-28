@@ -4,7 +4,10 @@ import Header from "@/components/layout/Header"; // Adjust import path as needed
 import Footer from "@/components/layout/Footer"; // Adjust import path as needed
 
 export const metadata: Metadata = {
-  title: "AEGA - Global Alliance",
+  title: {
+    default: "Agents & Educators Global Alliance",
+    template: "AEGA - %s",
+  },
   description: "Agents & Educators Global Alliance",
 };
 

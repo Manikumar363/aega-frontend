@@ -1,5 +1,6 @@
 interface TrustComplianceProps {
   data?: {
+    title?: string;
     description?: string;
     image?: string;
     points?: Array<{
@@ -19,66 +20,56 @@ export default function TrustCompliance({ data }: TrustComplianceProps) {
   };
 
   const imageSrc = formatImage(data?.image, "/landingPage/why-aega.png");
+  const sectionTitle = data?.title || "OUR IMPACT";
   const description = data?.description || "AT AEGA, WE BELIEVE THAT INTERNATIONAL STUDENT RECRUITMENT IS NOT MERELY A TRANSACTION—IT IS A LIFE-CHANGING JOURNEY THAT DEMANDS THE HIGHEST STANDARDS OF PROTECTION AND ETHICS. OUR IMPACT IS MEASURED BY THE STABILITY WE BRING TO INSTITUTIONS AND THE FUTURES WE SECURE FOR STUDENTS WORLDWIDE.";
-  
+
   const IMPACT = Array.isArray(data?.points) && data.points.length > 0 ? data.points : [
-    {
-      title: "ESTABLISH A GLOBAL STANDARD",
-      description:
-        "We aim to become the world's leading alliance, making AEGA membership the trusted benchmark for recruitment integrity and sponsor compliance.",
-    },
-    {
-      title: "TRANSFORM THE INDUSTRY",
-      description:
-        "We envision a future where every recruitment agent and educational sponsor operates with the tools and insights necessary for excellence.",
-    },
-    {
-      title: "EMPOWER THROUGH CONFIDENCE",
-      description:
-        "We strive to equip our partners to facilitate smooth, compliant, and enriching educational experiences for students worldwide.",
-    },
+    { title: "UKVI ALIGNED", description: "" },
+    { title: "AQF FRAMEWORK", description: "" },
+    { title: "GLOBAL STANDARDS", description: "" },
+    { title: "EDUCATION AGENCIES", description: "" },
+    { title: "HIGHER EDUCATION", description: "" },
+    { title: "INTERNATIONAL COMPLIANCE", description: "" },
   ];
 
   return (
-    <section className="w-full bg-[#0A1628] py-16">
+    <section className="w-full bg-[#0A1628] py-20 border-t border-white/5">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
-        {/* Section Heading and Content Row */}
-        <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-8">
-          <div className="w-full md:w-1/2">
-            <h2 className="text-left text-3xl md:text-2xl font-bold text-white mb-4 md:mb-0 tracking-tight">OUR IMPACT</h2>
-          </div>
-          <div className="w-full md:w-1/2 flex flex-col items-start">
-            <p className="text-white/90 text-lg md:text-xl font-bold leading-snug text-left" style={{lineHeight: '1.3'}}>
-              {description}
-            </p>
-          </div>
+
+        {/* Section Heading and Content Row - Centered */}
+        <div className="w-full flex flex-col items-center text-center mb-16 max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-5xl font-semibold text-white tracking-tight uppercase mb-4">
+            {sectionTitle}
+          </h2>
+          <p className="text-white/70 text-sm md:text-base font-medium leading-relaxed max-w-2xl">
+            {description}
+          </p>
         </div>
 
         {/* Banner Image */}
-        <div className="relative mb-12 overflow-hidden shadow-2xl aspect-[7/2] rounded-lg">
+        <div className="relative mb-16 overflow-hidden shadow-2xl aspect-[21/9] md:aspect-[21/7] rounded-2xl border border-white/10 group">
           <img
             src={imageSrc}
-            alt="Our Impact"
-            className="w-full h-full object-cover opacity-100"
+            alt={sectionTitle}
+            className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent opacity-40"></div>
         </div>
 
-        {/* Mission Cards - 3 Column Grid */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        {/* 6 Column Grid of Points */}
+        <div className="grid grid-cols-1 md:grid-cols-3 border border-white/10 overflow-hidden rounded-lg">
           {IMPACT.map((impact, index) => (
             <div
               key={index}
-              className="space-y-4 border-l-2 border-white/20 pl-6 text-left"
+              className="flex items-center justify-center text-center p-8 border-b border-white/10 md:border-r border-white/10 last:border-b-0 md:[&:nth-child(3n)]:border-r-0 md:[&:nth-child(n+4)]:border-b-0 min-h-[100px] hover:bg-white/[0.02] transition-all duration-300"
             >
-              <h3 className="text-lg font-bold uppercase tracking-wide text-white md:text-xl">
+              <h3 className="text-white font-semibold text-sm md:text-base tracking-wider uppercase">
                 {impact.title}
               </h3>
-              <p className="text-sm leading-relaxed text-white/70 md:text-base">
-                {impact.description}
-              </p>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );

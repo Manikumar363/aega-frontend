@@ -22,7 +22,7 @@ export default function Hero({ data }: HeroProps) {
   
   const heading = data?.heading || "A Global Alliance\nElevating Standards\nIn International\nStudent Recruitment";
   const description = data?.description || "AEGA represents the gold standard in international education, uniting agents and educators to foster trust, excellence, and ethical practices globally.";
-  const redirect = data?.redirectionUrl || "#";
+  const redirect = data?.redirectionUrl || "/about";
 
   return (
     <section className="relative w-full h-[95vh] flex items-center bg-[#03091F] overflow-hidden">

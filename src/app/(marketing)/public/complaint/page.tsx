@@ -52,18 +52,37 @@ export default function ComplaintPage() {
       toast.error("First name is required");
       return false;
     }
+    const nameRegex = /^[A-Za-z\s\-]+$/;
+    if (!nameRegex.test(formData.firstName.trim())) {
+      toast.error("First name must only contain alphabetic characters, spaces, or hyphens");
+      return false;
+    }
+
     if (!formData.lastName.trim()) {
       toast.error("Last name is required");
       return false;
     }
+    if (!nameRegex.test(formData.lastName.trim())) {
+      toast.error("Last name must only contain alphabetic characters, spaces, or hyphens");
+      return false;
+    }
+
     if (!formData.email.trim()) {
       toast.error("Email address is required");
       return false;
     }
+
     if (!formData.phoneNumber.trim()) {
       toast.error("Phone number is required");
       return false;
     }
+    const cleanPhone = formData.phoneNumber.replace(/[\s\-()]/g, "");
+    const phoneRegex = /^\+?[0-9]{7,15}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      toast.error("Please enter a valid phone number (7-15 digits, with or without a country code)");
+      return false;
+    }
+
     if (!formData.countryOfResidence.trim()) {
       toast.error("Country of residence is required");
       return false;
@@ -121,6 +140,7 @@ export default function ComplaintPage() {
         description: formData.complaintDescription,
         evidenceFiles: evidenceFiles,
         acceptedDeclaration: formData.termsAccepted,
+        targetType: "agent",
       };
 
       // Submit complaint

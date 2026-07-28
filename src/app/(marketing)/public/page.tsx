@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Testimonial from "@/components/university/testimonials";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "For the Public",
+};
 
 async function getPublicData() {
   try {

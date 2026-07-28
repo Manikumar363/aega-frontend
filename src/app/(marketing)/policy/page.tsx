@@ -1,6 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
+import TestimonialSection from "@/components/members/TestimonialSection";
+import Leadership from "@/components/about/Leadership";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Policy & Documentation",
+};
 
 interface PolicyItem {
   title: string;
@@ -129,18 +136,18 @@ export default async function PolicyPage() {
 
   const agentPolicies = agentCompliances.length > 0
     ? agentCompliances.map((item: any) => ({
-        title: item.name,
-        description: item.description,
-        link: "#",
-      }))
+      title: item.name,
+      description: item.description,
+      link: "#",
+    }))
     : DEFAULT_AGENT_POLICIES;
 
   const universityPolicies = universityCompliances.length > 0
     ? universityCompliances.map((item: any) => ({
-        title: item.name,
-        description: item.description,
-        link: "#",
-      }))
+      title: item.name,
+      description: item.description,
+      link: "#",
+    }))
     : DEFAULT_UNIVERSITY_POLICIES;
 
   return (
@@ -249,6 +256,7 @@ export default async function PolicyPage() {
           </div>
         </section>
         */}
+        <Leadership />
       </div>
     </div>
   );

@@ -88,12 +88,15 @@ export default function AgentCDPPage() {
   const [selectedViewCourse, setSelectedViewCourse] = useState<CdpCourse | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
   const getImageSrc = (path?: string) => {
     if (!path) return "";
     if (/^https?:\/\//.test(path) || path.startsWith("//")) return path;
-    if (path.startsWith("/")) return `${baseUrl}${path}`;
-    return `${baseUrl}/${path}`;
+    const base = (
+      process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || 
+      "https://divine-care.ap-south-1.storage.onantryk.com"
+    ).replace(/\/$/, "");
+    const rel = path.startsWith("/") ? path : `/${path}`;
+    return `${base}${rel}`;
   };
 
   const grouped = courses.reduce((acc: Record<string, CdpCourse[]>, c) => {

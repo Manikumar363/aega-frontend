@@ -349,6 +349,17 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 </li>
               );
             })}
+            <li>
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-white/80 hover:bg-white/5 hover:text-white transition-colors text-left cursor-pointer"
+              >
+                <span className="w-6 h-6 flex items-center justify-center text-white/80">
+                  <LogoutIcon />
+                </span>
+                <span className="text-sm">Logout</span>
+              </button>
+            </li>
           </ul>
 
         </nav>

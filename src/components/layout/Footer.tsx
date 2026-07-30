@@ -74,8 +74,13 @@ export default function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-center text-gray-500 text-xs pt-8 border-t border-white/5">
+      <div className="flex flex-col md:flex-row justify-between items-center text-gray-500 text-xs pt-8 border-t border-white/5 gap-4">
         <p>© All Rights Reserved by AEGA</p>
+        <div className="flex gap-4">
+          <a href="/privacy-policy" className="hover:text-[#F58A07] transition-colors">Privacy Policy</a>
+          <span>•</span>
+          <a href="/terms-of-use" className="hover:text-[#F58A07] transition-colors">Terms of Use</a>
+        </div>
         <p>Designed by <a href="https://quantumitinnovation.com/" target="_blank" rel="noopener noreferrer" className="hover:text-[#F58A07] transition-colors">Quantum</a></p>
       </div>
     </footer>

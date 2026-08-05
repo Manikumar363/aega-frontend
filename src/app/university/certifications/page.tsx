@@ -7,11 +7,12 @@ import type { CdpEnrollment } from "@/lib/api/types";
 
 const getFullImageUrl = (path?: string) => {
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
+  let cleanPath = path.replace(/(\/)?uploads\/uploads\//g, 'uploads/');
+  if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+    return cleanPath;
   }
   const base = process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || 'https://divine-care.ap-south-1.storage.onantryk.com';
-  return `${base.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+  return `${base.replace(/\/$/, '')}/${cleanPath.replace(/^\//, '')}`;
 };
 
 export default function UniversityCertificationsPage() {

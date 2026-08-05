@@ -28,6 +28,7 @@ interface AuditCheck {
     status: string;
     severity: string;
     comment?: string;
+    verificationNote?: string;
   }[];
 }
 
@@ -37,6 +38,39 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [activeSubTab, setActiveSubTab] = useState<string>("own");
+  const [agenciesList, setAgenciesList] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchAgencies = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/agent-management/agents`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : data.data || [];
+          setAgenciesList(
+            list.map((a: any, idx: number) => {
+              const nameStr = `${a.firstName || ''} ${a.lastName || ''}`.trim() || a.user?.name || a.agencyName || a.emailId || `Agency ${idx + 1}`;
+              return {
+                id: String(a.id || a._id || idx + 1),
+                name: nameStr,
+              };
+            })
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching registered agents:", err);
+      }
+    };
+
+    fetchAgencies();
+  }, []);
+
   useEffect(() => {
     const fetchAuditsData = async () => {
       try {
@@ -45,10 +79,20 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         const token = localStorage.getItem("authToken");
         if (!token) return;
 
-        // Build query string
+        // Build query string based on active tab selection
         const queryParams = new URLSearchParams();
-        if (targetType) queryParams.append("targetType", targetType);
-        if (targetId) queryParams.append("targetId", targetId);
+        
+        if (activeSubTab === "own" || !activeSubTab) {
+          if (targetType) queryParams.append("targetType", targetType);
+          if (targetId) queryParams.append("targetId", targetId);
+        } else if (activeSubTab !== "all") {
+          const selectedAgency = agenciesList.find((a) => a.name === activeSubTab);
+          if (selectedAgency) {
+            queryParams.append("targetType", "agent");
+            queryParams.append("targetId", selectedAgency.id);
+          }
+        }
+        
         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
         // 1. Fetch Summary KPIs
@@ -96,7 +140,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
     };
 
     fetchAuditsData();
-  }, [targetId, targetType]);
+  }, [targetId, targetType, activeSubTab, agenciesList]);
 
   const getRiskColor = (level: string) => {
     switch (level?.toUpperCase()) {
@@ -126,36 +170,110 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
     );
   }
 
-  const getPreviousOverallScore = () => {
-    if (!summary || !completedChecks || completedChecks.length <= 1) {
-      return "100.00%";
-    }
-    const latestCheckScore = completedChecks[0].complianceScore;
-    const currentOverall = summary.complianceScore;
-    const prevScore = 2 * currentOverall - latestCheckScore;
-    return `${Math.max(0, Math.min(100, prevScore)).toFixed(2)}%`;
-  };
-
   // Partition audits into Latest and Previous groups
   const latestChecks: AuditCheck[] = [];
   const previousChecks: AuditCheck[] = [];
   const seenCategories = new Set<string>();
 
   completedChecks.forEach((check) => {
-    const catIdStr = String(check.categoryId);
-    if (!seenCategories.has(catIdStr)) {
-      seenCategories.add(catIdStr);
+    const catKey = check.categoryId ? String(check.categoryId) : check.categoryName;
+    if (!seenCategories.has(catKey)) {
+      seenCategories.add(catKey);
       latestChecks.push(check);
     } else {
       previousChecks.push(check);
     }
   });
 
+  const renderAuditCard = (item: AuditCheck, isLatest: boolean = false) => {
+    const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
+    const commentsList = item.answers?.map((a: any) => a.comment || a.verificationNote || a.note).filter(Boolean) || [];
+
+    return (
+      <div
+        key={item._id}
+        className="bg-[#14123A] border border-[#3A3760] p-5 flex flex-col justify-between min-h-[160px] hover:border-[#F68E2D]/40 transition-all rounded space-y-3"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-bold text-white tracking-wide uppercase leading-tight">
+              {item.categoryName}
+            </h4>
+            <span className="text-xs text-white/50 block mt-1">
+              Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
+            </span>
+          </div>
+          {isLatest && (
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#F68E2D]/20 text-[#F68E2D] border border-[#F68E2D]/30">
+              Latest
+            </span>
+          )}
+        </div>
+
+        {/* Centered Status Badge in Middle */}
+        <div className="my-2 flex items-center justify-center text-center">
+          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 shadow-sm">
+            <span>{item.complianceScore.toFixed(2)}% Score</span>
+          </div>
+        </div>
+
+        {/* Admin Comments / Verification Notes */}
+        {commentsList.length > 0 ? (
+          <div className="bg-[#1A163E] border border-[#383B63] p-2.5 rounded text-xs text-white/80">
+            <span className="font-semibold text-[#F68E2D] block mb-1">Admin Verification Notes / Comments:</span>
+            <p className="whitespace-pre-line text-white/75">{commentsList.join(" | ")}</p>
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between text-xs text-white/60 pt-2 border-t border-[#3A3760]/30">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-4 h-4 text-white/40" />
+            <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+          </div>
+          <span className="text-[11px] text-[#F68E2D] font-medium">
+            {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* Top Filter Navigation Bar (Own / All / Sub-Agents) */}
+      <div className="flex items-center gap-8 border-b border-[#2C2A45] pb-2 text-sm overflow-x-auto">
+        <button
+          onClick={() => setActiveSubTab("own")}
+          className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeSubTab === "own" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
+          }`}
+        >
+          Own
+        </button>
+        <button
+          onClick={() => setActiveSubTab("all")}
+          className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeSubTab === "all" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
+          }`}
+        >
+          All
+        </button>
+        {agenciesList.map((agency) => (
+          <button
+            key={agency.id}
+            onClick={() => setActiveSubTab(agency.name)}
+            className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
+              activeSubTab === agency.name ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
+            }`}
+          >
+            {agency.name}
+          </button>
+        ))}
+      </div>
+
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 border border-[#3A3760] bg-[#14123A] divide-y sm:divide-y-0 sm:divide-x divide-[#3A3760]">
-        {/* Current Overall Score */}
+      <div className="grid grid-cols-1 md:grid-cols-4 border border-[#3A3760] bg-[#14123A] divide-y md:divide-y-0 md:divide-x divide-[#3A3760]">
+        {/* Overall Score */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
@@ -163,18 +281,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
               {summary ? `${summary.complianceScore.toFixed(2)}%` : "100.00%"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Current Overall Score</span>
-        </div>
-
-        {/* Previous Overall Score */}
-        <div className="px-6 py-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
-              {getPreviousOverallScore()}
-            </span>
-          </div>
-          <span className="text-white/70 text-sm">Previous Overall Score</span>
+          <span className="text-white/70 text-sm">Overall Score</span>
         </div>
 
         {/* Total Audits */}
@@ -213,10 +320,10 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
 
       {/* Completed History sections */}
       <div className="space-y-8">
-        {/* Latest Audits Section */}
+        {/* 1. Latest Audits */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
-            Latest Audits ({latestChecks.length})
+            1. Latest Audits ({latestChecks.length})
           </h3>
 
           {latestChecks.length === 0 ? (
@@ -225,86 +332,20 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {latestChecks.map((item) => {
-                const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
-                return (
-                  <div
-                    key={item._id}
-                    className="bg-[#14123A] border border-[#3A3760] p-5 flex flex-col justify-between h-36 hover:border-[#F68E2D]/40 transition-all rounded"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h4 className="text-sm font-bold text-white tracking-wide uppercase leading-tight">
-                          {item.categoryName}
-                        </h4>
-                        <span className="text-xs text-white/50">
-                          Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">
-                        <span>{item.complianceScore.toFixed(2)}% Score</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-white/60 mt-2 pt-2 border-t border-[#3A3760]/30">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-white/40" />
-                        <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <span className="text-[11px] text-[#F68E2D]">
-                        {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+              {latestChecks.map((item) => renderAuditCard(item, true))}
             </div>
           )}
         </div>
 
-        {/* Previous Audits History Section */}
+        {/* 2. Previous Audits History */}
         {previousChecks.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase border-t border-[#3A3760]/30 pt-6">
-              Previous Audits History ({previousChecks.length})
+          <div className="space-y-4 pt-4 border-t border-[#3A3760]/50">
+            <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
+              2. Previous Audits History ({previousChecks.length})
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {previousChecks.map((item) => {
-                const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
-                return (
-                  <div
-                    key={item._id}
-                    className="bg-[#14123A]/60 border border-[#3A3760]/60 p-5 flex flex-col justify-between h-36 hover:border-[#F68E2D]/20 transition-all rounded opacity-80"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h4 className="text-sm font-bold text-white/90 tracking-wide uppercase leading-tight">
-                          {item.categoryName}
-                        </h4>
-                        <span className="text-xs text-white/40">
-                          Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/5 text-green-400/80 border border-green-500/10">
-                        <span>{item.complianceScore.toFixed(2)}% Score</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-white/50 mt-2 pt-2 border-t border-[#3A3760]/20">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-white/30" />
-                        <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <span className="text-[11px] text-[#F68E2D]/80">
-                        {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+              {previousChecks.map((item) => renderAuditCard(item, false))}
             </div>
           </div>
         )}

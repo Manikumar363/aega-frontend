@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
   description: "Elevating Standards in International Student Recruitment",
   icons: {
-    icon: "/logo/AEGA Logo.svg",
+    icon: "/logo/AEGA%20Logo.svg",
   },
 };
 

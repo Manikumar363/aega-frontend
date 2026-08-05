@@ -203,10 +203,17 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
                       </span>
                     </div>
 
-                    <div className="flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">
+                    <div className="flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 text-center mx-auto">
                       <span>{item.complianceScore.toFixed(2)}% Score</span>
                     </div>
                   </div>
+
+                  {item.answers && item.answers.some((a) => a.comment) && (
+                    <div className="mt-2 text-xs bg-[#181537] p-2 rounded text-white/80 border border-[#2C2A45]">
+                      <span className="font-semibold text-[#F68E2D]">Comment / Note: </span>
+                      {item.answers.find((a) => a.comment)?.comment}
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between text-xs text-white/60 mt-2 pt-2 border-t border-[#3A3760]/30">
                     <div className="flex items-center gap-1.5">

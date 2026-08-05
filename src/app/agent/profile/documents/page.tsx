@@ -53,18 +53,33 @@ export default function DocumentsPage() {
 
       const data = await response.json();
       
-      // Transform supportingDocuments to include details
-      const docs: DocumentWithDetails[] = (data.supportingDocuments || []).map(
-        (doc: SupportingDocument, index: number) => ({
-          ...doc,
-          id: index + 1,
-          date: new Date().toLocaleDateString("en-US", {
+      // Transform documents to include details
+      const docs: DocumentWithDetails[] = (data.documents || []).map(
+        (doc: any, index: number) => {
+          let sizeStr = "Unknown";
+          if (doc.size) {
+            if (doc.size >= 1024 * 1024) {
+              sizeStr = `${(doc.size / (1024 * 1024)).toFixed(2)} MB`;
+            } else {
+              sizeStr = `${(doc.size / 1024).toFixed(2)} KB`;
+            }
+          }
+
+          const dateObj = doc.uploadedAt ? new Date(doc.uploadedAt) : new Date();
+          const dateStr = dateObj.toLocaleDateString("en-US", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",
-          }),
-          size: "Unknown",
-        })
+          });
+
+          return {
+            id: index + 1,
+            label: doc.documentName || "Document",
+            path: doc.fileUrl || "",
+            date: dateStr,
+            size: sizeStr,
+          };
+        }
       );
 
       setDocuments(docs);
@@ -81,34 +96,9 @@ export default function DocumentsPage() {
   const handleDownload = async (docPath: string, docLabel: string, docId: number) => {
     setDownloadingId(docId);
     try {
-      const fullUrl = `${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${docPath}`;
-      
-      // Fetch the file
-      const response = await fetch(fullUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to download file: ${response.statusText}`);
-      }
-
-      // Get the file blob
-      const blob = await response.blob();
-
-      // Create blob URL and download
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      
-      // Get file extension from path or use default
-      const fileName = docLabel || "document";
-      const hasExtension = fileName.includes(".");
-      const fileExtension = docPath.split(".").pop() || "pdf";
-      a.download = hasExtension ? fileName : `${fileName}.${fileExtension}`;
-
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
-      
-      toast.success(`${docLabel} downloaded successfully!`);
+      const fullUrl = `${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${docPath.replace(/^\/+/, '')}`;
+      window.open(fullUrl, "_blank");
+       toast.success(`${docLabel} downloaded successfully!`);
     } catch (error) {
       console.error("Download error:", error);
       toast.error(
@@ -143,11 +133,6 @@ export default function DocumentsPage() {
 
   // Handle document upload
   const handleUploadDocument = async () => {
-    if (!documentName.trim()) {
-      toast.error("Document name is required");
-      return;
-    }
-
     if (!selectedFile) {
       toast.error("Please select a file");
       return;
@@ -175,8 +160,10 @@ export default function DocumentsPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            documentName: documentName,
+            documentName: selectedFile.name,
             fileUrl: fileKey,
+            originalName: selectedFile.name,
+            size: selectedFile.size,
           }),
         }
       );
@@ -356,20 +343,7 @@ export default function DocumentsPage() {
 
             <h2 className="text-white text-2xl font-bold mb-6 pr-8">Upload Document</h2>
 
-            {/* Document Name Input */}
-            <div className="mb-6">
-              <label className="block text-white text-sm mb-2">
-                Document Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={documentName}
-                onChange={(e) => setDocumentName(e.target.value)}
-                placeholder="e.g., Passport, License"
-                disabled={isUploading}
-                className="w-full bg-[#0A0820] border border-gray-700 rounded-md px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D] disabled:opacity-50"
-              />
-            </div>
+
 
             {/* File Upload Input */}
             <div className="mb-6">

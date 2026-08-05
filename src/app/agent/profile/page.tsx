@@ -19,6 +19,7 @@ interface ProfileData {
   state?: string;
   city?: string;
   postCode?: string;
+  businessType?: string;
 }
 
 export default function AgentProfilePage() {
@@ -41,10 +42,12 @@ export default function AgentProfilePage() {
     state: "",
     city: "",
     postCode: "",
+    businessType: "",
   });
 
   const [originalData, setOriginalData] = useState<ProfileData>(profileData);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   // Fetch profile data on component mount
@@ -84,6 +87,7 @@ export default function AgentProfilePage() {
           state: data.state || "",
           city: data.city || "",
           postCode: data.postCode || "",
+          businessType: data.businessType || "",
         };
 
         setUserId(data.id);
@@ -92,7 +96,9 @@ export default function AgentProfilePage() {
 
         // Load profile image if it exists
         if (data.profileImage) {
-          setProfileImage(`${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${data.profileImage}`);
+          const imgUrl = `${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${data.profileImage}`;
+          setProfileImage(imgUrl);
+          setOriginalImage(imgUrl);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -145,9 +151,30 @@ export default function AgentProfilePage() {
       return;
     }
 
+    const isCompany = profileData.businessType === "b2b" || profileData.businessType === "b2c";
+
     // Validate required fields
-    if (!profileData.firstName || !profileData.lastName || !profileData.email) {
+    if (
+      !profileData.firstName ||
+      !profileData.lastName ||
+      !profileData.email ||
+      !profileData.phone ||
+      (isCompany && !profileData.companyName) ||
+      (!isCompany && !profileData.dateOfBirth) ||
+      !profileData.buildingNumber ||
+      !profileData.streetName ||
+      !profileData.streetAddress ||
+      !profileData.city ||
+      !profileData.state ||
+      !profileData.postCode
+    ) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Phone number character restriction validation
+    if (!/^[0-9+\s]+$/.test(profileData.phone)) {
+      toast.error("Phone number can only contain digits, spaces, and '+'");
       return;
     }
 
@@ -180,7 +207,11 @@ export default function AgentProfilePage() {
       // Prepare update data
       const updateData = {
         ...profileData,
-        ...(profileImagePath && { profileImage: profileImagePath }),
+        profileImage: profileImage
+          ? (profileImageFile
+              ? profileImagePath
+              : profileImage.replace(`${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/`, ""))
+          : null,
       };
 
       const response = await fetch(
@@ -205,6 +236,15 @@ export default function AgentProfilePage() {
 
       setOriginalData(profileData);
       setProfileImageFile(null);
+      if (updateData.profileImage) {
+        const imgUrl = `${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${updateData.profileImage}`;
+        setProfileImage(imgUrl);
+        setOriginalImage(imgUrl);
+      } else {
+        setProfileImage(null);
+        setOriginalImage(null);
+      }
+
       toast.success("Profile updated successfully!");
       setActiveTab("profile");
     } catch (error) {
@@ -219,9 +259,10 @@ export default function AgentProfilePage() {
 
   const handleDiscardChanges = () => {
     setProfileData(originalData);
-    setProfileImage(null);
+    setProfileImage(originalImage);
     setProfileImageFile(null);
     toast.success("Changes discarded");
+    setActiveTab("profile");
   };
 
   const handleDeleteAccount = async () => {
@@ -253,7 +294,7 @@ export default function AgentProfilePage() {
       }
 
       toast.success("Account deleted successfully");
-      localStorage.removeItem("authToken");
+      localStorage.clear();
       router.push("/");
     } catch (error) {
       console.error("Error deleting account:", error);
@@ -339,87 +380,163 @@ export default function AgentProfilePage() {
             </div>
 
             {/* View-Only Form */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-white text-sm mb-2">First Name</label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.firstName}
+            {profileData.businessType === "b2b" || profileData.businessType === "b2c" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-white text-sm mb-2">Full Name</label>
+                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                    {`${profileData.firstName} ${profileData.lastName}`.trim() || "N/A"}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm mb-2">Company Name</label>
+                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                    {profileData.companyName || "N/A"}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm mb-2">Email</label>
+                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white flex items-center justify-between">
+                    <span>{profileData.email}</span>
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm mb-2">Phone</label>
+                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                    {profileData.phone || "N/A"}
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-white text-sm mb-2">Company Full Address</label>
+                  <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
+                    {[
+                      profileData.buildingNumber,
+                      profileData.streetName,
+                      profileData.streetAddress,
+                      profileData.city,
+                      profileData.state,
+                      profileData.postCode
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "N/A"}
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-white text-sm mb-2">First Name</label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                      {profileData.firstName}
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-white text-sm mb-2">Last Name</label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.lastName}
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-white text-sm mb-2">Last Name</label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                      {profileData.lastName}
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-white text-sm mb-2">Email</label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.email}
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-white text-sm mb-2">Email</label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white flex items-center justify-between">
+                      <span>{profileData.email}</span>
+                      <svg
+                        className="w-5 h-5 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-white text-sm mb-2">Phone</label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.phone || "N/A"}
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-white text-sm mb-2">Phone</label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                      {profileData.phone || "N/A"}
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Company Name
-                </label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.companyName || "N/A"}
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-white text-sm mb-2">
+                      Company Name
+                    </label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                      {profileData.companyName || "N/A"}
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Date of Birth
-                </label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                  {profileData.dateOfBirth || "N/A"}
+                  <div>
+                    <label className="block text-white text-sm mb-2">
+                      Date of Birth
+                    </label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
+                      {profileData.dateOfBirth || "N/A"}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {(profileData.buildingNumber ||
-              profileData.streetName ||
-              profileData.streetAddress ||
-              profileData.state ||
-              profileData.city ||
-              profileData.postCode) && (
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Address
-                </label>
-                <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
-                  {profileData.buildingNumber && (
-                    <p>Building Number: {profileData.buildingNumber}</p>
-                  )}
-                  {profileData.streetName && (
-                    <p>Street Name: {profileData.streetName}</p>
-                  )}
-                  {profileData.streetAddress && (
-                    <p>Street Address: {profileData.streetAddress}</p>
-                  )}
-                  {(profileData.state ||
-                    profileData.city ||
-                    profileData.postCode) && (
-                    <p>
-                      {profileData.state && `State: ${profileData.state}`}
-                      {profileData.state && profileData.city && ", "}
-                      {profileData.city && `City: ${profileData.city}`}
-                    </p>
-                  )}
-                  {profileData.postCode && (
-                    <p>Post Code: {profileData.postCode}</p>
-                  )}
-                </div>
+                {(profileData.buildingNumber ||
+                  profileData.streetName ||
+                  profileData.streetAddress ||
+                  profileData.state ||
+                  profileData.city ||
+                  profileData.postCode) && (
+                  <div>
+                    <label className="block text-white text-sm mb-2">
+                      Address
+                    </label>
+                    <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
+                      {profileData.buildingNumber && (
+                        <p>Building Number: {profileData.buildingNumber}</p>
+                      )}
+                      {profileData.streetName && (
+                        <p>Street Name: {profileData.streetName}</p>
+                      )}
+                      {profileData.streetAddress && (
+                        <p>Street Address: {profileData.streetAddress}</p>
+                      )}
+                      {(profileData.state ||
+                        profileData.city ||
+                        profileData.postCode) && (
+                        <p>
+                          {profileData.state && `State: ${profileData.state}`}
+                          {profileData.state && profileData.city && ", "}
+                          {profileData.city && `City: ${profileData.city}`}
+                        </p>
+                      )}
+                      {profileData.postCode && (
+                        <p>Post Code: {profileData.postCode}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -536,10 +653,8 @@ export default function AgentProfilePage() {
                   <input
                     type="email"
                     value={profileData.email}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData, email: e.target.value })
-                    }
-                    className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 pr-10 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                    disabled
+                    className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 pr-10 text-white opacity-50 cursor-not-allowed focus:outline-none"
                   />
                   <svg
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500"
@@ -564,9 +679,12 @@ export default function AgentProfilePage() {
                 <input
                   type="tel"
                   value={profileData.phone}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, phone: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[0-9+\s]*$/.test(val)) {
+                      setProfileData({ ...profileData, phone: val });
+                    }
+                  }}
                   className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
                 />
               </div>
@@ -585,26 +703,29 @@ export default function AgentProfilePage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={profileData.dateOfBirth}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, dateOfBirth: e.target.value })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
+              {profileData.businessType !== "b2b" && profileData.businessType !== "b2c" && (
+                <div>
+                  <label className="block text-white text-sm mb-2">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.dateOfBirth}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, dateOfBirth: e.target.value })
+                    }
+                    className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                  />
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="block text-white text-sm mb-2">
-                Address <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Address Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  Building Number <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="Building Number"
@@ -617,6 +738,12 @@ export default function AgentProfilePage() {
                   }
                   className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  Street Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="Street Name"
@@ -629,6 +756,12 @@ export default function AgentProfilePage() {
                   }
                   className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  Street Address <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="Street Address"
@@ -641,6 +774,12 @@ export default function AgentProfilePage() {
                   }
                   className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  State <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="State"
@@ -653,6 +792,12 @@ export default function AgentProfilePage() {
                   }
                   className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="City"
@@ -665,6 +810,12 @@ export default function AgentProfilePage() {
                   }
                   className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-white text-sm mb-2">
+                  Post Code <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="Post Code"

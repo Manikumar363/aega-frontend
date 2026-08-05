@@ -90,12 +90,13 @@ export default function UniversityCDPPage() {
 
   const getImageSrc = (path?: string) => {
     if (!path) return "";
-    if (/^https?:\/\//.test(path) || path.startsWith("//")) return path;
+    let cleanPath = path.replace(/(\/)?uploads\/uploads\//g, "uploads/");
+    if (/^https?:\/\//.test(cleanPath) || cleanPath.startsWith("//")) return cleanPath;
     const base = (
       process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || 
       "https://divine-care.ap-south-1.storage.onantryk.com"
     ).replace(/\/$/, "");
-    const rel = path.startsWith("/") ? path : `/${path}`;
+    const rel = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
     return `${base}${rel}`;
   };
 
@@ -179,7 +180,7 @@ export default function UniversityCDPPage() {
     try {
       // 1. Upload file using uploadFile helper
       const fileKey = await uploadFile(certificateFile);
-      const relativeUrl = `/uploads/${fileKey}`;
+      const relativeUrl = fileKey.replace(/^\/+/, '');
 
       // 2. Call backend update progress API
       await updateProgress(selectedCompletionCourse.progressId, {

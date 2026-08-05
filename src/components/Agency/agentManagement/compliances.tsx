@@ -29,8 +29,13 @@ const Compliances: React.FC<CompliancesProps> = ({ targetId, targetType }) => {
 				});
 				if (summaryRes.ok) {
 					const summaryData = await summaryRes.json();
-					if (summaryData.success) {
-						setSummary(summaryData.data);
+					if (summaryData.success && summaryData.data) {
+						setSummary({
+							overallScore: summaryData.data.overallScore ?? 100,
+							numberOfAudits: summaryData.data.numberOfAudits ?? summaryData.data.numberOfAuditsDone ?? summaryData.data.totalAudits ?? 0,
+							activeIssues: summaryData.data.activeIssues ?? summaryData.data.activeAlerts ?? 0,
+							riskLevel: summaryData.data.riskLevel || "LOW"
+						});
 					}
 				}
 

@@ -32,10 +32,14 @@ export default function ResetPasswordPage() {
       toast.error("Confirm password is required");
       return false;
     }
-    if (passwords.new.length < 6) {
-      toast.error("New password must be at least 6 characters");
+    
+    // Strong password validation
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+[\]{};':",./<>?~`|\\-]).{8,}$/;
+    if (!strongPasswordRegex.test(passwords.new)) {
+      toast.error("New password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters");
       return false;
     }
+
     if (passwords.new !== passwords.confirm) {
       toast.error("New password and confirm password do not match");
       return false;
@@ -78,7 +82,7 @@ export default function ResetPasswordPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update password");
+        throw new Error(errorData.error || errorData.message || "Failed to update password");
       }
 
       toast.success("Password updated successfully!");
@@ -131,6 +135,8 @@ export default function ResetPasswordPage() {
           </button>
         </div>
 
+        <h1 className="text-white text-3xl font-bold">Reset Password</h1>
+
         {/* Description */}
         <p className="text-gray-400 text-sm">
           Ensure your account is using a long, random password to stay secure.
@@ -158,7 +164,7 @@ export default function ResetPasswordPage() {
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                {showCurrentPassword ? (
+                {!showCurrentPassword ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -217,7 +223,7 @@ export default function ResetPasswordPage() {
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                {showNewPassword ? (
+                {!showNewPassword ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -276,7 +282,7 @@ export default function ResetPasswordPage() {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                {showConfirmPassword ? (
+                {!showConfirmPassword ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"

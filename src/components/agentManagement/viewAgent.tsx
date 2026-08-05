@@ -10,6 +10,8 @@ interface Agent {
     agency?: string;
     avatar?: string;
     online?: boolean;
+    location?: string;
+    country?: string;
 }
 
 interface ViewAgentProps {
@@ -65,14 +67,14 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
         return 'N/A';
     };
 
-    const performance = [
-        { label: "Visa refusal (85% - 100%)", value: 75, max: 75, color: "#F68E2D" },
-        { label: "Enrollment (50% - 84%)", value: 24, max: 75, color: "#2563eb" },
-        { label: "withdrawn Student (0% - 49%)", value: 1, max: 75, color: "#2563eb" },
-        { label: "Withdrawn Payment (50% - 79%)", value: 40, max: 75, color: "#F68E2D" },
-        { label: "Academic Withdrawn (80% - 100%)", value: 75, max: 75, color: "#F68E2D" },
-        { label: "Student Output Sucess(80% - 100%)", value: 50, max: 75, color: "#10b981" },
-    ];
+    // const performance = [
+    // { label: "Visa refusal (85% - 100%)", value: 75, max: 75, color: "#F68E2D" },
+    // { label: "Enrollment (50% - 84%)", value: 24, max: 75, color: "#2563eb" },
+    // { label: "withdrawn Student (0% - 49%)", value: 1, max: 75, color: "#2563eb" },
+    // { label: "Withdrawn Payment (50% - 79%)", value: 40, max: 75, color: "#F68E2D" },
+    // { label: "Academic Withdrawn (80% - 100%)", value: 75, max: 75, color: "#F68E2D" },
+    // { label: "Student Output Sucess(80% - 100%)", value: 50, max: 75, color: "#10b981" },
+    // ];
 
     return (
         <div className="space-y-6">
@@ -84,9 +86,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
                     <div>
                         <div className="mb-2">
-                            <span className="font-semibold">
-                                {isAgentRequest ? 'Agent Name' : ('universityName' in agent ? 'University Name' : 'First Name')}
-                            </span>
+                            <span className="font-semibold">Company Name</span>
                             : {getAgentName()}
                         </div>
                         <div>
@@ -95,16 +95,12 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
                     </div>
                     <div>
                         <div className="mb-2">
-                            <span className="font-semibold">
-                                {'universityName' in agent ? 'Agent Role' : 'Last Name'}
-                            </span>
-                            : {getAgentRole()}
+                            <span className="font-semibold">Phone Number :</span>
+                            : {getBusinessType() || (agent as Agent).mobile || 'N/A'}
                         </div>
                         <div>
-                            <span className="font-semibold">
-                                {'agentBusinessType' in agent ? 'Business Type' : 'Phone Number'}
-                            </span>
-                            : {getBusinessType() || (agent as Agent).mobile || 'N/A'}
+                            <span className="font-semibold">Country :</span>
+                            : {('country' in agent ? (agent as any).country : (agent as Agent).location) || 'N/A'}
                         </div>
                     </div>
                 </div>
@@ -155,7 +151,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
                 </div>
             )}
 
-            {/* PERFORMANCE MATRIX */}
+            {/* PERFORMANCE MATRIX 
             <div className="bg-[#181537] rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-white text-lg font-semibold">PERFORMANCE MATIX</h2>
@@ -182,7 +178,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
                         </div>
                     ))}
                 </div>
-            </div>
+            </div>*/}
         </div>
     );
 };

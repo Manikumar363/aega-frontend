@@ -117,6 +117,8 @@ export interface University {
   logoColor: string;
   verified: "green" | "yellow";
   online: boolean;
+  avatar?: string;
+  logo?: string;
 }
 
 export interface UniversityListResponse {

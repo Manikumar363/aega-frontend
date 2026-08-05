@@ -25,6 +25,8 @@ type CompanyRow = {
   email: string;
   region: string;
   initials: string;
+  avatar?: string;
+  designation?: string;
 };
 
 type ViewingCompany = {
@@ -51,6 +53,8 @@ type CompanyApiItem = {
   country: string;
   companyDocument1?: string;
   companyDocument2?: string;
+  profileImage?: string;
+  avatar?: string;
   agentId?: string;
   createdAt?: string;
 };
@@ -58,7 +62,7 @@ type CompanyApiItem = {
 const ENTRIES_OPTIONS = [8, 16, 24];
 
 const makeInitials = (name: string) => {
-  const trimmed = name.trim();
+  const trimmed = (name || "").trim();
   if (!trimmed) return "CMP";
 
   const parts = trimmed.split(/\s+/);
@@ -76,6 +80,7 @@ const makeInitials = (name: string) => {
 export default function CompanyManagementHome() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [agentTypeFilter, setAgentTypeFilter] = useState("All");
   const [entriesPerPage, setEntriesPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
   const [showEntriesDropdown, setShowEntriesDropdown] = useState(false);
@@ -84,88 +89,179 @@ export default function CompanyManagementHome() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Edit & Delete state
+  const [editingCompany, setEditingCompany] = useState<CompanyRow | null>(null);
+  const [deletingCompany, setDeletingCompany] = useState<CompanyRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editForm, setEditForm] = useState({
+    companyName: "",
+    founderName: "",
+    emailId: "",
+    mobileNumber: "",
+    office: "",
+    country: "",
+    designation: "",
+  });
+
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+  const loadCompanies = async () => {
+    if (!API_BASE_URL) {
+      setErrorMessage("API base URL is not configured.");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/companies`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const data = (await response.json().catch(() => null)) as CompanyApiItem[] | { message?: string } | null;
+
+      if (!response.ok) {
+        const message = !Array.isArray(data) && data?.message ? data.message : `Request failed with status ${response.status}`;
+        throw new Error(message);
+      }
+
+      const rows = Array.isArray(data)
+        ? data.map((item, index) => ({
+            id: index + 1,
+            apiId: item._id,
+            name: item.companyName || "N/A",
+            owner: item.founderName || "N/A",
+            mobile: item.mobileNumber || "N/A",
+            email: item.emailId || "N/A",
+            region: item.office || item.country || "N/A",
+            initials: makeInitials(item.companyName || ""),
+            avatar: item.profileImage || item.avatar || "",
+            designation: item.designation || "",
+          }))
+        : [];
+
+      setCompanies(rows);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load companies";
+      setErrorMessage(message);
+      setCompanies([]);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const controller = new AbortController();
-
-    const loadCompanies = async () => {
-      if (!API_BASE_URL) {
-        setErrorMessage("API base URL is not configured.");
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage("");
-
-      try {
-        const token = getAuthToken();
-        const response = await fetch(`${API_BASE_URL}/api/companies`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          signal: controller.signal,
-        });
-
-        const data = (await response.json().catch(() => null)) as CompanyApiItem[] | { message?: string } | null;
-
-        if (!response.ok) {
-          const message = !Array.isArray(data) && data?.message ? data.message : `Request failed with status ${response.status}`;
-          throw new Error(message);
-        }
-
-        const rows = Array.isArray(data)
-          ? data.map((item, index) => ({
-              id: index + 1,
-              apiId: item._id,
-              name: item.companyName,
-              owner: item.founderName,
-              mobile: item.mobileNumber,
-              email: item.emailId,
-              region: item.office,
-              initials: makeInitials(item.companyName),
-            }))
-          : [];
-
-        setCompanies(rows);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        const message = error instanceof Error ? error.message : "Failed to load companies";
-        setErrorMessage(message);
-        setCompanies([]);
-        toast.error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadCompanies();
-
-    return () => controller.abort();
   }, [API_BASE_URL]);
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return companies;
+  const openEditModal = (row: CompanyRow) => {
+    setEditingCompany(row);
+    setEditForm({
+      companyName: row.name,
+      founderName: row.owner,
+      emailId: row.email,
+      mobileNumber: row.mobile,
+      office: row.region,
+      country: "",
+      designation: row.designation || "B2B",
+    });
+  };
 
-    return companies.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) ||
-        item.owner.toLowerCase().includes(query) ||
-        item.email.toLowerCase().includes(query) ||
-        item.region.toLowerCase().includes(query),
-    );
-  }, [companies, search]);
+  const handleUpdateCompanySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCompany || !API_BASE_URL) return;
+
+    setIsUpdating(true);
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/companies/${editingCompany.apiId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || "Failed to update company");
+      }
+
+      toast.success("Company updated successfully");
+      setEditingCompany(null);
+      await loadCompanies();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update company");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteCompanyConfirm = async () => {
+    if (!deletingCompany || !API_BASE_URL) return;
+
+    setIsDeleting(true);
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/companies/${deletingCompany.apiId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || "Failed to delete company");
+      }
+
+      toast.success("Company deleted successfully");
+      setDeletingCompany(null);
+      setCompanies((prev) => prev.filter((item) => item.apiId !== deletingCompany.apiId));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete company");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const filtered = useMemo(() => {
+    let result = companies;
+
+    if (agentTypeFilter !== "All") {
+      result = result.filter((item) =>
+        item.designation?.toLowerCase().includes(agentTypeFilter.toLowerCase())
+      );
+    }
+
+    const query = search.trim().toLowerCase();
+    if (query) {
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.owner.toLowerCase().includes(query) ||
+          item.email.toLowerCase().includes(query) ||
+          item.region.toLowerCase().includes(query),
+      );
+    }
+
+    return result;
+  }, [companies, search, agentTypeFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, entriesPerPage]);
+  }, [search, agentTypeFilter, entriesPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / entriesPerPage));
   const paginatedRows = filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
@@ -225,10 +321,18 @@ export default function CompanyManagementHome() {
             <Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0F1A36]" />
           </div>
 
-          <button className="inline-flex h-[58px] items-center justify-between gap-4 bg-[#F68E2D] px-5 text-sm font-medium text-white transition-colors hover:bg-[#e57d1f] sm:w-[150px]">
-            <span>Agent Type</span>
-            <ChevronDown className="h-4 w-4" />
-          </button>
+          <div className="relative">
+            <select
+              value={agentTypeFilter}
+              onChange={(e) => setAgentTypeFilter(e.target.value)}
+              className="h-[58px] appearance-none bg-[#F68E2D] px-5 pr-10 text-sm font-medium text-white outline-none cursor-pointer hover:bg-[#e57d1f] sm:w-[150px]"
+            >
+              <option value="All" className="bg-[#14112E] text-white">Agent Type: All</option>
+              <option value="B2B" className="bg-[#14112E] text-white">B2B</option>
+              <option value="B2C" className="bg-[#14112E] text-white">B2C</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white" />
+          </div>
 
           <button
             type="button"
@@ -278,9 +382,17 @@ export default function CompanyManagementHome() {
                 paginatedRows.map((row, index) => (
                   <tr key={row.id} className="text-sm text-white/90">
                     <td className={`border-r border-[#8A91AC] px-6 py-5 ${index !== paginatedRows.length - 1 ? "border-b border-[#8A91AC]" : ""}`}>
-                      <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-white text-[8px] font-bold text-[#1B153D] shadow-sm">
-                        {row.initials}
-                      </div>
+                      {row.avatar ? (
+                        <img
+                          src={row.avatar.startsWith("http") ? row.avatar : `${(process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || '').replace(/\/$/, '')}/${row.avatar.replace(/^\/+/, '')}`}
+                          alt={row.name}
+                          className="mx-auto h-8 w-8 rounded-full object-cover shadow-sm"
+                        />
+                      ) : (
+                        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-white text-[8px] font-bold text-[#1B153D] shadow-sm">
+                          {row.initials}
+                        </div>
+                      )}
                     </td>
                     <td className={`border-r border-[#8A91AC] px-6 py-5 text-center ${index !== paginatedRows.length - 1 ? "border-b border-[#8A91AC]" : ""}`}>
                       {row.name}
@@ -310,21 +422,43 @@ export default function CompanyManagementHome() {
                               mobile: row.mobile,
                               email: row.email,
                               location: row.region,
-                              avatar: "/avatar.jpg",
+                              avatar: row.avatar || "/avatar.jpg",
                               verified: "blue",
                               online: true,
                             })
                           }
-                          className="flex h-8 w-8 items-center justify-center rounded-md bg-[#F68E2D] text-white transition-colors hover:bg-[#e57d1f]"
+                          className="group relative flex h-8 w-8 items-center justify-center rounded-md bg-[#F68E2D] text-white transition-colors hover:bg-[#e57d1f]"
+                          title="View Company"
                           aria-label="View company"
                         >
                           <Eye className="h-4 w-4" />
+                          <span className="pointer-events-none absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#0D0B1A] border border-white/20 px-2 py-1 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 shadow-xl z-30">
+                            View Company
+                          </span>
                         </button>
-                        <button className="flex h-8 w-8 items-center justify-center rounded-md bg-[#4A5BE7] text-white transition-colors hover:bg-[#3e4fd3]" aria-label="Edit company">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(row)}
+                          className="group relative flex h-8 w-8 items-center justify-center rounded-md bg-[#4A5BE7] text-white transition-colors hover:bg-[#3e4fd3]"
+                          title="Edit Company"
+                          aria-label="Edit company"
+                        >
                           <Pencil className="h-4 w-4" />
+                          <span className="pointer-events-none absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#0D0B1A] border border-white/20 px-2 py-1 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 shadow-xl z-30">
+                            Edit Company
+                          </span>
                         </button>
-                        <button className="flex h-8 w-8 items-center justify-center rounded-md bg-[#E03137] text-white transition-colors hover:bg-[#c62830]" aria-label="Delete company">
+                        <button
+                          type="button"
+                          onClick={() => setDeletingCompany(row)}
+                          className="group relative flex h-8 w-8 items-center justify-center rounded-md bg-[#E03137] text-white transition-colors hover:bg-[#c62830]"
+                          title="Delete Company"
+                          aria-label="Delete company"
+                        >
                           <Trash2 className="h-4 w-4" />
+                          <span className="pointer-events-none absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#0D0B1A] border border-white/20 px-2 py-1 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 shadow-xl z-30">
+                            Delete Company
+                          </span>
                         </button>
                       </div>
                     </td>
@@ -356,8 +490,8 @@ export default function CompanyManagementHome() {
                 {page}
               </button>
             ) : (
-              <span key={`${page}-${index}`} className="px-1 text-white/70">
-                ...
+              <span key={`ellipsis-${index}`} className="px-1 text-white/50">
+                {page}
               </span>
             ),
           )}

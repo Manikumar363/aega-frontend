@@ -43,6 +43,7 @@ function normalize(raw: any): University {
   const logoColor = raw.logoColor || raw.color || pickColorFromName(name);
   const verified = (raw.verified === "yellow" || raw.verified === "green") ? raw.verified : (raw.verified === true ? "green" : "yellow");
   const online = !!(raw.online || raw.isOnline || raw.active || raw.status === "active");
+  const avatar = raw.avatar || raw.logo || raw.profilePic || raw.imageUrl || undefined;
 
   return {
     id,
@@ -54,6 +55,8 @@ function normalize(raw: any): University {
     logoColor,
     verified,
     online,
+    avatar,
+    logo: avatar,
   };
 }
 
@@ -71,4 +74,21 @@ export async function getUniversities(): Promise<University[]> {
   else if (response && Array.isArray(response.result)) rawList = response.result;
 
   return rawList.map(normalize);
+}
+
+/**
+ * Delete a university by ID
+ */
+export async function deleteUniversity(id: string): Promise<void> {
+  const { apiDelete } = await import("./apiClient");
+  await apiDelete(`/api/agent-management/universities/${id}`);
+}
+
+/**
+ * Update a university profile
+ */
+export async function updateUniversity(id: string, updates: Partial<University>): Promise<University> {
+  const { apiPut } = await import("./apiClient");
+  const response = await apiPut<any>(`/api/agent-management/universities/${id}`, updates);
+  return normalize(response.data || response.university || response);
 }

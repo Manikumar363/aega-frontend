@@ -1,57 +1,152 @@
-import React from "react";
+"use client";
 
-const modules = [
-  {
-    title: "UKVI COMPLIANCE UPDATE 2025",
-    module: "Module 3",
-    hours: "3 hours",
-    due: "2025-01-15",
-    status: "On going",
-    statusColor: "bg-blue-500",
-    certificate: true,
-  },
-  // ...add all modules as in your screenshot...
-];
+import React, { useEffect, useState } from "react";
 
-const CDPTraining: React.FC = () => (
-  <div>
-    {/* Progress Bar */}
-    <div className="bg-[#181537] rounded-lg p-6 mb-6">
-      <div className="text-white font-semibold mb-2">CDP PROGRESS</div>
-      <div className="text-gray-400 mb-2">Monthly Progress</div>
-      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-        <div className="h-2 rounded-full bg-[#F68E2D]" style={{ width: "75%" }}></div>
-      </div>
-      <div className="text-white text-right">15/20</div>
-    </div>
-    {/* Modules Grid */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {modules.map((mod, idx) => (
-        <div key={idx} className="bg-[#181537] rounded-lg p-4 flex flex-col gap-2 border border-[#23204a]">
-          <div className="flex justify-between items-center">
-            <div className="text-white font-semibold">{mod.title}</div>
-            <span className={`text-xs px-3 py-1 rounded-full ${
-              mod.status === "Completed"
-                ? "bg-green-200 text-green-800"
-                : mod.status === "Due"
-                ? "bg-red-200 text-red-800"
-                : "bg-blue-200 text-blue-800"
-            }`}>
-              {mod.status}
-            </span>
-          </div>
-          <div className="text-gray-300">{mod.module}</div>
-          <div className="flex items-center gap-4 text-gray-400 text-xs">
-            <span>⏰ {mod.hours}</span>
-            <span>📅 Due: {mod.due}</span>
-          </div>
-          <button className="ml-auto mt-2 bg-[#23204a] text-white px-4 py-1 rounded text-xs border border-[#333]">
-            View Certificate
-          </button>
+interface CDPTrainingProps {
+  targetId?: string;
+  targetType?: "agent" | "company" | "university";
+}
+
+interface CdpProgressItem {
+  _id: string;
+  status: "on-going" | "completed" | "due";
+  dueDate?: string;
+  notes?: string;
+  certificateUrl?: string;
+  courseId: {
+    _id: string;
+    courseName: string;
+    modules: number;
+    timeInHr: number;
+    description?: string;
+  };
+}
+
+export default function CDPTraining({ targetId, targetType = "agent" }: CDPTrainingProps) {
+  const [progressList, setProgressList] = useState<CdpProgressItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCdpProgress = async () => {
+      if (!targetId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        setError(null);
+        const token = localStorage.getItem("authToken");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/cdp-courses/enrolled?targetType=${targetType}&targetId=${targetId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData.success) {
+            setProgressList(resData.data || []);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading CDP progress:", err);
+        setError("Failed to load CDP progress.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCdpProgress();
+  }, [targetId, targetType]);
+
+  const stats = React.useMemo(() => {
+    const total = progressList.reduce((sum, item) => sum + (item.courseId?.timeInHr || 0), 0);
+    const completed = progressList
+      .filter((item) => item.status === "completed")
+      .reduce((sum, item) => sum + (item.courseId?.timeInHr || 0), 0);
+    const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+    return { total, completed, percentage };
+  }, [progressList]);
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return "bg-green-500/10 text-green-400 border border-green-500/20";
+      case "due":
+        return "bg-red-500/10 text-red-400 border border-red-500/20";
+      default:
+        return "bg-sky-500/10 text-sky-400 border border-sky-500/20";
+    }
+  };
+
+  const handleViewCertificate = (url?: string) => {
+    if (!url) return;
+    const baseUrl = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+    const fullUrl = url.startsWith("http") ? url : `${baseUrl}/${url.replace(/^\/+/, "")}`;
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
+  };
+
+  if (loading) {
+    return <div className="text-white/60 text-sm py-6 text-center">Loading CDP progress...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-400 text-sm py-6 text-center">{error}</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* KPI stats card */}
+      <div className="bg-[#14112E] rounded-lg p-5 border border-[#2C2A45]">
+        <div className="text-white font-semibold text-xl mb-1">CDP PROGRESS</div>
+        <div className="text-white/70 text-sm mb-3">Overall Completion Hours</div>
+        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+          <div className="h-2 bg-[#F68E2D] rounded-full transition-all duration-300" style={{ width: `${stats.percentage}%` }} />
         </div>
-      ))}
-    </div>
-  </div>
-);
+        <div className="text-right text-white font-semibold">{stats.completed}/{stats.total} hrs ({stats.percentage}%)</div>
+      </div>
 
-export default CDPTraining;
+      {progressList.length === 0 ? (
+        <div className="border border-gray-800 p-8 text-center rounded-lg bg-[#14112E] text-white/55">
+          No enrolled courses found for this profile.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {progressList.map((item) => (
+            <div key={item._id} className="bg-[#14112E] border border-[#2C2A45] rounded-lg p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <h3 className="text-white font-semibold text-base line-clamp-1">{item.courseId?.courseName || "CDP Course"}</h3>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${getStatusBadgeClass(item.status)}`}>
+                    {item.status.replace("-", " ")}
+                  </span>
+                </div>
+                <div className="text-white/80 text-sm mb-2">Module {item.courseId?.modules || 1}</div>
+                <div className="flex items-center gap-4 text-white/60 text-xs mb-4">
+                  <span>⏱ {item.courseId?.timeInHr || 0} hours</span>
+                  {item.dueDate && <span>📅 Due: {new Date(item.dueDate).toLocaleDateString()}</span>}
+                </div>
+              </div>
+
+              {item.status === "completed" && item.certificateUrl ? (
+                <button
+                  type="button"
+                  onClick={() => handleViewCertificate(item.certificateUrl)}
+                  className="ml-auto bg-[#F68E2D] hover:bg-[#e57d1f] text-white text-xs font-semibold px-4 py-2 rounded transition-colors cursor-pointer"
+                >
+                  View Certificate
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

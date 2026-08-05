@@ -1,7 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import {
   getCdpCourses,
@@ -90,12 +90,13 @@ export default function AgentCDPPage() {
 
   const getImageSrc = (path?: string) => {
     if (!path) return "";
-    if (/^https?:\/\//.test(path) || path.startsWith("//")) return path;
+    let cleanPath = path.replace(/(\/)?uploads\/uploads\//g, "uploads/");
+    if (/^https?:\/\//.test(cleanPath) || cleanPath.startsWith("//")) return cleanPath;
     const base = (
       process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || 
       "https://divine-care.ap-south-1.storage.onantryk.com"
     ).replace(/\/$/, "");
-    const rel = path.startsWith("/") ? path : `/${path}`;
+    const rel = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
     return `${base}${rel}`;
   };
 
@@ -179,7 +180,7 @@ export default function AgentCDPPage() {
     try {
       // 1. Upload file using uploadFile helper
       const fileKey = await uploadFile(certificateFile);
-      const relativeUrl = `/uploads/${fileKey}`;
+      const relativeUrl = fileKey.replace(/^\/+/, '');
 
       // 2. Call backend update progress API
       await updateProgress(selectedCompletionCourse.progressId, {
@@ -198,34 +199,151 @@ export default function AgentCDPPage() {
     }
   };
 
+  const [activeSubTab, setActiveSubTab] = useState<string>("own");
+  const [agenciesList, setAgenciesList] = useState<{ id: string; name: string }[]>([]);
+  const [agentProgressMap, setAgentProgressMap] = useState<Record<string, CdpCourse[]>>({});
+
+  useEffect(() => {
+    const fetchAgenciesAndProgress = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/agent-management/agents`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : data.data || [];
+          const parsedAgencies = list.map((a: any, idx: number) => {
+            const nameStr = `${a.firstName || ''} ${a.lastName || ''}`.trim() || a.user?.name || a.agencyName || a.emailId || `Agency ${idx + 1}`;
+            return {
+              id: String(a.id || a._id || idx + 1),
+              name: nameStr,
+            };
+          });
+          setAgenciesList(parsedAgencies);
+
+          // Fetch enrolled courses for each sub-agency
+          const progressMap: Record<string, CdpCourse[]> = {};
+          await Promise.all(
+            parsedAgencies.map(async (agency: { id: string; name: string }) => {
+              try {
+                const enrolledRes = await fetch(
+                  `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/cdp-courses/enrolled?targetType=agent&targetId=${agency.id}`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (enrolledRes.ok) {
+                  const resData = await enrolledRes.json();
+                  if (resData.success && Array.isArray(resData.data)) {
+                    progressMap[agency.name] = resData.data.map((item: any) => ({
+                      id: item.courseId?._id || item._id,
+                      courseName: item.courseId?.courseName || "Agent Course",
+                      modules: item.courseId?.modules || 1,
+                      timeInHr: item.courseId?.timeInHr || 3,
+                      type: "mandatory",
+                      registered: true,
+                      enrollmentStatus: item.status || "on-going",
+                      certificateUrl: item.certificateUrl,
+                    }));
+                  }
+                }
+              } catch (e) {
+                console.error(`Error loading progress for ${agency.name}:`, e);
+              }
+            })
+          );
+          setAgentProgressMap(progressMap);
+        }
+      } catch (err) {
+        console.error("Error fetching registered agents list:", err);
+      }
+    };
+    fetchAgenciesAndProgress();
+  }, []);
+
+  // Filter courses based on selected activeSubTab
+  const displayedCourses = useMemo(() => {
+    if (activeSubTab === "own") {
+      return courses;
+    }
+    if (activeSubTab === "all") {
+      const allAgentCourses = Object.values(agentProgressMap).flat();
+      const combined = [...courses];
+      allAgentCourses.forEach((ac) => {
+        if (!combined.some((c) => c.id === ac.id)) combined.push(ac);
+      });
+      return combined;
+    }
+    return agentProgressMap[activeSubTab] || [];
+  }, [courses, activeSubTab, agentProgressMap]);
+
+  const activeRegisteredCourses = displayedCourses.filter((c) => !!c.registered);
+  const activeTotalRegistered = activeRegisteredCourses.length;
+  const activeMandatoryCount = activeRegisteredCourses.filter((c) => c.type === "mandatory").length;
+  const activePercentage = activeTotalRegistered === 0 ? 0 : Math.round((activeMandatoryCount / activeTotalRegistered) * 100);
+
   return (
     <DashboardLayout role="agent">
-      <div className="space-y-8">
-        {/* CDP Progress Section (only when user has registered courses) */}
-        {totalRegistered > 0 && (
-          <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-white mb-4">Your Courses & Progress</h2>
+      <div className="space-y-6">
+        {/* Top Navigation Filter Sub-Tabs */}
+        <div className="flex items-center gap-8 border-b border-[#2C2A45] pb-2 text-sm overflow-x-auto">
+          <button
+            onClick={() => setActiveSubTab("own")}
+            className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
+              activeSubTab === "own" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
+            }`}
+          >
+            Own
+          </button>
+          <button
+            onClick={() => setActiveSubTab("all")}
+            className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
+              activeSubTab === "all" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
+            }`}
+          >
+            All
+          </button>
+          {agenciesList.map((agency) => (
+            <button
+              key={agency.id}
+              onClick={() => setActiveSubTab(agency.name)}
+              className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
+                activeSubTab === agency.name ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
+              }`}
+            >
+              {agency.name}
+            </button>
+          ))}
+        </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Mandatory Courses (registered)</span>
-                <span className="text-white font-semibold">{mandatoryRegisteredCount}/{totalRegistered}</span>
-              </div>
+        {/* CDP Progress Section */}
+        <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6">
+          <h2 className="text-2xl font-semibold text-white mb-4">
+            {activeSubTab === "own" ? "Your Courses & Progress" : `${activeSubTab} Courses & Progress`}
+          </h2>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-[#F68E2D] h-full transition-all duration-300"
-                  style={{ width: `${percentage}%` }}
-                ></div>
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 text-sm">Mandatory Courses (registered)</span>
+              <span className="text-white font-semibold">{activeMandatoryCount}/{activeTotalRegistered || 1}</span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-[#F68E2D] h-full transition-all duration-300"
+                style={{ width: `${activePercentage}%` }}
+              ></div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Your Courses Section (registered courses) */}
         <div className="space-y-4">
-          {totalRegistered > 0 && <h2 className="text-2xl font-semibold text-white">Your Courses</h2>}
+          <h2 className="text-2xl font-semibold text-white">
+            {activeSubTab === "own" ? "Your Courses" : `${activeSubTab} Registered Courses`}
+          </h2>
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -238,55 +356,53 @@ export default function AgentCDPPage() {
             <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg">
               <p className="text-red-400">{error}</p>
             </div>
-          ) : courses.length === 0 ? (
-            <div className="border border-gray-700 p-8 text-center">
-              <p className="text-white/70">No courses available.</p>
+          ) : activeRegisteredCourses.length === 0 ? (
+            <div className="border border-gray-700 p-8 text-center rounded-lg bg-[#14112E]">
+              <p className="text-white/70">No registered courses found for {activeSubTab === "own" ? "your profile" : activeSubTab}.</p>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Registered courses list */}
-              {totalRegistered > 0 && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {registeredCourses.map((course) => {
-                      const UNSPLASH_PLACEHOLDER =
-                        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80";
-                      const imageSrc = getImageSrc(course.coverPicture) || UNSPLASH_PLACEHOLDER;
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeRegisteredCourses.map((course) => {
+                    const UNSPLASH_PLACEHOLDER =
+                      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80";
+                    const imageSrc = getImageSrc(course.coverPicture) || UNSPLASH_PLACEHOLDER;
 
-                      const status = (course.enrollmentStatus || (course as any).status || "on-going").toLowerCase();
-                      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ");
-                      const statusClass =
-                        status === "completed"
-                          ? "bg-green-500"
-                          : status === "due"
-                          ? "bg-[#E03137]"
-                          : "bg-[#4A90E2]";
+                    const status = (course.enrollmentStatus || (course as any).status || "on-going").toLowerCase();
+                    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ");
+                    const statusClass =
+                      status === "completed"
+                        ? "bg-green-500"
+                        : status === "due"
+                        ? "bg-[#E03137]"
+                        : "bg-[#4A90E2]";
 
-                      return (
-                        <div
-                          key={course.id}
-                          onClick={() => handleCourseClick(course)}
-                          role="button"
-                          tabIndex={0}
-                          className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition text-left"
-                        >
-                          <div className="flex items-center gap-4">
-                            <img src={imageSrc} alt={course.courseName} className="w-28 h-16 object-cover rounded-md" />
-                            <div>
-                              <h4 className="text-md font-semibold text-white">{course.courseName}</h4>
-                              <p className="text-gray-400 text-sm">Module {course.modules} • {course.timeInHr} hrs</p>
-                            </div>
-                          </div>
-
-                          <div className="ml-4">
-                            <span className={`${statusClass} text-white text-xs px-3 py-1 rounded-full`}>{statusLabel}</span>
+                    return (
+                      <div
+                        key={course.id}
+                        onClick={() => handleCourseClick(course)}
+                        role="button"
+                        tabIndex={0}
+                        className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition text-left"
+                      >
+                        <div className="flex items-center gap-4">
+                          <img src={imageSrc} alt={course.courseName} className="w-28 h-16 object-cover rounded-md" />
+                          <div>
+                            <h4 className="text-md font-semibold text-white">{course.courseName}</h4>
+                            <p className="text-gray-400 text-sm">Module {course.modules} • {course.timeInHr} hrs</p>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        <div className="ml-4">
+                          <span className={`${statusClass} text-white text-xs px-3 py-1 rounded-full`}>{statusLabel}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
               
               {/* Grouped courses by type (accordion) */}
               <div className="space-y-3">

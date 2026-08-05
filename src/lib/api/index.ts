@@ -25,7 +25,7 @@ export {
 } from "./universityRequests";
 
 // University Management Service
-export { getUniversities } from "./universityManagement";
+export { getUniversities, deleteUniversity, updateUniversity } from "./universityManagement";
 
 // CDP Courses Service
 export { getCdpCourses } from "./cdpCourses";

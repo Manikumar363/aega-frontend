@@ -48,32 +48,45 @@ const verifiedColors: Record<string, string> = {
 
 const ENTRIES_OPTIONS = [8, 16, 24];
 
-const mapApiAgentToUi = (agent: AgentApiItem, index: number): Agent => ({
-  id: index + 1,
-  apiId: agent.id,
-  name: `${agent.firstName} ${agent.lastName}`.trim(),
-  designation: agent.designation,
-  mobile: agent.mobileNumber,
-  email: agent.emailId,
-  location: agent.office,
-  avatar: "/avatar.jpg",
-  verified: "blue",
-  online: true,
-  source: {
-    id: agent.id,
-    firstName: agent.firstName,
-    lastName: agent.lastName,
-    emailId: agent.emailId,
-    mobileNumber: agent.mobileNumber,
-    designation: agent.designation,
-    office: agent.office,
-    country: agent.country,
-    authorization: agent.authorization,
-  },
-});
+const getFullImageUrl = (url?: string) => {
+  if (!url) return "/avatar.jpg";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const baseUrl = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+  const cleanPath = url.replace(/^\/+/, "");
+  return `${baseUrl}/${cleanPath}`;
+};
+
+const mapApiAgentToUi = (agent: AgentApiItem, index: number): Agent => {
+  const nameStr = `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || agent.user?.name || agent.emailId || "Agent";
+  return {
+    id: index + 1,
+    apiId: agent.id,
+    name: nameStr,
+    designation: agent.designation || "Counselor",
+    mobile: agent.mobileNumber || "N/A",
+    email: agent.emailId || agent.user?.email || "N/A",
+    location: agent.office || agent.country || "N/A",
+    avatar: getFullImageUrl((agent.user as any)?.avatar || (agent.user as any)?.profilePic || (agent as any).avatar || (agent as any).profilePic),
+    verified: "blue",
+    online: true,
+    source: {
+      id: agent.id,
+      firstName: agent.firstName || nameStr,
+      lastName: agent.lastName || "",
+      emailId: agent.emailId,
+      mobileNumber: agent.mobileNumber,
+      designation: agent.designation,
+      office: agent.office,
+      country: agent.country,
+      authorization: agent.authorization,
+    },
+  };
+};
 
 const AgentManagementHome: React.FC = () => {
   const [search, setSearch] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [entriesPerPage, setEntriesPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
   const [showEntriesDropdown, setShowEntriesDropdown] = useState(false);
@@ -140,20 +153,32 @@ const AgentManagementHome: React.FC = () => {
   }, [API_BASE_URL, refreshCounter]);
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return agents;
+    let result = agents;
 
-    return agents.filter(
+    if (selectedFilter !== "All") {
+      const f = selectedFilter.toLowerCase();
+      result = result.filter(
+        (a) =>
+          a.designation.toLowerCase().includes(f) ||
+          a.location.toLowerCase().includes(f)
+      );
+    }
+
+    const query = search.trim().toLowerCase();
+    if (!query) return result;
+
+    return result.filter(
       (agent) =>
         agent.name.toLowerCase().includes(query) ||
         agent.email.toLowerCase().includes(query) ||
-        agent.designation.toLowerCase().includes(query),
+        agent.designation.toLowerCase().includes(query) ||
+        agent.location.toLowerCase().includes(query)
     );
-  }, [agents, search]);
+  }, [agents, search, selectedFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, entriesPerPage]);
+  }, [search, selectedFilter, entriesPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / entriesPerPage));
   const paginatedAgents = filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
@@ -309,12 +334,35 @@ const AgentManagementHome: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
           </svg>
         </div>
-        <button className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-5 py-2 rounded font-medium flex items-center gap-2 transition-colors">
-          Agent Type
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowFilterDropdown((v) => !v)}
+            className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-5 py-2 rounded font-medium flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            Filter{selectedFilter !== "All" ? `: ${selectedFilter}` : ""}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showFilterDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-[#14112E] border border-white/20 rounded shadow-xl z-20 py-1 text-sm text-white">
+              {["All", "Counselor", "Managing Director", "Chief Operating Officer", "Hyderabad", "Bangalore", "Noida"].map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    setSelectedFilter(opt);
+                    setShowFilterDropdown(false);
+                  }}
+                  className={`block w-full text-left px-4 py-2 hover:bg-white/10 ${selectedFilter === opt ? "font-bold text-[#F68E2D]" : ""}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setShowAddAgent(true)}

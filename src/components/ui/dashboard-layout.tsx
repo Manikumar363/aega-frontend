@@ -12,7 +12,7 @@ import {
   CDPIcon,
   HelpIcon,
   DashboardIcon,
-  PasswordIcon, 
+  PasswordIcon,
   ProfileIcon,
   LogoutIcon,
   AgentManagementIcon,
@@ -63,12 +63,12 @@ const resolveIcon = (icon: IconLike): SvgIcon => {
 const agentTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/agent/dashboard" },
   { icon: OfficeIcon, label: "Company Management", href: "/agent/company-management" },
-  {icon: StudentManagementIcon, label: "Student Management", href: "/agent/student-management" },
-  {icon: AgentManagementIcon, label: "Agent Management", href: "/agent/agent-management" },
-  {icon: UniManagementIcon, label: "Uni Management", href: "/agent/university-management" },
-  {icon:OfficeIcon, label: "Office", href: "/agent/office-management" },
-  {icon: RevenueIcon, label: "Revenue", href: "/agent/revenue" },
-  {icon:LeaveManagementIcon, label: "Leave Management", href: "/agent/leave-management" },
+  // {icon: StudentManagementIcon, label: "Student Management", href: "/agent/student-management" },
+  { icon: AgentManagementIcon, label: "Agent Management", href: "/agent/agent-management" },
+  { icon: UniManagementIcon, label: "Uni Management", href: "/agent/university-management" },
+  { icon: OfficeIcon, label: "Office", href: "/agent/office-management" },
+  { icon: RevenueIcon, label: "Revenue", href: "/agent/revenue" },
+  { icon: LeaveManagementIcon, label: "Leave Management", href: "/agent/leave-management" },
   { icon: CDPIcon, label: "CDP Training", href: "/agent/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/agent/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/agent/audits" },
@@ -76,21 +76,21 @@ const agentTopNav: NavItem[] = [
 
 const universityTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/university/dashboard" },
-  {icon: AgentManagementIcon, label: "Agent Management", href: "/university/agentManagement" },
+  { icon: AgentManagementIcon, label: "Agent Management", href: "/university/agentManagement" },
   { icon: CDPIcon, label: "CDP Training", href: "/university/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/university/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/university/audits" },
- 
+
 ];
 
 const agentBottomNav: NavItem[] = [
-//   { icon: LogoutIcon, label: "Logout", href: "/agent/logout" },
+  //   { icon: LogoutIcon, label: "Logout", href: "/agent/logout" },
 ];
 
 const universityBottomNav: NavItem[] = [
   { icon: HelpIcon, label: "Help Center", href: "/university/help-center" },
   { icon: PasswordIcon, label: "Password & Security", href: "/university/password" },
-//   { icon: LogoutIcon, label: "Logout", href: "/university/logout" },
+  //   { icon: LogoutIcon, label: "Logout", href: "/university/logout" },
 ];
 
 const parseBusinessTypeFromToken = (token: string | null): "b2b" | "b2c" | null => {
@@ -122,6 +122,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [userState, setUserState] = useState<StoredUser>(null);
+  const [profilePic, setProfilePic] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -182,7 +183,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   useEffect(() => {
     const allItems = [...topNavigationItems, ...bottomNavigationItems];
     const match = allItems.find(item => item.href === pathname);
-    
+
     let label = "Dashboard";
     if (match) {
       label = match.label;
@@ -215,7 +216,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         label = "Audits";
       }
     }
-    
+
     document.title = `AEGA - ${label}`;
   }, [pathname, topNavigationItems, bottomNavigationItems]);
 
@@ -233,7 +234,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     }
 
     const storedUserRole = storedUser.role as string;
-    const isRoleMatch = storedUserRole === role || 
+    const isRoleMatch = storedUserRole === role ||
       (role === 'agent' && storedUserRole === 'counsellor');
 
     if (!isRoleMatch) {
@@ -244,6 +245,35 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
     setUserState(storedUser);
   }, [role, router]);
+
+  useEffect(() => {
+    const fetchHeaderProfile = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+
+        if (role === "agent") {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.profileImage) {
+              setProfilePic(`${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${data.profileImage}`);
+            } else {
+              setProfilePic(null);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch header profile pic:", err);
+      }
+    };
+    fetchHeaderProfile();
+  }, [role, pathname]);
 
   const searchEnabledRoutes = [
     `/${role}/dashboard`,
@@ -258,19 +288,19 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     if (!React.isValidElement(node)) return node;
 
     const el = node as React.ReactElement<any>;
-    
+
     // Handle Suspense by injecting into its children
     if (el.type === React.Suspense) {
       const inner = (el.props as any)?.children;
       return React.cloneElement(el, {}, injectSearchProp(inner, q) as any);
     }
-    
+
     // Only inject searchQuery into custom components (not DOM elements)
     // DOM elements have string types like "div", "span", etc.
     if (typeof el.type === 'string') {
       return node;
     }
-    
+
     return React.cloneElement(el, { searchQuery: q });
   };
 
@@ -278,9 +308,8 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     <div className="min-h-screen flex bg-[#03091F]">
       {/* Sidebar */}
       <div
-        className={`w-64 bg-[#14112E] text-white flex flex-col fixed top-0 left-0 h-screen z-20 transition-transform duration-300 ease-in-out overflow-y-auto ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`w-64 bg-[#14112E] text-white flex flex-col fixed top-0 left-0 h-screen z-20 transition-transform duration-300 ease-in-out overflow-y-auto ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
       >
         {/* Logo */}
         <div className="p-3 flex items-start justify-start">
@@ -302,15 +331,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 transition-colors ${
-                      pathname === item.href
+                    className={`flex items-center gap-2 px-3 py-2 transition-colors ${pathname === item.href
                         ? "bg-[#F68E2D] text-white"
                         : "text-white/80 hover:bg-[#F68E2D] hover:text-white"
-                    }`}
+                      }`}
                   >
-                    <span className={`w-6 h-6 flex items-center justify-center ${
-                      pathname === item.href ? "text-white" : ""
-                    }`}>
+                    <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""
+                      }`}>
                       <Icon />
                     </span>
                     <span className="text-sm">{item.label}</span>
@@ -333,15 +360,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      pathname === item.href
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${pathname === item.href
                         ? "bg-white/10 text-white"
                         : "text-white/80 hover:bg-white/5 hover:text-white"
-                    }`}
+                      }`}
                   >
-                    <span className={`w-6 h-6 flex items-center justify-center ${
-                      pathname === item.href ? "text-white" : ""
-                    }`}>
+                    <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""
+                      }`}>
                       <Icon />
                     </span>
                     <span className="text-sm">{item.label}</span>
@@ -422,13 +447,21 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
             <div className="relative">
               <button
-                className="p-0 hover:bg-white/10 rounded"
+                className="p-0 hover:bg-white/10 rounded-full overflow-hidden flex items-center justify-center w-8 h-8 focus:outline-none"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleProfileMenu();
                 }}
               >
-                <ProfileIcon className="w-6 h-6" />
+                {profilePic ? (
+                  <img
+                    src={profilePic}
+                    alt="User Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ProfileIcon className="w-6 h-6" />
+                )}
               </button>
 
               {isProfileMenuOpen && (
@@ -445,7 +478,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   >
                     Profile
                   </button>
-                   <button
+                  <button
                     className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-red-500/10 hover:text-red-300 transition-colors"
                     onClick={() => {
                       setIsProfileMenuOpen(false);
@@ -470,24 +503,24 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6">
+        <main className="flex-1 overflow-y-auto flex flex-col">
+          <div className="p-6 flex-1">
             {searchEnabledRoutes.includes(pathname)
               ? injectSearchProp(children, searchQuery)
               : children}
           </div>
 
           {/* Bottom Footer */}
-          <footer className="bg-[#03091F] border-t border-white/10 px-6 py-4">
+          <footer className="bg-[#03091F] border-t border-white/10 px-6 py-4 mt-auto">
             <div className="flex items-center gap-6 text-sm text-white/60">
-              <Link 
+              <Link
                 href={`/${role}/privacy-policy`}
                 className="hover:text-white transition-colors"
               >
                 Privacy Policy
               </Link>
               <span className="text-white/30">•</span>
-              <Link 
+              <Link
                 href={`/${role}/terms-of-use`}
                 className="hover:text-white transition-colors"
               >

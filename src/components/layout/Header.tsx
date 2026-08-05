@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { label: "FOR UNIVERSITY & SPONSORS", href: "/university-sponsors" },
   { label: "COMPLIANCES & COURSES", href: "/compliance" },
   { label: "POLICY", href: "/policy" },
+  { label: "PRICING", href: "/pricing" },
   {
     label: "FOR THE PUBLIC",
     hasDropdown: true,

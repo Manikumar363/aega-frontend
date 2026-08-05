@@ -258,11 +258,18 @@ const AddAgent: React.FC<AddAgentProps> = ({ editAgent, onSuccess }) => {
         return;
       }
 
-      toast.success(isEditMode ? "Agent updated successfully." : "Agent added successfully");
-
       if (isEditMode) {
+        toast.success("Agent updated successfully.");
         onSuccess?.();
       } else {
+        const autoPassword = data?.credentials?.password || data?.password || data?.agent?.password;
+        if (autoPassword) {
+          toast.success(`Agent added successfully! Generated Password: ${autoPassword}`, {
+            autoClose: 10000,
+          });
+        } else {
+          toast.success("Agent added successfully!");
+        }
         setForm(initialState);
         onSuccess?.();
         router.push("/agent/agent-management");

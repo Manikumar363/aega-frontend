@@ -61,6 +61,7 @@ const AddCompany: React.FC = () => {
 		companyDocument1: "",
 		companyDocument2: "",
 	});
+	const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
 	const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 	const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -248,16 +249,23 @@ const AddCompany: React.FC = () => {
 				throw new Error(errorMessage);
 			}
 
-			toast.update(loadingToastId, {
-				render: "Company added successfully",
-				type: "success",
-				isLoading: false,
-				autoClose: 3000,
+			const autoPassword = data?.credentials?.password || data?.password || data?.tempPassword;
+			toast.dismiss(loadingToastId);
+
+			toast.success(`Company added successfully! ${autoPassword ? `Password: ${autoPassword}` : ''}`, {
+				autoClose: 15000,
 			});
 
-			setForm(initialState);
-			setSelectedFileName({ companyDocument1: "", companyDocument2: "" });
-			router.push("/agent/company-management");
+			if (autoPassword) {
+				setCreatedCredentials({
+					email: emailId,
+					password: autoPassword,
+				});
+			} else {
+				setForm(initialState);
+				setSelectedFileName({ companyDocument1: "", companyDocument2: "" });
+				router.push("/agent/company-management");
+			}
 		} catch (error) {
 			const rawMsg = error instanceof Error ? error.message : "Failed to create company";
 			const isDuplicate = rawMsg.toLowerCase().includes("exist") || rawMsg.toLowerCase().includes("duplicate");
@@ -388,6 +396,55 @@ const AddCompany: React.FC = () => {
 					{isSubmitting ? "Saving..." : "Add Company"}
 				</button>
 			</div>
+
+			{/* CREATED CREDENTIALS MODAL (DEVELOPMENT MODE) */}
+			{createdCredentials && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+					<div className="w-full max-w-md bg-[#14112E] border border-[#F68E2D] rounded-lg p-6 text-white text-center shadow-2xl space-y-4">
+						<div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+							✓
+						</div>
+						<h2 className="text-xl font-bold text-white">Company Added Successfully!</h2>
+						<p className="text-xs text-white/70">Development Credentials (Auto-Generated):</p>
+
+						<div className="bg-[#1A163E] border border-white/20 rounded p-4 text-left space-y-3">
+							<div>
+								<span className="text-xs text-gray-400 block mb-0.5">Email ID:</span>
+								<span className="text-sm font-semibold text-white select-all">{createdCredentials.email}</span>
+							</div>
+							<div>
+								<span className="text-xs text-gray-400 block mb-0.5">Auto-Generated Password:</span>
+								<div className="flex items-center justify-between gap-2 bg-[#07051A] p-2.5 rounded border border-white/10">
+									<span className="text-base font-mono font-bold text-[#F68E2D] select-all">{createdCredentials.password}</span>
+									<button
+										type="button"
+										onClick={() => {
+											navigator.clipboard.writeText(createdCredentials.password);
+											toast.info("Password copied to clipboard!");
+										}}
+										className="text-xs bg-[#F68E2D] hover:bg-[#e57d1f] px-3 py-1.5 rounded text-white font-semibold transition-colors"
+									>
+										Copy
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<button
+							type="button"
+							onClick={() => {
+								setCreatedCredentials(null);
+								setForm(initialState);
+								setSelectedFileName({ companyDocument1: "", companyDocument2: "" });
+								router.push("/agent/company-management");
+							}}
+							className="w-full bg-[#F68E2D] hover:bg-[#e57d1f] text-white py-3 rounded font-semibold text-base transition-colors cursor-pointer"
+						>
+							Done & Return to Companies
+						</button>
+					</div>
+				</div>
+			)}
 		</form>
 	);
 };

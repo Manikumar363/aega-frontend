@@ -48,45 +48,47 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
         if ('message' in agent) {
             return agent.message || 'No message provided';
         }
+        if ('email' in agent) return agent.email;
+        if ('emailId' in agent) return (agent as any).emailId;
         return 'N/A';
     };
 
-    // Helper function to get agent business type
-    const getBusinessType = () => {
-        if ('agentBusinessType' in agent) {
-            return agent.agentBusinessType?.replace(/_/g, ' ') || 'N/A';
-        }
-        return 'N/A';
-    };
-
-    // Helper function to get agent role
     const getAgentRole = () => {
-        if ('agentRole' in agent) {
-            return agent.agentRole || 'N/A';
-        }
+        if ('designation' in agent) return agent.designation;
+        if ('agentRole' in agent) return (agent as any).agentRole;
         return 'N/A';
     };
 
-    // const performance = [
-    // { label: "Visa refusal (85% - 100%)", value: 75, max: 75, color: "#F68E2D" },
-    // { label: "Enrollment (50% - 84%)", value: 24, max: 75, color: "#2563eb" },
-    // { label: "withdrawn Student (0% - 49%)", value: 1, max: 75, color: "#2563eb" },
-    // { label: "Withdrawn Payment (50% - 79%)", value: 40, max: 75, color: "#F68E2D" },
-    // { label: "Academic Withdrawn (80% - 100%)", value: 75, max: 75, color: "#F68E2D" },
-    // { label: "Student Output Sucess(80% - 100%)", value: 50, max: 75, color: "#10b981" },
-    // ];
+    const getBusinessType = () => {
+        if ('agentBusinessType' in agent) return (agent as any).agentBusinessType;
+        return undefined;
+    };
 
     return (
         <div className="space-y-6">
             {/* AGENT INFORMATION */}
             <div className="bg-[#181537] rounded-lg p-6">
+                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[#23204a]">
+                    <img
+                        src={('avatar' in agent && agent.avatar && agent.avatar !== "/avatar.jpg" ? (agent as Agent).avatar : '') || DEFAULT_AVATAR}
+                        alt={getAgentName()}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-[#F68E2D] bg-[#14112E]"
+                        onError={(e) => {
+                            (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+                        }}
+                    />
+                    <div>
+                        <h3 className="text-white font-bold text-lg">{getAgentName()}</h3>
+                        <p className="text-gray-400 text-xs">{getAgentRole() || 'Agent'}</p>
+                    </div>
+                </div>
                 <h2 className="text-white text-lg font-semibold mb-4 border-b border-[#23204a] pb-2">
                     {isAgentRequest ? 'AGENT INFORMATION' : ('universityName' in agent ? 'UNIVERSITY INFORMATION' : 'AGENT INFORMATION')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
                     <div>
                         <div className="mb-2">
-                            <span className="font-semibold">Company Name</span>
+                            <span className="font-semibold">Full Name</span>
                             : {getAgentName()}
                         </div>
                         <div>

@@ -95,8 +95,10 @@ export default function AgentProfilePage() {
         setOriginalData(profileInfo);
 
         // Load profile image if it exists
-        if (data.profileImage) {
-          const imgUrl = `${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${data.profileImage}`;
+        const rawPic = data.profileImage || data.profilePic || data.avatar || data.profilePhoto || (data.user && (data.user.profilePic || data.user.avatar));
+        if (rawPic) {
+          const baseUrl = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+          const imgUrl = rawPic.startsWith("http") ? rawPic : `${baseUrl}/${rawPic.replace(/^\/+/, "")}`;
           setProfileImage(imgUrl);
           setOriginalImage(imgUrl);
         }

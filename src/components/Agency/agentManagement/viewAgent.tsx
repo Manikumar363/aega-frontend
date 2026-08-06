@@ -38,6 +38,9 @@ const performance = [
 ];
 */
 
+const DEFAULT_AVATAR =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23F68E2D' viewBox='0 0 24 24'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
 const ViewAgent: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
   const [timePeriod, setTimePeriod] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [activeTab, setActiveTab] = useState<"info" | "cdp" | "compliances" | "audits">("info");
@@ -140,11 +143,25 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent, onClose }) => {
         <>
           {/* AGENT INFORMATION */}
           <div className="bg-[#14112E] rounded-lg p-6 border border-[#2C2A45]">
-            <h2 className="text-white text-lg font-semibold mb-4">AGENT INFORMATION</h2>
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[#2C2A45]">
+              <img
+                src={agent.avatar && agent.avatar !== "/avatar.jpg" ? agent.avatar : DEFAULT_AVATAR}
+                alt={agent.name}
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#F68E2D] bg-[#14112E]"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+                }}
+              />
+              <div>
+                <h3 className="text-white font-bold text-lg">{agent.name}</h3>
+                <p className="text-white/60 text-xs">{agent.designation || "Agent"}</p>
+              </div>
+            </div>
+            <h2 className="text-white text-lg font-semibold mb-4">AGENT DETAILS</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white text-sm">
               <div>
                 <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Company Name :</span>
+                  <span className="font-semibold text-gray-400">Full Name :</span>
                   <span className="ml-2">{agent.name}</span>
                 </div>
                 <div>

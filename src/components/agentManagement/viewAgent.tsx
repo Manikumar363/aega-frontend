@@ -12,6 +12,8 @@ interface Agent {
     online?: boolean;
     location?: string;
     country?: string;
+}
+
 interface ViewAgentProps {
     agent: Agent | AgentRequest;
 }

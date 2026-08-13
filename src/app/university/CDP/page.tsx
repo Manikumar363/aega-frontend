@@ -1,30 +1,47 @@
 "use client";
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   getCdpCourses,
   enrollInCourse,
   getMyEnrolledCourses,
-  getMyStats,
   type CdpCourse,
   uploadFile,
   updateProgress,
 } from "@/lib/api";
+import { Edit2, Play, Pause, Video, CheckCircle2, X } from "lucide-react";
 
 export default function UniversityCDPPage() {
   const [courses, setCourses] = useState<CdpCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch and normalize courses
+  // Modal States
+  const [selectedCourse, setSelectedCourse] = useState<CdpCourse | null>(null);
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [watchVideoUrl, setWatchVideoUrl] = useState<string | null>(null);
+
+  // Form States
+  const [todayStr] = useState(() => new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Completion Modal Form
+  const [completionNote, setCompletionNote] = useState("");
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [completing, setCompleting] = useState(false);
+
   const fetchCourses = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getCdpCourses();
-      // also fetch enrolled courses to flag registered ones
       const enrolled = await getMyEnrolledCourses().catch(() => []);
 
       const enrolledById = new Map<string, any>();
@@ -33,16 +50,21 @@ export default function UniversityCDPPage() {
         if (cid) enrolledById.set(String(cid), e);
       });
 
-      const normalized = data.map((c) => {
+      // Filter courses specific to Universities
+      const universityCourses = data.filter(
+        (c: any) => c.courseFor === "universities" || c.courseFor === "university"
+      );
+
+      const normalized = universityCourses.map((c) => {
         const match = enrolledById.get(c._id || c.id);
         if (match) {
           return {
             ...c,
             registered: true,
             progressId: match._id || match.id,
-            registrationStartDate: match.startDate || match.enrollmentDate || match.startDate,
+            registrationStartDate: match.startDate || match.enrollmentDate,
             registrationNote: match.notes || "",
-            enrollmentStatus: match.status || undefined,
+            enrollmentStatus: match.status || "on-going",
             certificateUrl: match.certificateUrl || null,
           };
         }
@@ -52,7 +74,6 @@ export default function UniversityCDPPage() {
       setCourses(normalized);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch courses");
-      console.error("Error fetching CDP courses:", err);
     } finally {
       setLoading(false);
     }
@@ -63,137 +84,162 @@ export default function UniversityCDPPage() {
   }, []);
 
   const registeredCourses = courses.filter((c) => !!c.registered);
-  const total = courses.length;
-  const totalRegistered = registeredCourses.length;
-  const mandatoryRegisteredCount = registeredCourses.filter((c) => c.type === "mandatory").length;
-  const percentage = totalRegistered === 0 ? 0 : Math.round((mandatoryRegisteredCount / totalRegistered) * 100);
-
-  const [openTypes, setOpenTypes] = useState<Record<string, boolean>>({});
-
-  // Registration Modal State
-  const [selectedCourse, setSelectedCourse] = useState<CdpCourse | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [note, setNote] = useState("Starting from today");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Course Completion Modal State
-  const [selectedCompletionCourse, setSelectedCompletionCourse] = useState<CdpCourse | null>(null);
-  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-  const [completionNote, setCompletionNote] = useState("");
-  const [certificateFile, setCertificateFile] = useState<File | null>(null);
-  const [completing, setCompleting] = useState(false);
-
-  // View Completed Course Modal State
-  const [selectedViewCourse, setSelectedViewCourse] = useState<CdpCourse | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const completedCourses = registeredCourses.filter((c) => c.enrollmentStatus === "completed");
+  const totalCourses = courses.length;
+  const completedCount = completedCourses.length;
+  const progressPercentage = totalCourses === 0 ? 0 : Math.round((completedCount / totalCourses) * 100);
 
   const getImageSrc = (path?: string) => {
-    if (!path) return "";
+    if (!path) return "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80";
     let cleanPath = path.replace(/(\/)?uploads\/uploads\//g, "uploads/");
     if (/^https?:\/\//.test(cleanPath) || cleanPath.startsWith("//")) return cleanPath;
     const base = (
-      process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || 
-      "https://divine-care.ap-south-1.storage.onantryk.com"
+      process.env.NEXT_PUBLIC_ANTRYK_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      ""
     ).replace(/\/$/, "");
     const rel = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
     return `${base}${rel}`;
   };
 
-  const grouped = courses.reduce((acc: Record<string, CdpCourse[]>, c) => {
-    const t = (c.type || "Other").toLowerCase();
-    acc[t] = acc[t] || [];
-    acc[t].push(c);
-    return acc;
-  }, {} as Record<string, CdpCourse[]>);
-
-  useEffect(() => {
-    // initialize accordion open state: open types that have registered courses
-    setOpenTypes((prev) => {
-      if (Object.keys(prev).length > 0) return prev;
-      const map: Record<string, boolean> = {};
-      Object.entries(grouped).forEach(([type, list]) => {
-        map[type] = list.some((c) => !!c.registered);
-      });
-      return map;
-    });
-  }, [JSON.stringify(grouped)]);
-
-  const handleCourseClick = (course: CdpCourse) => {
-    if (!course.registered) {
-      // Unregistered course -> Open registration modal
-      setSelectedCourse(course);
-      setStartDate(new Date().toISOString().slice(0, 10));
-      setNote("Starting from today");
-      setIsModalOpen(true);
-    } else if (course.enrollmentStatus === "completed") {
-      // Completed course -> Open read-only view details modal
-      setSelectedViewCourse(course);
-      setIsViewModalOpen(true);
-    } else {
-      // On-going or due course -> Open completion modal
-      setSelectedCompletionCourse(course);
-      setCompletionNote("");
-      setCertificateFile(null);
-      setIsCompletionModalOpen(true);
-    }
+  const handleOpenRegistrationModal = (course: CdpCourse) => {
+    setSelectedCourse(course);
+    setStartDate(todayStr);
+    setNote("");
+    setIsRegistrationModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedCourse(null);
-  };
-
-  const submitRegistration = async () => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedCourse) return;
-    setSubmitting(true);
-    try {
-      await enrollInCourse(selectedCourse.id, { startDate, notes: note });
-      toast.success("Enrolled in course successfully!");
-      fetchCourses();
 
-      // Open course hyperLink in a new tab if provided
-      try {
-        const href = (selectedCourse.hyperLink || (selectedCourse as any).hyperlink || "").trim();
-        if (href) {
-          const newWin = window.open(href, "_blank", "noopener,noreferrer");
-          if (newWin) newWin.focus();
-        }
-      } catch (err) {
-        console.warn("Failed to open course link:", err);
-      }
-    } catch (err: any) {
-      console.error("Error registering course:", err);
-      toast.error(err.message || "Failed to start course");
-    } finally {
-      setSubmitting(false);
-      closeModal();
-    }
-  };
-
-  const submitCompletion = async () => {
-    if (!selectedCompletionCourse || !selectedCompletionCourse.progressId || !certificateFile) {
-      toast.error("Please select a certificate file.");
+    if (!startDate) {
+      toast.error("Start Date is mandatory.");
       return;
     }
-    setCompleting(true);
-    try {
-      // 1. Upload file using uploadFile helper
-      const fileKey = await uploadFile(certificateFile);
-      const relativeUrl = fileKey.replace(/^\/+/, '');
 
-      // 2. Call backend update progress API
-      await updateProgress(selectedCompletionCourse.progressId, {
-        certificateUrl: relativeUrl,
-        notes: completionNote,
+    try {
+      setSubmitting(true);
+      const courseId = String(selectedCourse._id || selectedCourse.id);
+      const res = await enrollInCourse(courseId, {
+        startDate,
+        notes: note.trim(),
       });
 
-      toast.success("Course marked as completed!");
-      setIsCompletionModalOpen(false);
-      fetchCourses();
+      toast.success(res.message || "Enrolled in course successfully!");
+      setIsRegistrationModalOpen(false);
+      await fetchCourses();
     } catch (err: any) {
-      console.error("Error completing course:", err);
-      toast.error(err.message || "Failed to complete course.");
+      toast.error(err.message || "Failed to register for course.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenEditModal = (course: CdpCourse) => {
+    setSelectedCourse(course);
+    setStartDate(course.registrationStartDate?.slice(0, 10) || todayStr);
+    setNote(course.registrationNote || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse || !selectedCourse.progressId) return;
+
+    if (!startDate) {
+      toast.error("Start Date is mandatory.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/cdp-courses/enrolled/${selectedCourse.progressId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            startDate,
+            notes: note.trim(),
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to update schedule");
+
+      toast.success("Schedule updated!");
+      setIsEditModalOpen(false);
+      await fetchCourses();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update schedule.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleTogglePause = async (course: CdpCourse) => {
+    if (!course.progressId) return;
+    const nextStatus = course.enrollmentStatus === "paused" ? "on-going" : "paused";
+
+    try {
+      await updateProgress(course.progressId, { status: nextStatus });
+      toast.success(`Course ${nextStatus === "paused" ? "paused" : "resumed"}`);
+      await fetchCourses();
+    } catch (err: any) {
+      toast.error("Failed to update status.");
+    }
+  };
+
+  const handleWatchVideo = (course: CdpCourse) => {
+    const videoUrl = course.hyperLink || "https://www.youtube.com/embed/dQw4w9WgXcQ";
+    setWatchVideoUrl(videoUrl);
+    setSelectedCourse(course);
+    setIsVideoModalOpen(true);
+  };
+
+  const handleCertificateFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Certificate file size exceeds 10 MB limit!");
+        e.target.value = "";
+        setCertificateFile(null);
+        return;
+      }
+      setCertificateFile(file);
+    }
+  };
+
+  const handleCompletionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse || !selectedCourse.progressId) return;
+
+    try {
+      setCompleting(true);
+      let certUrl = "";
+      if (certificateFile) {
+        certUrl = await uploadFile(certificateFile);
+      }
+
+      await updateProgress(selectedCourse.progressId, {
+        status: "completed",
+        certificateUrl: certUrl,
+        completionDate: new Date().toISOString(),
+        notes: completionNote.trim(),
+      });
+
+      toast.success("Course marked as Completed!");
+      setIsCompletionModalOpen(false);
+      setCertificateFile(null);
+      setCompletionNote("");
+      await fetchCourses();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to mark course complete.");
     } finally {
       setCompleting(false);
     }
@@ -201,319 +247,270 @@ export default function UniversityCDPPage() {
 
   return (
     <DashboardLayout role="university">
-      <div className="space-y-8">
-        {/* CDP Progress Section (only when user has registered courses) */}
-        {totalRegistered > 0 && (
-          <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-white mb-4">Your Courses & Progress</h2>
+      <div className="space-y-8 text-white pb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+          <div>
+            <h1 className="text-3xl font-bold">University CDP Training Platform</h1>
+            <p className="text-sm text-white/60">
+              Access university partner training modules &amp; UKVI compliance certifications.
+            </p>
+          </div>
+          <div className="bg-[#14112E] border border-gray-800 px-4 py-2 rounded-lg text-xs font-bold text-[#F68E2D]">
+            TOTAL COURSES COMPLETED: ({completedCount}/{totalCourses})
+          </div>
+        </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Mandatory Courses (registered)</span>
-                <span className="text-white font-semibold">{mandatoryRegisteredCount}/{totalRegistered}</span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-[#F68E2D] h-full transition-all duration-300"
-                  style={{ width: `${percentage}%` }}
-                ></div>
-              </div>
+        {/* CDP PROGRESS SECTION */}
+        <div className="bg-[#14112E] border border-gray-800 rounded-xl p-6 space-y-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white uppercase tracking-wider">CDP PROGRESS</h2>
+              <p className="text-xs text-gray-400">University CDP completion score bar</p>
+            </div>
+            <div className="text-right">
+              <span className="text-3xl font-extrabold text-[#F68E2D]">{progressPercentage}%</span>
+              <span className="block text-[10px] text-gray-400 uppercase font-semibold">Overall Completion Score</span>
             </div>
           </div>
-        )}
 
-        {/* Your Courses Section (registered courses) */}
+          <div className="w-full bg-[#0A0724] border border-gray-700 h-3 rounded-full overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-[#F68E2D] to-amber-400 h-full rounded-full transition-all duration-500"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
+            <span>Completed: {completedCount} Modules</span>
+            <span>Registered: {registeredCourses.length}</span>
+            <span>Total Available: {totalCourses} Courses</span>
+          </div>
+        </div>
+
+        {/* YOUR COURSES SECTION */}
         <div className="space-y-4">
-          {totalRegistered > 0 && <h2 className="text-2xl font-semibold text-white">Your Courses</h2>}
+          <h2 className="text-2xl font-bold text-white border-l-4 border-[#F68E2D] pl-3">
+            Your Courses &amp; University Partner Modules
+          </h2>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#F68E2D] mb-4"></div>
-                <p className="text-white/70">Loading courses...</p>
-              </div>
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F68E2D]"></div>
+              <p className="text-sm text-gray-400 mt-2">Loading courses...</p>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg">
-              <p className="text-red-400">{error}</p>
+            <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-300 text-xs">
+              {error}
             </div>
           ) : courses.length === 0 ? (
-            <div className="border border-gray-700 p-8 text-center">
-              <p className="text-white/70">No courses available.</p>
+            <div className="bg-[#14112E] border border-gray-800 p-8 rounded-xl text-center text-gray-400">
+              No CDP courses available for University profile.
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Registered courses list */}
-              {totalRegistered > 0 && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {registeredCourses.map((course) => {
-                      const UNSPLASH_PLACEHOLDER =
-                        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80";
-                      const imageSrc = getImageSrc(course.coverPicture) || UNSPLASH_PLACEHOLDER;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => {
+                const imageSrc = getImageSrc(course.coverPicture);
+                const isRegistered = !!course.registered;
+                const status = course.enrollmentStatus || "on-going";
+                const isCompleted = status === "completed";
+                const isPaused = status === "paused";
 
-                      const status = (course.enrollmentStatus || (course as any).status || "on-going").toLowerCase();
-                      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ");
-                      const statusClass =
-                        status === "completed"
-                          ? "bg-green-500"
-                          : status === "due"
-                          ? "bg-[#E03137]"
-                          : "bg-[#4A90E2]";
+                const isFutureDate = Boolean(
+                  course.registrationStartDate &&
+                  new Date(course.registrationStartDate.slice(0, 10)) > new Date(todayStr)
+                );
 
-                      return (
+                return (
+                  <div
+                    key={course._id || course.id}
+                    className="bg-[#14112E] border border-gray-800 rounded-xl overflow-hidden shadow-lg flex flex-col justify-between hover:border-[#F68E2D]/40 transition-colors"
+                  >
+                    <div>
+                      <div className="relative h-44 w-full bg-gray-900">
+                        <img src={imageSrc} alt={course.courseName} className="w-full h-full object-cover" />
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <span
+                            className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded shadow ${
+                              course.type === "mandatory"
+                                ? "bg-red-600 text-white"
+                                : "bg-blue-600 text-white"
+                            }`}
+                          >
+                            {course.type}
+                          </span>
+                          {isRegistered && (
+                            <span
+                              className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded shadow ${
+                                isCompleted
+                                  ? "bg-emerald-600 text-white"
+                                  : isPaused
+                                  ? "bg-amber-600 text-white"
+                                  : "bg-teal-600 text-white"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Course Info */}
+                      <div className="p-5 space-y-3">
                         <div
-                          key={course.id}
-                          onClick={() => handleCourseClick(course)}
-                          role="button"
-                          tabIndex={0}
-                          className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:shadow-lg transition text-left"
+                          onClick={() => {
+                            if (course.hyperLink) {
+                              const url = course.hyperLink.startsWith("http") ? course.hyperLink : `https://${course.hyperLink}`;
+                              window.open(url, "_blank");
+                            } else {
+                              toast.error("No course redirection link available.");
+                            }
+                          }}
+                          className="cursor-pointer group"
                         >
-                          <div className="flex items-center gap-4">
-                            <img src={imageSrc} alt={course.courseName} className="w-28 h-16 object-cover rounded-md" />
-                            <div>
-                              <h4 className="text-md font-semibold text-white">{course.courseName}</h4>
-                              <p className="text-gray-400 text-sm">Module {course.modules} • {course.timeInHr} hrs</p>
+                          <h3 className="font-bold text-base text-white line-clamp-1 group-hover:text-[#F68E2D] transition-colors flex items-center gap-1.5">
+                            {course.courseName} <span className="text-xs text-blue-400">↗</span>
+                          </h3>
+                        </div>
+                        <p className="text-xs text-gray-400 line-clamp-2">{course.description}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
+                          <span>{course.modules} Modules</span>
+                          <span>⏱ {course.timeInHr} Hours</span>
+                        </div>
+
+                        {/* Display Start Date & Notes if registered */}
+                        {isRegistered && (
+                          <div className="bg-[#0A0724] border border-gray-800 p-2.5 rounded-lg text-xs space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-400">Start Date:</span>
+                              <span className="text-[#F68E2D] font-bold">
+                                {course.registrationStartDate ? course.registrationStartDate.slice(0, 10) : "N/A"}
+                              </span>
                             </div>
+                            {course.registrationNote && course.registrationNote !== "Starting from today" && (
+                              <p className="text-[11px] text-gray-300 italic truncate">
+                                "{course.registrationNote}"
+                              </p>
+                            )}
                           </div>
+                        )}
+                      </div>
+                    </div>
 
-                          <div className="ml-4">
-                            <span className={`${statusClass} text-white text-xs px-3 py-1 rounded-full`}>{statusLabel}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                    {/* Action Controls */}
+                    <div className="p-5 pt-0 space-y-2">
+                      {!isRegistered ? (
+                        <button
+                          onClick={() => handleOpenRegistrationModal(course)}
+                          className="w-full bg-[#F68E2D] hover:bg-[#e28124] text-white py-2.5 rounded-lg font-bold text-xs uppercase transition-colors cursor-pointer"
+                        >
+                          Register Course
+                        </button>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* Edit Schedule Button */}
+                          <button
+                            onClick={() => handleOpenEditModal(course)}
+                            className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" /> Edit
+                          </button>
 
-              {/* Grouped courses by type (accordion) */}
-              <div className="space-y-3">
-                {Object.entries(grouped).map(([type, list]) => {
-                  const displayType = type.charAt(0).toUpperCase() + type.slice(1);
-                  const isOpen = !!openTypes[type];
-
-                  return (
-                    <div key={type} className="bg-[#0f0d20] border border-gray-800 rounded-md">
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between px-4 py-3"
-                        onClick={() => setOpenTypes((p) => ({ ...p, [type]: !p[type] }))}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-white font-semibold">{displayType}</span>
-                          <span className="text-gray-400 text-sm">{list.length} courses</span>
-                        </div>
-                        <svg className={`w-5 h-5 text-gray-300 transform transition-transform ${isOpen ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M5 8L10 13L15 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-
-                      {isOpen && (
-                        <div className="p-4 space-y-3">
-                          {list.map((course) => {
-                            const UNSPLASH_PLACEHOLDER =
-                              "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80";
-                            const imageSrc = getImageSrc(course.coverPicture) || UNSPLASH_PLACEHOLDER;
-
-                            return (
-                              <div
-                                key={course.id}
-                                onClick={() => handleCourseClick(course)}
-                                role="button"
-                                tabIndex={0}
-                                className="bg-[#14112E] border border-gray-800 rounded-lg p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg transition text-left"
-                              >
-                                <img src={imageSrc} alt={course.courseName} className="w-28 h-16 object-cover rounded-md" />
-                                <div className="flex-1">
-                                  <h4 className="text-md font-semibold text-white">{course.courseName}</h4>
-                                  <p className="text-gray-400 text-sm">Module {course.modules} • {course.timeInHr} hrs</p>
-                                </div>
-                                <div>
-                                  <span className={`${course.type === "mandatory" ? "bg-[#E03137]" : "bg-[#4A90E2]"} text-white text-xs px-3 py-1 rounded-full`}>{course.type}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
+                          {/* Complete Course Button */}
+                          {!isCompleted ? (
+                            <button
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setIsCompletionModalOpen(true);
+                              }}
+                              disabled={isFutureDate}
+                              className={`w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer ${
+                                isFutureDate
+                                  ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              }`}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Complete
+                            </button>
+                          ) : (
+                            <span className="w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800">
+                              ✓ Completed
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Registration Modal */}
-        {isModalOpen && selectedCourse && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/50" onClick={closeModal} />
-            <div className="relative bg-[#0b0a17] border border-gray-800 rounded-md p-6 w-full max-w-lg mx-4 z-10 text-white">
-              <div className="flex gap-4 mb-4">
-                <img
-                  src={getImageSrc(selectedCourse.coverPicture) || "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80"}
-                  alt={selectedCourse.courseName}
-                  className="w-36 h-24 object-cover rounded-md"
-                />
-
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Start Course: {selectedCourse.courseName}</h3>
-                  {selectedCourse.description ? (
-                    <p className="text-gray-300 text-sm mb-2">{selectedCourse.description}</p>
-                  ) : (
-                    <p className="text-gray-400 text-sm mb-2">No description available.</p>
-                  )}
-                  <p className="text-gray-400 text-xs">Module {selectedCourse.modules} • {selectedCourse.timeInHr} hrs</p>
-                </div>
-              </div>
-
-              <label className="block text-sm text-gray-400 mb-1">Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full mb-3 p-2 bg-[#14112E] border border-gray-700 rounded text-white"
-              />
-
-              <label className="block text-sm text-gray-400 mb-1">Note</label>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full mb-4 p-2 bg-[#14112E] border border-gray-700 rounded text-white resize-none"
-                rows={4}
-              />
-
-              <div className="flex justify-end gap-2">
-                <button onClick={closeModal} className="px-4 py-2 bg-gray-700 text-white rounded">Cancel</button>
-                <button
-                  onClick={submitRegistration}
-                  disabled={submitting}
-                  className="px-4 py-2 bg-[#F68E2D] text-black rounded font-semibold disabled:opacity-50"
-                >
-                  {submitting ? "Starting…" : "Start Course"}
+        {/* REGISTRATION MODAL */}
+        {isRegistrationModalOpen && selectedCourse && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#14112E] border border-gray-700 rounded-xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto text-white space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 className="text-lg font-bold text-[#F68E2D]">Register for {selectedCourse.courseName}</h3>
+                <button onClick={() => setIsRegistrationModalOpen(false)} className="text-gray-400 hover:text-white font-bold">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Course Completion Modal */}
-        {isCompletionModalOpen && selectedCompletionCourse && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/50" onClick={() => setIsCompletionModalOpen(false)} />
-            <div className="relative bg-[#0b0a17] border border-gray-800 rounded-md p-6 w-full max-w-lg mx-4 z-10 text-white">
-              <h3 className="text-xl font-semibold mb-4 text-[#F68E2D]">Complete Course: {selectedCompletionCourse.courseName}</h3>
-              
-              <form onSubmit={(e) => { e.preventDefault(); submitCompletion(); }}>
-                <div className="space-y-4 mb-6">
-                  {/* File Upload */}
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Upload Certificate *</label>
-                    <input
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg,.webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        setCertificateFile(file);
-                      }}
-                      className="w-full p-2 bg-[#14112E] border border-gray-700 rounded text-white text-sm"
-                      required
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Allowed formats: PDF, PNG, JPG, JPEG, WEBP. Max size: 10MB.</p>
-                  </div>
+              <div className="h-44 w-full rounded-lg overflow-hidden border border-gray-800">
+                <img src={getImageSrc(selectedCourse.coverPicture)} alt={selectedCourse.courseName} className="w-full h-full object-cover" />
+              </div>
 
-                  {/* Description / Notes */}
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Completion Description / Notes</label>
-                    <textarea
-                      value={completionNote}
-                      onChange={(e) => setCompletionNote(e.target.value)}
-                      placeholder="Enter a description or notes about your learning experience..."
-                      className="w-full p-2 bg-[#14112E] border border-gray-700 rounded text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-[#F68E2D] resize-none"
-                      rows={4}
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Course Description</label>
+                <div className="max-h-36 overflow-y-auto bg-[#0A0724] border border-gray-800 p-3 rounded-lg text-xs leading-relaxed text-gray-300">
+                  {selectedCourse.description}
+                </div>
+              </div>
+
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-white uppercase mb-1">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    min={todayStr}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    required
+                    className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2.5 text-xs text-white outline-none focus:border-[#F68E2D]"
+                  />
                 </div>
 
-                <div className="flex justify-end gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-white uppercase mb-1">Notes / Objectives</label>
+                  <textarea
+                    rows={2}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Enter registration notes"
+                    className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2.5 text-xs text-white outline-none focus:border-[#F68E2D]"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-gray-800">
                   <button
                     type="button"
-                    onClick={() => setIsCompletionModalOpen(false)}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition"
-                    disabled={completing}
+                    onClick={() => setIsRegistrationModalOpen(false)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-bold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-[#F68E2D] hover:bg-[#e57d1f] text-black font-semibold rounded text-sm transition disabled:opacity-50"
-                    disabled={completing || !certificateFile}
+                    disabled={submitting}
+                    className="px-6 py-2 bg-[#F68E2D] hover:bg-[#e28124] text-white rounded-lg text-xs font-bold uppercase disabled:opacity-50"
                   >
-                    {completing ? "Submitting..." : "Complete Course"}
+                    {submitting ? "Registering..." : "Start & Register Course"}
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* View Completed Details Modal */}
-        {isViewModalOpen && selectedViewCourse && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/50" onClick={() => setIsViewModalOpen(false)} />
-            <div className="relative bg-[#0b0a17] border border-gray-800 rounded-md p-6 w-full max-w-lg mx-4 z-10 text-white">
-              <h3 className="text-xl font-semibold mb-3 text-[#F68E2D]">Course Details: {selectedViewCourse.courseName}</h3>
-              <p className="text-sm text-gray-400 mb-4">Module {selectedViewCourse.modules} • {selectedViewCourse.timeInHr} hrs</p>
-              
-              <div className="space-y-4 mb-6">
-                <div>
-                  <span className="block text-xs text-gray-500 uppercase tracking-wider">Status</span>
-                  <span className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full mt-1">Completed</span>
-                </div>
-                
-                {selectedViewCourse.registrationStartDate && (
-                  <div>
-                    <span className="block text-xs text-gray-500 uppercase tracking-wider">Start Date</span>
-                    <p className="text-sm text-white mt-0.5">{new Date(selectedViewCourse.registrationStartDate).toLocaleDateString()}</p>
-                  </div>
-                )}
-
-                {selectedViewCourse.registrationNote && (
-                  <div>
-                    <span className="block text-xs text-gray-500 uppercase tracking-wider">Notes / Description</span>
-                    <p className="text-sm text-white/90 mt-0.5 whitespace-pre-wrap">{selectedViewCourse.registrationNote}</p>
-                  </div>
-                )}
-
-                {selectedViewCourse.certificateUrl && (
-                  <div>
-                    <span className="block text-xs text-gray-500 uppercase tracking-wider">Certificate</span>
-                    <a
-                      href={getImageSrc(selectedViewCourse.certificateUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-2 text-sm text-[#F68E2D] hover:underline"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v4h16v-4" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      View / Download Certificate
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setIsViewModalOpen(false)}
-                  className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         )}

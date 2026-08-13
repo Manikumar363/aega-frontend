@@ -4,7 +4,6 @@ import DashboardLayout from "@/components/ui/dashboard-layout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { uploadFile } from "@/lib/api/fileService";
 
 interface ProfileData {
   firstName: string;
@@ -12,14 +11,7 @@ interface ProfileData {
   email: string;
   phone?: string;
   companyName?: string;
-  dateOfBirth?: string;
-  buildingNumber?: string;
-  streetName?: string;
-  streetAddress?: string;
-  state?: string;
-  city?: string;
-  postCode?: string;
-  businessType?: string;
+  companyAddress?: string;
 }
 
 export default function AgentProfilePage() {
@@ -35,19 +27,10 @@ export default function AgentProfilePage() {
     email: "",
     phone: "",
     companyName: "",
-    dateOfBirth: "",
-    buildingNumber: "",
-    streetName: "",
-    streetAddress: "",
-    state: "",
-    city: "",
-    postCode: "",
-    businessType: "",
+    companyAddress: "",
   });
 
-  const [originalData, setOriginalData] = useState<ProfileData>(profileData);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   // Fetch profile data on component mount
@@ -57,7 +40,7 @@ export default function AgentProfilePage() {
         const token = localStorage.getItem("authToken");
         if (!token) {
           toast.error("Please login first");
-          router.push("/agent/login");
+          router.push("/login");
           return;
         }
 
@@ -72,27 +55,22 @@ export default function AgentProfilePage() {
         }
 
         const data = await response.json();
-        console.log("Profile data:", data);
+        const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+        const fullAddr = [data.buildingNumber, data.streetName, data.streetAddress, data.city, data.state, data.postCode]
+          .filter(Boolean)
+          .join(", ") || data.streetAddress || data.address || "";
 
         const profileInfo: ProfileData = {
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           email: data.email || "",
-          phone: data.phone || "",
-          companyName: data.companyName || "",
-          dateOfBirth: data.dateOfBirth || "",
-          buildingNumber: data.buildingNumber || "",
-          streetName: data.streetName || "",
-          streetAddress: data.streetAddress || "",
-          state: data.state || "",
-          city: data.city || "",
-          postCode: data.postCode || "",
-          businessType: data.businessType || "",
+          phone: data.phone || data.mobileNumber || "",
+          companyName: data.companyName || fullName || "Company Name",
+          companyAddress: fullAddr,
         };
 
-        setUserId(data.id);
+        setUserId(data.id || data._id);
         setProfileData(profileInfo);
-        setOriginalData(profileInfo);
 
         // Load profile image if it exists
         const rawPic = data.profileImage || data.profilePic || data.avatar || data.profilePhoto || (data.user && (data.user.profilePic || data.user.avatar));
@@ -100,13 +78,10 @@ export default function AgentProfilePage() {
           const baseUrl = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
           const imgUrl = rawPic.startsWith("http") ? rawPic : `${baseUrl}/${rawPic.replace(/^\/+/, "")}`;
           setProfileImage(imgUrl);
-          setOriginalImage(imgUrl);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load profile"
-        );
+        toast.error("Failed to load profile");
       } finally {
         setIsLoading(false);
       }
@@ -118,13 +93,10 @@ export default function AgentProfilePage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("File size must be less than 5MB");
         return;
       }
-
-      // Validate file type
       const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
       if (!validTypes.includes(file.type)) {
         toast.error("Only JPG, PNG, GIF, and WebP images are allowed");
@@ -144,173 +116,86 @@ export default function AgentProfilePage() {
   const handleDeleteImage = () => {
     setProfileImage(null);
     setProfileImageFile(null);
-    toast.success("Image removed");
+    toast.success("Profile image removed");
   };
 
   const handleSaveProfile = async () => {
-    if (!userId) {
-      toast.error("User ID not found");
+    if (!profileData.companyName?.trim()) {
+      toast.error("Company Name is required");
       return;
     }
-
-    const isCompany = profileData.businessType === "b2b" || profileData.businessType === "b2c";
-
-    // Validate required fields
-    if (
-      !profileData.firstName ||
-      !profileData.lastName ||
-      !profileData.email ||
-      !profileData.phone ||
-      (isCompany && !profileData.companyName) ||
-      (!isCompany && !profileData.dateOfBirth) ||
-      !profileData.buildingNumber ||
-      !profileData.streetName ||
-      !profileData.streetAddress ||
-      !profileData.city ||
-      !profileData.state ||
-      !profileData.postCode
-    ) {
-      toast.error("Please fill in all required fields");
+    if (!profileData.phone?.trim()) {
+      toast.error("Mobile number is required");
       return;
     }
-
-    // Phone number character restriction validation
-    if (!/^[0-9+\s]+$/.test(profileData.phone)) {
-      toast.error("Phone number can only contain digits, spaces, and '+'");
-      return;
-    }
-
-    setIsSaving(true);
 
     try {
+      setIsSaving(true);
       const token = localStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Please login first");
-        return;
-      }
+      if (!token) return;
 
-      let profileImagePath = null;
-
-      // Upload profile image if changed
+      let uploadedPicPath = undefined;
       if (profileImageFile) {
-        try {
-          toast.loading("Uploading profile image...");
-          profileImagePath = await uploadFile(profileImageFile);
-          toast.dismiss();
-          console.log("Profile image uploaded:", profileImagePath);
-        } catch (error) {
-          toast.dismiss();
-          toast.error("Failed to upload profile image");
-          setIsSaving(false);
-          return;
+        const formData = new FormData();
+        formData.append("file", profileImageFile);
+        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/upload`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          uploadedPicPath = uploadData.filePath || uploadData.url;
         }
       }
 
-      // Prepare update data
-      const updateData = {
-        ...profileData,
-        profileImage: profileImage
-          ? (profileImageFile
-              ? profileImagePath
-              : profileImage.replace(`${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/`, ""))
-          : null,
+      // First and last name update from Company Name if single field
+      const nameParts = profileData.companyName.trim().split(" ");
+      const firstName = nameParts[0] || profileData.companyName;
+      const lastName = nameParts.slice(1).join(" ") || "Agency";
+
+      const payload: any = {
+        firstName,
+        lastName,
+        companyName: profileData.companyName,
+        phone: profileData.phone,
+        mobileNumber: profileData.phone,
+        streetAddress: profileData.companyAddress,
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updateData),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update profile");
+      if (uploadedPicPath !== undefined) {
+        payload.profileImage = uploadedPicPath;
+      } else if (profileImage === null) {
+        payload.profileImage = "";
       }
 
-      const updatedProfile = await response.json();
-      console.log("Profile updated:", updatedProfile);
+      const updateRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-      setOriginalData(profileData);
-      setProfileImageFile(null);
-      if (updateData.profileImage) {
-        const imgUrl = `${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${updateData.profileImage}`;
-        setProfileImage(imgUrl);
-        setOriginalImage(imgUrl);
-      } else {
-        setProfileImage(null);
-        setOriginalImage(null);
+      if (!updateRes.ok) {
+        throw new Error("Failed to update profile");
       }
 
       toast.success("Profile updated successfully!");
       setActiveTab("profile");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update profile"
-      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleDiscardChanges = () => {
-    setProfileData(originalData);
-    setProfileImage(originalImage);
-    setProfileImageFile(null);
-    toast.success("Changes discarded");
-    setActiveTab("profile");
-  };
-
-  const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      "Are you absolutely sure? This action cannot be undone. All your data will be permanently deleted."
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Please login first");
-        return;
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me/${userId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete account");
-      }
-
-      toast.success("Account deleted successfully");
-      localStorage.clear();
-      router.push("/");
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete account"
-      );
     }
   };
 
   if (isLoading) {
     return (
       <DashboardLayout role="agent">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-white text-lg">Loading profile...</div>
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F68E2D]"></div>
         </div>
       </DashboardLayout>
     );
@@ -318,274 +203,112 @@ export default function AgentProfilePage() {
 
   return (
     <DashboardLayout role="agent">
-      <div className="space-y-6">
-        {/* Tabs Navigation */}
-        <div className="flex items-center gap-8 border-b border-gray-700">
+      <div className="max-w-4xl mx-auto space-y-6 text-white pb-10">
+        {/* Header Tabs */}
+        <div className="flex items-center gap-6 border-b border-gray-700 pb-3">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`pb-2 text-base font-medium transition-colors ${
+            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${
               activeTab === "profile"
-                ? "text-[#F68E2D] border-b-2 border-[#F68E2D]"
-                : "text-gray-400 hover:text-white"
+                ? "text-[#F68E2D] border-[#F68E2D]"
+                : "text-gray-400 border-transparent hover:text-white"
             }`}
           >
             Profile
           </button>
           <button
             onClick={() => setActiveTab("edit")}
-            className={`pb-2 text-base font-medium transition-colors ${
+            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${
               activeTab === "edit"
-                ? "text-[#F68E2D] border-b-2 border-[#F68E2D]"
-                : "text-gray-400 hover:text-white"
+                ? "text-[#F68E2D] border-[#F68E2D]"
+                : "text-gray-400 border-transparent hover:text-white"
             }`}
           >
             Edit Profile
           </button>
           <button
-            onClick={() => router.push("/agent/profile/documents")}
-            className="pb-2 text-base font-medium text-gray-400 hover:text-white transition-colors"
-          >
-            Documents
-          </button>
-          <button
             onClick={() => router.push("/agent/profile/reset-password")}
-            className="pb-2 text-base font-medium text-gray-400 hover:text-white transition-colors"
+            className="text-lg font-semibold pb-2 text-gray-400 hover:text-white border-b-2 border-transparent transition-colors cursor-pointer"
           >
             Reset Password
           </button>
         </div>
 
-        {/* Profile Tab Content */}
+        {/* PROFILE VIEW TAB */}
         {activeTab === "profile" && (
-          <div className="space-y-6">
-            {/* Profile Image */}
-            <div className="flex items-center gap-4">
+          <div className="bg-[#14112E] border border-gray-800 rounded-xl p-8 space-y-6 shadow-xl">
+            <div className="flex items-center gap-5">
               <div className="w-20 h-20 rounded-full bg-gray-700 overflow-hidden border-4 border-[#F68E2D]">
                 {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <svg
-                      className="w-12 h-12"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                     </svg>
                   </div>
                 )}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">{profileData.companyName}</h2>
+                <p className="text-xs text-[#F68E2D] font-semibold uppercase">{profileData.email}</p>
               </div>
             </div>
 
-            {/* View-Only Form */}
-            {profileData.businessType === "b2b" || profileData.businessType === "b2c" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-white text-sm mb-2">Full Name</label>
-                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                    {`${profileData.firstName} ${profileData.lastName}`.trim() || "N/A"}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white text-sm mb-2">Company Name</label>
-                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                    {profileData.companyName || "N/A"}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white text-sm mb-2">Email</label>
-                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white flex items-center justify-between">
-                    <span>{profileData.email}</span>
-                    <svg
-                      className="w-5 h-5 text-green-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white text-sm mb-2">Phone</label>
-                  <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                    {profileData.phone || "N/A"}
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-white text-sm mb-2">Company Full Address</label>
-                  <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
-                    {[
-                      profileData.buildingNumber,
-                      profileData.streetName,
-                      profileData.streetAddress,
-                      profileData.city,
-                      profileData.state,
-                      profileData.postCode
-                    ]
-                      .filter(Boolean)
-                      .join(", ") || "N/A"}
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-800">
+              <div>
+                <label className="block text-gray-400 text-xs font-semibold uppercase mb-1">Company Name</label>
+                <div className="bg-[#0A0724] border border-gray-700 rounded-lg p-3 text-white font-medium">
+                  {profileData.companyName || "N/A"}
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-white text-sm mb-2">First Name</label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                      {profileData.firstName}
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-white text-sm mb-2">Last Name</label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                      {profileData.lastName}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm mb-2">Email</label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white flex items-center justify-between">
-                      <span>{profileData.email}</span>
-                      <svg
-                        className="w-5 h-5 text-green-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm mb-2">Phone</label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                      {profileData.phone || "N/A"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm mb-2">
-                      Company Name
-                    </label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                      {profileData.companyName || "N/A"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm mb-2">
-                      Date of Birth
-                    </label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white">
-                      {profileData.dateOfBirth || "N/A"}
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-gray-400 text-xs font-semibold uppercase mb-1">Email ID</label>
+                <div className="bg-[#0A0724] border border-gray-700 rounded-lg p-3 text-white font-medium flex items-center justify-between">
+                  <span>{profileData.email}</span>
+                  <span className="text-emerald-400 text-xs">✓ Verified</span>
                 </div>
-
-                {(profileData.buildingNumber ||
-                  profileData.streetName ||
-                  profileData.streetAddress ||
-                  profileData.state ||
-                  profileData.city ||
-                  profileData.postCode) && (
-                  <div>
-                    <label className="block text-white text-sm mb-2">
-                      Address
-                    </label>
-                    <div className="bg-[#14112E] border border-gray-700 rounded-md p-4 text-white text-sm leading-relaxed">
-                      {profileData.buildingNumber && (
-                        <p>Building Number: {profileData.buildingNumber}</p>
-                      )}
-                      {profileData.streetName && (
-                        <p>Street Name: {profileData.streetName}</p>
-                      )}
-                      {profileData.streetAddress && (
-                        <p>Street Address: {profileData.streetAddress}</p>
-                      )}
-                      {(profileData.state ||
-                        profileData.city ||
-                        profileData.postCode) && (
-                        <p>
-                          {profileData.state && `State: ${profileData.state}`}
-                          {profileData.state && profileData.city && ", "}
-                          {profileData.city && `City: ${profileData.city}`}
-                        </p>
-                      )}
-                      {profileData.postCode && (
-                        <p>Post Code: {profileData.postCode}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-            )}
+
+              <div>
+                <label className="block text-gray-400 text-xs font-semibold uppercase mb-1">Mobile Number</label>
+                <div className="bg-[#0A0724] border border-gray-700 rounded-lg p-3 text-white font-medium">
+                  {profileData.phone || "N/A"}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-400 text-xs font-semibold uppercase mb-1">Company Address</label>
+                <div className="bg-[#0A0724] border border-gray-700 rounded-lg p-3 text-white font-medium">
+                  {profileData.companyAddress || "N/A"}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Edit Profile Tab Content */}
+        {/* EDIT PROFILE TAB (SIMPLIFIED TO 5 CORE FIELDS) */}
         {activeTab === "edit" && (
-          <div className="space-y-6">
-            {/* Profile Image with Upload/Delete */}
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gray-700 overflow-hidden border-4 border-[#F68E2D]">
+          <div className="bg-[#14112E] border border-gray-800 rounded-xl p-8 space-y-6 shadow-xl">
+            {/* 1. Profile Pic Field */}
+            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-gray-800">
+              <div className="w-24 h-24 rounded-full bg-gray-700 overflow-hidden border-4 border-[#F68E2D] shrink-0">
                 {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <svg
-                      className="w-12 h-12"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                     </svg>
                   </div>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <label
                   htmlFor="profile-upload"
-                  className="bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer transition-colors"
+                  className="bg-white hover:bg-gray-100 text-gray-900 font-bold px-4 py-2 rounded-md text-xs cursor-pointer transition-colors"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                    />
-                  </svg>
                   Upload New Picture
                 </label>
                 <input
@@ -596,286 +319,90 @@ export default function AgentProfilePage() {
                   className="hidden"
                 />
                 <button
+                  type="button"
                   onClick={handleDeleteImage}
-                  className="bg-[#E03137] hover:bg-[#c41e24] text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm transition-colors"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-md text-xs transition-colors cursor-pointer"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
                   Delete Picture
                 </button>
               </div>
             </div>
 
-            {/* Editable Form */}
+            {/* 4 Core Input Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 2. Company Name */}
               <div>
-                <label className="block text-white text-sm mb-2">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={profileData.firstName}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, firstName: e.target.value })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Last Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={profileData.lastName}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, lastName: e.target.value })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    value={profileData.email}
-                    disabled
-                    className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 pr-10 text-white opacity-50 cursor-not-allowed focus:outline-none"
-                  />
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^[0-9+\s]*$/.test(val)) {
-                      setProfileData({ ...profileData, phone: val });
-                    }
-                  }}
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
+                <label className="block text-white text-xs font-semibold uppercase mb-2">
                   Company Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={profileData.companyName}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, companyName: e.target.value })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                  onChange={(e) => setProfileData({ ...profileData, companyName: e.target.value })}
+                  className="w-full bg-[#0A0724] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D]"
+                  placeholder="Enter company name"
                 />
               </div>
 
-              {profileData.businessType !== "b2b" && profileData.businessType !== "b2c" && (
-                <div>
-                  <label className="block text-white text-sm mb-2">
-                    Date of Birth <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.dateOfBirth}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData, dateOfBirth: e.target.value })
-                    }
-                    className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Address Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              {/* 3. Email ID (Read-only) */}
               <div>
-                <label className="block text-white text-sm mb-2">
-                  Building Number <span className="text-red-500">*</span>
+                <label className="block text-white text-xs font-semibold uppercase mb-2">
+                  Email ID <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  placeholder="Building Number"
-                  value={profileData.buildingNumber}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      buildingNumber: e.target.value,
-                    })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                  type="email"
+                  value={profileData.email}
+                  disabled
+                  className="w-full bg-[#0A0724] border border-gray-700 rounded-lg px-4 py-3 text-white/50 cursor-not-allowed outline-none"
                 />
               </div>
 
+              {/* 4. Mobile Number */}
               <div>
-                <label className="block text-white text-sm mb-2">
-                  Street Name <span className="text-red-500">*</span>
+                <label className="block text-white text-xs font-semibold uppercase mb-2">
+                  Mobile Number <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  placeholder="Street Name"
-                  value={profileData.streetName}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      streetName: e.target.value,
-                    })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                  type="tel"
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  className="w-full bg-[#0A0724] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D]"
+                  placeholder="Enter mobile number"
                 />
               </div>
 
+              {/* 5. Company Address */}
               <div>
-                <label className="block text-white text-sm mb-2">
-                  Street Address <span className="text-red-500">*</span>
+                <label className="block text-white text-xs font-semibold uppercase mb-2">
+                  Company Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Street Address"
-                  value={profileData.streetAddress}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      streetAddress: e.target.value,
-                    })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  State <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="State"
-                  value={profileData.state}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      state: e.target.value,
-                    })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="City"
-                  value={profileData.city}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      city: e.target.value,
-                    })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm mb-2">
-                  Post Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Post Code"
-                  value={profileData.postCode}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      postCode: e.target.value,
-                    })
-                  }
-                  className="w-full bg-[#14112E] border border-gray-700 rounded-md px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D] focus:ring-1 focus:ring-[#F68E2D]"
+                  value={profileData.companyAddress}
+                  onChange={(e) => setProfileData({ ...profileData, companyAddress: e.target.value })}
+                  className="w-full bg-[#0A0724] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#F68E2D]"
+                  placeholder="Enter full company address"
                 />
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-center gap-4">
+            {/* Save Button */}
+            <div className="pt-4 flex justify-end gap-4 border-t border-gray-800">
               <button
-                onClick={handleDiscardChanges}
-                disabled={isSaving}
-                className="bg-transparent hover:bg-gray-800 border border-gray-600 text-white px-12 py-3 rounded-md text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={() => setActiveTab("profile")}
+                className="px-6 py-2.5 rounded-lg border border-gray-600 text-white/80 hover:text-white text-xs font-bold transition-colors cursor-pointer"
               >
-                Discard
+                Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-12 py-3 rounded-md text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#F68E2D] hover:bg-[#e28124] text-white px-8 py-2.5 rounded-lg font-bold text-xs uppercase transition-colors cursor-pointer disabled:opacity-50"
               >
-                {isSaving ? "Saving..." : "Save Details"}
+                {isSaving ? "Saving Changes..." : "Save Profile"}
               </button>
-            </div>
-
-            {/* Delete Account Section */}
-            <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6 mt-8">
-              <h2 className="text-xl font-semibold text-[#F68E2D] mb-4">
-                DELETE ACCOUNT !!
-              </h2>
-              <p className="text-white mb-2">We're sorry to see you go.,</p>
-              <ul className="text-white text-sm space-y-1 list-disc list-inside mb-6">
-                <li>
-                  If you'd like to reduce your email notifications, you can disable them here or if you just want to change your username, you can do that here.
-                </li>
-                <li>
-                  Be advised, account deletion is final. There will be no way to restore your account.
-                </li>
-              </ul>
-              <div className="flex justify-end gap-4">
-                <button className="bg-white hover:bg-gray-100 text-gray-700 px-8 py-2.5 rounded-md text-sm transition-colors">
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  className="bg-[#E03137] hover:bg-[#c41e24] text-white px-8 py-2.5 rounded-md text-sm transition-colors"
-                >
-                  Delete Account
-                </button>
-              </div>
             </div>
           </div>
         )}

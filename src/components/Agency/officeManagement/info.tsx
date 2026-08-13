@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import CDPTraining from "./cdpTraining";
-import Audits from "./audits";
-import Compliances from "./compliances";
-import Employee from "./employee";
 import toast from "react-hot-toast";
 
 type OfficeData = {
@@ -15,6 +11,7 @@ type OfficeData = {
   email: string;
   mobileNumber: string;
   employees: any[];
+  numberOfEmployees?: number;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -25,22 +22,9 @@ type ViewAgentProps = {
   onClose?: () => void;
 };
 
-const performance = [
-  { label: "Visa refusal (85% - 100%)", value: 75, max: 75, color: "#F68E2D" },
-  { label: "Enrollment (50% - 84%)", value: 24, max: 75, color: "#2563eb" },
-  { label: "withdrawn Student (0% - 49%)", value: 1, max: 75, color: "#F68E2D" },
-  { label: "Withdrawn Payment (50% - 79%)", value: 40, max: 75, color: "#F68E2D" },
-  { label: "Academic Withdrawn (80% - 100%)", value: 75, max: 75, color: "#F68E2D" },
-  { label: "Student Output Sucess(80% - 100%)", value: 50, max: 75, color: "#10b981" },
-  { label: "Student Output Needs Improvement (60% - 79%)", value: 40, max: 75, color: "#10b981" },
-  { label: "Student Output Unsatisfactory( Below 60%)", value: 30, max: 75, color: "#10b981" },
-];
-
-const Info: React.FC<ViewAgentProps> = ({ officeId, onClose }) => {
+const Info: React.FC<ViewAgentProps> = ({ officeId }) => {
   const [office, setOffice] = useState<OfficeData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timePeriod, setTimePeriod] = useState<"weekly" | "monthly" | "yearly">("weekly");
-  const [activeTab, setActiveTab] = useState<"info" | "cdp" | "compliances" | "audits" | "employee">("info");
 
   useEffect(() => {
     const fetchOfficeDetails = async () => {
@@ -80,8 +64,8 @@ const Info: React.FC<ViewAgentProps> = ({ officeId, onClose }) => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-white text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#F68E2D]"></div>
-          <p className="mt-4">Loading office details...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#F68E2D]"></div>
+          <p className="mt-3 text-xs text-gray-300">Loading office details...</p>
         </div>
       </div>
     );
@@ -90,143 +74,59 @@ const Info: React.FC<ViewAgentProps> = ({ officeId, onClose }) => {
   if (!office) {
     return (
       <div className="text-white text-center py-12">
-        <p>No office details found</p>
+        <p className="text-sm text-gray-400">No office details found.</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-[#F68E2D] pb-2 mb-6">
-        <div className="flex items-center gap-8">
-          <button
-            onClick={() => setActiveTab("info")}
-            className={`font-semibold pb-2 border-b-2 ${activeTab === "info" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent"}`}
-          >
-            Info
-          </button>
-          <button
-            onClick={() => setActiveTab("cdp")}
-            className={`font-semibold pb-2 border-b-2 ${activeTab === "cdp" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent"}`}
-          >
-            CDP Training
-          </button>
-          <button
-            onClick={() => setActiveTab("compliances")}
-            className={`font-semibold pb-2 border-b-2 ${activeTab === "compliances" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent"}`}
-          >
-            Compliances
-          </button>
-          <button
-            onClick={() => setActiveTab("audits")}
-            className={`font-semibold pb-2 border-b-2 ${activeTab === "audits" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent"}`}
-          >
-            Audits
-          </button>
-          <button
-            onClick={() => setActiveTab("employee")}
-            className={`font-semibold pb-2 border-b-2 ${activeTab === "employee" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent"}`}
-          >
-            Employee
-          </button>
-        </div>
+  const employeeCount = typeof office.numberOfEmployees === "number" ? office.numberOfEmployees : (Array.isArray(office.employees) ? office.employees.length : 0);
 
-        <button className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-6 py-2 rounded font-medium flex items-center gap-2 transition-colors">
-          <span className="text-lg font-bold">+</span> Raise Complaint
-        </button>
+  return (
+    <div className="space-y-6 text-white">
+      {/* Title */}
+      <div className="border-b border-[#F68E2D] pb-3">
+        <h2 className="text-2xl font-bold text-[#F68E2D]">Office Information</h2>
+        <p className="text-xs text-gray-400 mt-0.5">Overview and details for {office.location}</p>
       </div>
 
-      {activeTab === "cdp" ? (
-        <CDPTraining />
-      ) : activeTab === "compliances" ? (
-        <Compliances />
-      ) : activeTab === "audits" ? (
-        <Audits />
-      ) : activeTab === "employee" ? (
-        <Employee />
-      ) : (
-        <>
-          {/* OFFICE INFORMATION */}
-          <div className="bg-[#14112E] rounded-lg p-6 border border-[#2C2A45]">
-            <h2 className="text-white text-lg font-semibold mb-4">OFFICE INFORMATION</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white text-sm">
-              <div>
-                <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Location :</span>
-                  <span className="ml-2">{office.location}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-400">Email ID :</span>
-                  <span className="ml-2">{office.email}</span>
-                </div>
-              </div>
-              <div>
-                <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Full Address :</span>
-                  <span className="ml-2">{office.fullAddress}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-400">Mobile Number :</span>
-                  <span className="ml-2">{office.mobileNumber}</span>
-                </div>
-              </div>
-              <div>
-                <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Total Employees :</span>
-                  <span className="ml-2">{office.employees.length}</span>
-                </div>
-              </div>
-              <div>
-                <div className="mb-3">
-                  <span className="font-semibold text-gray-400">Office ID :</span>
-                  <span className="ml-2 text-xs font-mono">{office._id}</span>
-                </div>
-              </div>
-            </div>
+      {/* Office Information Cards Grid */}
+      <div className="bg-[#14123A] border border-gray-800 rounded-xl p-6 shadow-xl space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+          <div className="bg-[#0A0724] border border-gray-800 p-4 rounded-lg space-y-1">
+            <span className="text-gray-400 font-semibold uppercase block text-[10px]">Location / Name</span>
+            <span className="text-base font-bold text-white">{office.location}</span>
           </div>
 
-          {/* PERFORMANCE MATRIX */}
-          <div className="bg-[#14112E] rounded-lg p-6 border border-[#2C2A45]">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white text-lg font-semibold">PERFORMANCE MATRIX</h2>
-              <div className="flex gap-2">
-                {(["weekly", "monthly", "yearly"] as const).map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => setTimePeriod(period)}
-                    className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                      timePeriod === period
-                        ? "bg-[#F68E2D] text-white"
-                        : "bg-transparent text-white/70 hover:text-white border border-white/20"
-                    }`}
-                  >
-                    {period.charAt(0).toUpperCase() + period.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {performance.map((item, idx) => (
-                <div key={idx}>
-                  <div className="flex justify-between text-white text-sm mb-2">
-                    <span>{item.label}</span>
-                    <span className="font-semibold">
-                      {String(item.value).padStart(2, "0")}/{item.max}
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(item.value / item.max) * 100}%`, backgroundColor: item.color }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="bg-[#0A0724] border border-gray-800 p-4 rounded-lg space-y-1">
+            <span className="text-gray-400 font-semibold uppercase block text-[10px]">Total Employees</span>
+            <span className="text-base font-bold text-[#F68E2D]">{employeeCount}</span>
           </div>
-        </>
-      )}
+
+          <div className="bg-[#0A0724] border border-gray-800 p-4 rounded-lg space-y-1">
+            <span className="text-gray-400 font-semibold uppercase block text-[10px]">Email Address</span>
+            <span className="text-sm font-semibold text-white">{office.email}</span>
+          </div>
+
+          <div className="bg-[#0A0724] border border-gray-800 p-4 rounded-lg space-y-1">
+            <span className="text-gray-400 font-semibold uppercase block text-[10px]">Mobile Number</span>
+            <span className="text-sm font-semibold text-white">{office.mobileNumber}</span>
+          </div>
+        </div>
+
+        <div className="bg-[#0A0724] border border-gray-800 p-4 rounded-lg space-y-1 text-xs">
+          <span className="text-gray-400 font-semibold uppercase block text-[10px]">Full Registered Address</span>
+          <span className="text-sm font-semibold text-white leading-relaxed">{office.fullAddress}</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-400 pt-2 border-t border-gray-800">
+          <div>
+            Registered Date: <span className="text-white font-medium">{new Date(office.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div>
+            Last Updated: <span className="text-white font-medium">{new Date(office.updatedAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

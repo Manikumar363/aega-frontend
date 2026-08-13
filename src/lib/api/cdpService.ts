@@ -24,7 +24,7 @@ export async function getProgress(progressId: string) {
   return apiGet<any>(`/api/cdp-courses/progress/${progressId}`);
 }
 
-export async function updateProgress(progressId: string, body: { certificateUrl?: string; notes?: string }) {
+export async function updateProgress(progressId: string, body: { status?: string; certificateUrl?: string; notes?: string; completionDate?: string }) {
   return apiPut<any>(`/api/cdp-courses/progress/${progressId}`, body);
 }
 

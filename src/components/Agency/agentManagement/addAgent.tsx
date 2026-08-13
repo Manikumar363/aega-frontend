@@ -253,8 +253,8 @@ const AddAgent: React.FC<AddAgentProps> = ({ editAgent, onSuccess }) => {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        if (response.status === 409 || data?.error?.toLowerCase().includes("exist")) {
-          toast.error("Agent already exist with this emailid");
+        if (response.status === 409 || data?.error?.toLowerCase().includes("exist") || data?.message?.toLowerCase().includes("exist")) {
+          toast.error("Company already exist with this emailid");
         } else {
           toast.error(data?.error || data?.message || `Request failed with status ${response.status}`);
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -41,13 +41,17 @@ type DashboardLayoutProps = {
 };
 
 type StoredUser = {
+  name?: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: string;
   businessType?: "b2b" | "b2c" | null;
+  universityName?: string;
 } | null;
 
 const resolveIcon = (icon: IconLike): SvgIcon => {
-  // Supports both:
-  // 1) (props) => <svg .../>
-  // 2) () => (props) => <svg .../>
   try {
     const maybeFactoryResult = (icon as () => SvgIcon)();
     if (typeof maybeFactoryResult === "function") {
@@ -59,11 +63,9 @@ const resolveIcon = (icon: IconLike): SvgIcon => {
   return icon as SvgIcon;
 };
 
-// ✅ Define role-based nav items for AGENT & UNIVERSITY
 const agentTopNav: NavItem[] = [
   { icon: DashboardIcon, label: "Dashboard", href: "/agent/dashboard" },
   { icon: OfficeIcon, label: "Company Management", href: "/agent/company-management" },
-  // {icon: StudentManagementIcon, label: "Student Management", href: "/agent/student-management" },
   { icon: AgentManagementIcon, label: "Agent Management", href: "/agent/agent-management" },
   { icon: UniManagementIcon, label: "Uni Management", href: "/agent/university-management" },
   { icon: OfficeIcon, label: "Office", href: "/agent/office-management" },
@@ -80,34 +82,24 @@ const universityTopNav: NavItem[] = [
   { icon: CDPIcon, label: "CDP Training", href: "/university/CDP" },
   { icon: ComplianceIcon, label: "Compliances", href: "/university/compliances" },
   { icon: AuditsIcon, label: "Audits", href: "/university/audits" },
-
 ];
 
-const agentBottomNav: NavItem[] = [
-  //   { icon: LogoutIcon, label: "Logout", href: "/agent/logout" },
-];
+const agentBottomNav: NavItem[] = [];
 
 const universityBottomNav: NavItem[] = [
   { icon: HelpIcon, label: "Help Center", href: "/university/help-center" },
   { icon: PasswordIcon, label: "Password & Security", href: "/university/password" },
-  //   { icon: LogoutIcon, label: "Logout", href: "/university/logout" },
 ];
 
 const parseBusinessTypeFromToken = (token: string | null): "b2b" | "b2c" | null => {
-  if (!token) {
-    return null;
-  }
-
+  if (!token) return null;
   try {
     const payload = token.split(".")[1];
-    if (!payload) {
-      return null;
-    }
-
+    if (!payload) return null;
     const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
     const paddedPayload = normalizedPayload.padEnd(
       normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
-      "=",
+      "="
     );
     const decodedPayload = atob(paddedPayload);
     const parsed = JSON.parse(decodedPayload) as { businessType?: "b2b" | "b2c" };
@@ -120,11 +112,16 @@ const parseBusinessTypeFromToken = (token: string | null): "b2b" | "b2c" | null 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [userState, setUserState] = useState<StoredUser>(null);
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const businessType = userState?.businessType ?? null;
   const topNavigationItems = role === "agent"
@@ -140,20 +137,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         localStorage.removeItem("userRole");
         sessionStorage.clear();
       }
-      console.log(`Logging out ${role}...`);
-
       toast.success("Successfully logged out!", {
         duration: 3000,
-        style: {
-          background: "#fff",
-          color: "#2A020D",
-          fontWeight: "bold",
-        },
+        style: { background: "#fff", color: "#2A020D", fontWeight: "bold" },
       });
-
-      setTimeout(() => {
-        router.push(`/login`);
-      }, 500);
+      setTimeout(() => { router.push(`/login`); }, 500);
     } catch (error) {
       console.error("Error during logout:", error);
       toast.error("Error during logout. Please try again.");
@@ -169,17 +157,21 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     } else {
       document.body.style.overflow = "unset";
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [isSidebarOpen]);
 
   useEffect(() => {
-    const closeMenu = () => setIsProfileMenuOpen(false);
+    const closeMenu = (e: MouseEvent) => {
+      setIsProfileMenuOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
     window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
   }, []);
 
+  // Set Dynamic Role-based Browser Tab Title
   useEffect(() => {
     const allItems = [...topNavigationItems, ...bottomNavigationItems];
     const match = allItems.find(item => item.href === pathname);
@@ -188,42 +180,41 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     if (match) {
       label = match.label;
     } else {
-      if (pathname.includes("/profile")) {
-        label = "Profile";
-      } else if (pathname.includes("/certifications")) {
-        label = "Certifications";
-      } else if (pathname.includes("/password")) {
-        label = "Password & Security";
-      } else if (pathname.includes("/help-center")) {
-        label = "Help Center";
-      } else if (pathname.includes("/agent-management") || pathname.includes("/agentManagement")) {
-        label = "Agent Management";
-      } else if (pathname.includes("/student-management")) {
-        label = "Student Management";
-      } else if (pathname.includes("/office-management")) {
-        label = "Office Management";
-      } else if (pathname.includes("/revenue")) {
-        label = "Revenue";
-      } else if (pathname.includes("/leave-management")) {
-        label = "Leave Management";
-      } else if (pathname.includes("/university-management")) {
-        label = "University Management";
-      } else if (pathname.includes("/CDP")) {
-        label = "CDP Training";
-      } else if (pathname.includes("/compliances")) {
-        label = "Compliances";
-      } else if (pathname.includes("/audits")) {
-        label = "Audits";
-      }
+      if (pathname.includes("/profile")) label = "Profile";
+      else if (pathname.includes("/certifications")) label = "Certifications";
+      else if (pathname.includes("/password")) label = "Password & Security";
+      else if (pathname.includes("/help-center")) label = "Help Center";
+      else if (pathname.includes("/agent-management") || pathname.includes("/agentManagement")) label = "Agent Management";
+      else if (pathname.includes("/student-management")) label = "Student Management";
+      else if (pathname.includes("/office-management")) label = "Office Management";
+      else if (pathname.includes("/revenue")) label = "Revenue";
+      else if (pathname.includes("/leave-management")) label = "Leave Management";
+      else if (pathname.includes("/university-management")) label = "University Management";
+      else if (pathname.includes("/CDP")) label = "CDP Training";
+      else if (pathname.includes("/compliances")) label = "Compliances";
+      else if (pathname.includes("/audits")) label = "Audits";
     }
 
-    document.title = `AEGA - ${label}`;
-  }, [pathname, topNavigationItems, bottomNavigationItems]);
+    const token = typeof window !== "undefined" ? getAuthToken() : null;
+    const userRole = userState?.role || (role === "agent" ? "agent" : "university");
+    const bizType = userState?.businessType || parseBusinessTypeFromToken(token);
+
+    let platformPrefix = "AEGA B2B Platform";
+    if (userRole === "counsellor") {
+      platformPrefix = "AEGA Counsellor Platform";
+    } else if (userRole === "university") {
+      platformPrefix = "AEGA University Platform";
+    } else if (bizType === "b2c" || pathname.includes("/public") || pathname.includes("/student")) {
+      platformPrefix = "AEGA B2C Platform";
+    } else {
+      platformPrefix = "AEGA B2B Platform";
+    }
+
+    document.title = `${platformPrefix} | ${label}`;
+  }, [pathname, topNavigationItems, bottomNavigationItems, userState, role]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    if (typeof window === "undefined") return;
 
     const token = getAuthToken();
     const storedUser = getStoredUserData();
@@ -234,8 +225,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     }
 
     const storedUserRole = storedUser.role as string;
-    const isRoleMatch = storedUserRole === role ||
-      (role === 'agent' && storedUserRole === 'counsellor');
+    const isRoleMatch = storedUserRole === role || (role === 'agent' && storedUserRole === 'counsellor');
 
     if (!isRoleMatch) {
       const targetRole = storedUserRole === 'counsellor' ? 'agent' : (storedUserRole === 'admin' ? 'agent' : storedUserRole);
@@ -254,9 +244,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
         if (role === "agent") {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/me`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
 
           if (response.ok) {
@@ -275,6 +263,51 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     fetchHeaderProfile();
   }, [role, pathname]);
 
+  // Global Dynamic Search Handler
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      setShowSearchDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const token = getAuthToken();
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/dashboard/search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setSearchResults(data.data);
+            setShowSearchDropdown(true);
+          }
+        }
+      } catch (err) {
+        console.error("Dashboard search failed:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Format Display Full Name
+  const getDisplayFullName = () => {
+    if (!userState) return "User Profile";
+    if (userState.fullName) return userState.fullName;
+    const combined = `${userState.firstName || ''} ${userState.lastName || ''}`.trim();
+    if (combined) return combined;
+    if (userState.name) return userState.name;
+    if (userState.universityName) return userState.universityName;
+    if (userState.email) return userState.email.split('@')[0];
+    return "User Profile";
+  };
+
   const searchEnabledRoutes = [
     `/${role}/dashboard`,
     `/${role}/CDP`,
@@ -284,32 +317,25 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
   const injectSearchProp = (node: React.ReactNode, q: string): React.ReactNode => {
     if (Array.isArray(node)) return React.Children.map(node, (n) => injectSearchProp(n, q));
-
     if (!React.isValidElement(node)) return node;
-
     const el = node as React.ReactElement<any>;
-
-    // Handle Suspense by injecting into its children
     if (el.type === React.Suspense) {
       const inner = (el.props as any)?.children;
       return React.cloneElement(el, {}, injectSearchProp(inner, q) as any);
     }
-
-    // Only inject searchQuery into custom components (not DOM elements)
-    // DOM elements have string types like "div", "span", etc.
-    if (typeof el.type === 'string') {
-      return node;
-    }
-
+    if (typeof el.type === 'string') return node;
     return React.cloneElement(el, { searchQuery: q });
   };
+
+  const displayName = getDisplayFullName();
 
   return (
     <div className="min-h-screen flex bg-[#03091F]">
       {/* Sidebar */}
       <div
-        className={`w-64 bg-[#14112E] text-white flex flex-col fixed top-0 left-0 h-screen z-20 transition-transform duration-300 ease-in-out overflow-y-auto ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          }`}
+        className={`w-64 bg-[#14112E] text-white flex flex-col fixed top-0 left-0 h-screen z-20 transition-transform duration-300 ease-in-out overflow-y-auto ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
         {/* Logo */}
         <div className="p-3 flex items-start justify-start">
@@ -331,13 +357,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 transition-colors ${pathname === item.href
+                    className={`flex items-center gap-2 px-3 py-2 transition-colors ${
+                      pathname === item.href
                         ? "bg-[#F68E2D] text-white"
                         : "text-white/80 hover:bg-[#F68E2D] hover:text-white"
-                      }`}
+                    }`}
                   >
-                    <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""
-                      }`}>
+                    <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""}`}>
                       <Icon />
                     </span>
                     <span className="text-sm">{item.label}</span>
@@ -348,7 +374,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           </ul>
         </nav>
 
-        {/* Spacer */}
         <div className="flex-1 hidden md:block"></div>
 
         {/* Bottom Navigation */}
@@ -360,13 +385,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${pathname === item.href
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                      pathname === item.href
                         ? "bg-white/10 text-white"
                         : "text-white/80 hover:bg-white/5 hover:text-white"
-                      }`}
+                    }`}
                   >
-                    <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""
-                      }`}>
+                    <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""}`}>
                       <Icon />
                     </span>
                     <span className="text-sm">{item.label}</span>
@@ -386,7 +411,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
               </button>
             </li>
           </ul>
-
         </nav>
       </div>
 
@@ -402,7 +426,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       <div className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64">
         {/* Header */}
         <header className="bg-[#14112E] text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-          {/* Hamburger button (mobile only) */}
           <button
             className="md:hidden mr-4 text-white"
             onClick={toggleSidebar}
@@ -419,58 +442,139 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             </svg>
           </button>
 
-          {/* Search */}
-          <div className="flex-1 max-w-[250px] relative bg-white/30">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#A0AEC0]" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-transparent rounded-full ml-2 text-[#A0AEC0] placeholder-white/30 focus:outline-none focus:ring-0 border-none"
-              style={{
-                border: "none",
-                background: "transparent",
-                boxShadow: "none",
-              }}
-            />
+          {/* Dynamic Global Search Bar & Results Dropdown Overlay */}
+          <div className="flex-1 max-w-[320px] relative" ref={searchRef}>
+            <div className="relative flex items-center bg-white/10 rounded-full px-3 py-1.5 border border-white/15 focus-within:border-[#F68E2D] transition-colors">
+              <SearchIcon className="text-[#A0AEC0] w-4 h-4 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search agents, unis, courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => { if (searchResults) setShowSearchDropdown(true); }}
+                className="w-full pl-2.5 pr-2 text-xs text-white placeholder-white/40 bg-transparent outline-none border-none"
+              />
+              {isSearching && <span className="text-[10px] text-[#F68E2D] animate-pulse shrink-0">...</span>}
+            </div>
+
+            {/* LIVE SEARCH RESULTS OVERLAY */}
+            {showSearchDropdown && searchResults && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#14112E] border border-white/20 rounded-xl shadow-2xl p-4 z-50 max-h-96 overflow-y-auto space-y-4 text-xs text-white">
+                {/* Agents */}
+                {searchResults.agents?.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-[#F68E2D] uppercase tracking-wider mb-1">Agents ({searchResults.agents.length})</h4>
+                    <div className="space-y-1">
+                      {searchResults.agents.map((a: any) => (
+                        <div
+                          key={a._id}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            router.push(`/${role}/agent-management`);
+                          }}
+                          className="p-2 bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-colors"
+                        >
+                          <p className="font-bold">{a.firstName} {a.lastName}</p>
+                          <p className="text-[10px] text-white/60">{a.email} • {a.country || 'Global'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Universities */}
+                {searchResults.universities?.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-[#F68E2D] uppercase tracking-wider mb-1">Universities ({searchResults.universities.length})</h4>
+                    <div className="space-y-1">
+                      {searchResults.universities.map((u: any) => (
+                        <div
+                          key={u._id}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            router.push(`/${role}/university-management`);
+                          }}
+                          className="p-2 bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-colors"
+                        >
+                          <p className="font-bold">{u.universityName}</p>
+                          <p className="text-[10px] text-white/60">{u.email} • {u.country || 'UK'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* CDP Courses */}
+                {searchResults.courses?.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-[#F68E2D] uppercase tracking-wider mb-1">CDP Courses ({searchResults.courses.length})</h4>
+                    <div className="space-y-1">
+                      {searchResults.courses.map((c: any) => (
+                        <div
+                          key={c._id}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            router.push(`/${role}/CDP`);
+                          }}
+                          className="p-2 bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-colors"
+                        >
+                          <p className="font-bold">{c.courseName}</p>
+                          <p className="text-[10px] text-white/60">{c.modules} Modules • {c.timeInHr} Hours</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(!searchResults.agents?.length && !searchResults.universities?.length && !searchResults.courses?.length) && (
+                  <p className="text-center text-white/60 py-2">No matching results found.</p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Actions */}
+          {/* Actions & Display Full Name */}
           <div className="flex items-center gap-4">
             <button
-              className="p-0 hover:bg-white/10 rounded"
+              className="p-0 hover:bg-white/10 rounded cursor-pointer"
               onClick={() => router.push(`/${role}/help-center`)}
             >
               <NotificationsIcon className="w-8 h-8" />
             </button>
 
+            {/* User Full Name & Avatar Header Button */}
             <div className="relative">
               <button
-                className="p-0 hover:bg-white/10 rounded-full overflow-hidden flex items-center justify-center w-8 h-8 focus:outline-none"
+                className="p-1 hover:bg-white/10 rounded-full flex items-center gap-2.5 focus:outline-none cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleProfileMenu();
                 }}
               >
-                {profilePic ? (
-                  <img
-                    src={profilePic}
-                    alt="User Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <ProfileIcon className="w-6 h-6" />
-                )}
+                <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-white/10 border border-white/20">
+                  {profilePic ? (
+                    <img src={profilePic} alt="User Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <ProfileIcon className="w-5 h-5 text-white/80" />
+                  )}
+                </div>
+                {/* Full Name Display */}
+                <span className="hidden sm:inline-block font-semibold text-xs text-white max-w-[140px] truncate">
+                  {displayName}
+                </span>
               </button>
 
               {isProfileMenuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-52 bg-[#14112E] border border-white/10 rounded-lg shadow-lg py-2 z-20"
+                  className="absolute right-0 mt-2 w-56 bg-[#14112E] border border-white/10 rounded-lg shadow-2xl py-2 z-20"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <div className="px-4 py-2 border-b border-white/10 mb-1">
+                    <p className="font-bold text-xs text-white truncate">{displayName}</p>
+                    <p className="text-[10px] text-white/60 capitalize">{userState?.role || role}</p>
+                  </div>
                   <button
-                    className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
                     onClick={() => {
                       setIsProfileMenuOpen(false);
                       router.push(`/${role}/profile`);
@@ -479,16 +583,16 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                     Profile
                   </button>
                   <button
-                    className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
                     onClick={() => {
                       setIsProfileMenuOpen(false);
                       router.push(`/${role}/certifications`);
                     }}
                   >
-                    certifications
+                    Certifications
                   </button>
                   <button
-                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer"
                     onClick={() => {
                       setIsProfileMenuOpen(false);
                       handleLogout();

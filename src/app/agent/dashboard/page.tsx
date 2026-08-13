@@ -1,4 +1,3 @@
-// src/app/agent/dashboard/page.tsx
 "use client";
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
@@ -13,13 +12,27 @@ export default function AgentDashboardPage() {
   const [userName, setUserName] = useState<string>("Agent");
   const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState({
-    overallScore: 100,
+    overallScore: null as number | null,
     numberOfAudits: 0,
     activeIssues: 0,
-    riskLevel: "LOW",
+    riskLevel: "N/A",
     completedCdpHours: 0,
     targetCdpHours: 120
   });
+
+  const [complianceDistribution, setComplianceDistribution] = useState([
+    { name: "Agent Compliance", score: 95, color: "#10B981" },
+    { name: "University Compliance", score: 90, color: "#F59E0B" },
+    { name: "UKVI Compliance", score: 85, color: "#3B82F6" },
+    { name: "Rules & Regulations", score: 80, color: "#8B5CF6" },
+  ]);
+
+  const [revenueDistribution, setRevenueDistribution] = useState([
+    { label: "Total Revenue", value: "£0 GBP", progress: 100, color: "#10B981" },
+    { label: "Pro Tier Revenue", value: "£0 GBP", progress: 0, color: "#3B82F6" },
+    { label: "Elements Tier Revenue", value: "£0 GBP", progress: 0, color: "#F59E0B" },
+    { label: "Active Subscriptions", value: "0 Subscriptions", progress: 0, color: "#8B5CF6" },
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -32,30 +45,51 @@ export default function AgentDashboardPage() {
       return;
     }
 
-    setUserName(storedUser.firstName || "Agent");
+    const u = storedUser as any;
+    const fullName = u?.fullName || `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || u?.name || "Agent";
+    setUserName(fullName);
 
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
 
-        // Fetch summary
+        // Fetch compliance summary
         const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/compliance-indicators/summary`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
- 
+
         if (summaryRes.ok) {
           const summaryData = await summaryRes.json();
-          if (summaryData.success) {
+          if (summaryData.success && summaryData.data) {
+            const audits = summaryData.data.numberOfAudits ?? 0;
             setSummary({
-              overallScore: summaryData.data.overallScore ?? 100,
-              numberOfAudits: summaryData.data.numberOfAudits ?? 0,
+              overallScore: audits > 0 ? (summaryData.data.overallScore ?? null) : null,
+              numberOfAudits: audits,
               activeIssues: summaryData.data.activeIssues ?? 0,
-              riskLevel: summaryData.data.riskLevel ?? "LOW",
+              riskLevel: audits > 0 ? (summaryData.data.riskLevel || "LOW") : "N/A",
               completedCdpHours: summaryData.data.completedCdpHours ?? 0,
               targetCdpHours: summaryData.data.targetCdpHours ?? 120
             });
+          }
+        }
+
+        // Fetch admin stats for dynamic total hours and distributions
+        const adminStatsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/dashboard/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (adminStatsRes.ok) {
+          const adminData = await adminStatsRes.json();
+          if (adminData.success && adminData.data) {
+            if (adminData.data.totalCdpHours) {
+              setSummary((prev) => ({ ...prev, targetCdpHours: adminData.data.totalCdpHours }));
+            }
+            if (adminData.data.complianceDistribution) {
+              setComplianceDistribution(adminData.data.complianceDistribution);
+            }
+            if (adminData.data.revenueDistribution) {
+              setRevenueDistribution(adminData.data.revenueDistribution);
+            }
           }
         }
       } catch (error) {
@@ -64,37 +98,27 @@ export default function AgentDashboardPage() {
         setIsLoading(false);
       }
     };
- 
+
     fetchDashboardData();
   }, [router]);
 
+  const hasScore = summary.numberOfAudits > 0 && summary.overallScore !== null;
+  const scoreDisplay = hasScore ? `${summary.overallScore}%` : "N/A";
+  const riskDisplay = summary.numberOfAudits > 0 ? summary.riskLevel : "N/A";
+
   const statsData = [
-    { icon: <ComplianceIcon />, label: "Compliance Score", value: `${summary.overallScore}%`, color: "#F68E2D", href: "/agent/compliances" },
+    { icon: <ComplianceIcon />, label: "Compliance Score", value: scoreDisplay, color: "#F68E2D", href: "/agent/compliances" },
     { icon: <ComplianceIcon />, label: "CDP Hours", value: `${summary.completedCdpHours}/${summary.targetCdpHours}`, color: "#F68E2D", href: "/agent/CDP" },
     { icon: <ComplianceIcon />, label: "Active Issues", value: String(summary.activeIssues), color: "#F68E2D", href: "/agent/compliances" },
     { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D", href: "/agent/audits" },
-    { icon: <ComplianceIcon />, label: "Overall Score", value: `${summary.overallScore}%`, color: "#F68E2D", href: "/agent/compliances" },
-    { 
-      icon: <ComplianceIcon />, 
-      label: "Risk Level", 
-      value: summary.riskLevel, 
-      color: summary.riskLevel === 'HIGH' ? '#EF4444' : summary.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981',
+    { icon: <ComplianceIcon />, label: "Overall Score", value: scoreDisplay, color: "#F68E2D", href: "/agent/compliances" },
+    {
+      icon: <ComplianceIcon />,
+      label: "Risk Level",
+      value: riskDisplay,
+      color: riskDisplay === 'HIGH' ? '#EF4444' : riskDisplay === 'MEDIUM' ? '#F59E0B' : riskDisplay === 'LOW' ? '#10B981' : '#9CA3AF',
       href: "/agent/compliances"
     },
-  ];
-
-  const complianceDistribution = [
-    { name: "Agent Compliance", score: 95, color: "#10B981" },
-    { name: "University Compliance", score: 90, color: "#F59E0B" },
-    { name: "UKVI Compliance", score: 85, color: "#3B82F6" },
-    { name: "Rules & Regulations", score: 80, color: "#8B5CF6" },
-  ];
-
-  const revenueDistribution = [
-    { label: "Total Revenue", value: "$25,000", progress: 100, color: "#10B981" },
-    { label: "Commission Earned", value: "$12,500", progress: 50, color: "#3B82F6" },
-    { label: "Pending Clearance", value: "$4,500", progress: 18, color: "#F59E0B" },
-    { label: "Payout Cleared", value: "$8,000", progress: 32, color: "#8B5CF6" },
   ];
 
   return (
@@ -149,8 +173,8 @@ export default function AgentDashboardPage() {
                     <span className="font-semibold" style={{ color: item.color }}>{item.score}%</span>
                   </div>
                   <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500" 
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${item.score}%`, backgroundColor: item.color }}
                     />
                   </div>
@@ -170,8 +194,8 @@ export default function AgentDashboardPage() {
                     <span className="font-semibold text-white">{item.value}</span>
                   </div>
                   <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500" 
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${item.progress}%`, backgroundColor: item.color }}
                     />
                   </div>

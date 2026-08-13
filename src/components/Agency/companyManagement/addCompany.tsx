@@ -271,12 +271,8 @@ const AddCompany: React.FC = () => {
 			const isDuplicate = rawMsg.toLowerCase().includes("exist") || rawMsg.toLowerCase().includes("duplicate");
 			const errorMessage = isDuplicate ? "Company already exist with this emailid" : rawMsg;
 
-			toast.update(loadingToastId, {
-				render: errorMessage,
-				type: "error",
-				isLoading: false,
-				autoClose: 4000,
-			});
+			toast.dismiss(loadingToastId);
+			toast.error(errorMessage);
 		} finally {
 			setIsSubmitting(false);
 		}

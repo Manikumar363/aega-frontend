@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ShieldAlert, Calendar, Loader2 } from "lucide-react";
+import { ShieldAlert, Calendar, Loader2, Download, FileText, X, CheckCircle2, AlertTriangle } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface AuditsProps {
   targetId?: string;
@@ -25,8 +26,9 @@ interface AuditCheck {
   } | string;
   createdAt: string;
   answers: {
+    questionText?: string;
     status: string;
-    severity: string;
+    severity?: string;
     comment?: string;
     verificationNote?: string;
   }[];
@@ -37,39 +39,8 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
   const [completedChecks, setCompletedChecks] = useState<AuditCheck[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [activeSubTab, setActiveSubTab] = useState<string>("own");
-  const [agenciesList, setAgenciesList] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    const fetchAgencies = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/agent-management/agents`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const list = Array.isArray(data) ? data : data.data || [];
-          setAgenciesList(
-            list.map((a: any, idx: number) => {
-              const nameStr = `${a.firstName || ''} ${a.lastName || ''}`.trim() || a.user?.name || a.agencyName || a.emailId || `Agency ${idx + 1}`;
-              return {
-                id: String(a.id || a._id || idx + 1),
-                name: nameStr,
-              };
-            })
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching registered agents:", err);
-      }
-    };
-
-    fetchAgencies();
-  }, []);
+  const [selectedAuditModal, setSelectedAuditModal] = useState<AuditCheck | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAuditsData = async () => {
@@ -79,19 +50,9 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         const token = localStorage.getItem("authToken");
         if (!token) return;
 
-        // Build query string based on active tab selection
         const queryParams = new URLSearchParams();
-        
-        if (activeSubTab === "own" || !activeSubTab) {
-          if (targetType) queryParams.append("targetType", targetType);
-          if (targetId) queryParams.append("targetId", targetId);
-        } else if (activeSubTab !== "all") {
-          const selectedAgency = agenciesList.find((a) => a.name === activeSubTab);
-          if (selectedAgency) {
-            queryParams.append("targetType", "agent");
-            queryParams.append("targetId", selectedAgency.id);
-          }
-        }
+        if (targetType) queryParams.append("targetType", targetType);
+        if (targetId) queryParams.append("targetId", targetId);
         
         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
@@ -140,24 +101,73 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
     };
 
     fetchAuditsData();
-  }, [targetId, targetType, activeSubTab, agenciesList]);
+  }, [targetId, targetType]);
+
+  const handleDownloadReport = (check: AuditCheck, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setDownloadingId(check._id);
+
+    try {
+      const auditorName = typeof check.auditedBy === "object" ? check.auditedBy.name : "System Auditor";
+      const reportLines = [
+        `==================================================`,
+        `           AEGA AUDIT COMPLIANCE REPORT            `,
+        `==================================================`,
+        `Category Name  : ${check.categoryName}`,
+        `Audited Date   : ${new Date(check.createdAt).toLocaleString()}`,
+        `Auditor        : ${auditorName}`,
+        `Compliance Score: ${check.complianceScore.toFixed(2)}%`,
+        `Overall Status : ${check.complianceScore >= 80 ? "PASSED" : check.complianceScore >= 60 ? "UNDER REVIEW" : "ACTION NEEDED"}`,
+        `--------------------------------------------------`,
+        `AUDIT ANSWERS & VERIFICATION COMMENTS:`,
+        `--------------------------------------------------`,
+        ...(check.answers || []).map((ans, idx) => {
+          const qText = ans.questionText || `Question ${idx + 1}`;
+          const note = ans.comment || ans.verificationNote || "No verification note recorded.";
+          return `\n${idx + 1}. ${qText}\n   Status: ${ans.status.toUpperCase()} | Severity: ${ans.severity || 'Normal'}\n   Notes: ${note}`;
+        }),
+        `\n==================================================`,
+        `Generated by Agents & Educators Global Alliance (AEGA)`,
+        `==================================================`,
+      ];
+
+      const reportContent = reportLines.join("\n");
+      const blob = new Blob([reportContent], { type: "text/plain;charset=utf-8" });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${check.categoryName.replace(/[^a-z0-9]/gi, "_")}_Audit_Report.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+
+      toast.success(`Downloaded ${check.categoryName} Report`);
+    } catch (err) {
+      console.error("Report download error:", err);
+      toast.error("Failed to generate audit report.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const getRiskColor = (level: string) => {
     switch (level?.toUpperCase()) {
       case "HIGH":
         return "text-red-400";
       case "MEDIUM":
-        return "text-yellow-400";
+        return "text-amber-400";
       default:
-        return "text-green-400";
+        return "text-emerald-400";
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12 text-white">
+      <div className="flex justify-center items-center py-16 text-white">
         <Loader2 className="w-8 h-8 animate-spin text-[#F68E2D]" />
-        <span className="ml-3 text-sm text-white/70">Loading audit log...</span>
+        <span className="ml-3 text-sm text-white/70">Loading audit records...</span>
       </div>
     );
   }
@@ -170,7 +180,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
     );
   }
 
-  // Partition audits into Latest and Previous groups
+  // Partition audits into Latest and Previous
   const latestChecks: AuditCheck[] = [];
   const previousChecks: AuditCheck[] = [];
   const seenCategories = new Set<string>();
@@ -187,169 +197,233 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
 
   const renderAuditCard = (item: AuditCheck, isLatest: boolean = false) => {
     const issuesCount = item.answers?.filter((a) => a.status === "non-compliant").length ?? 0;
-    const commentsList = item.answers?.map((a: any) => a.comment || a.verificationNote || a.note).filter(Boolean) || [];
+    const auditorName = typeof item.auditedBy === "object" ? item.auditedBy.name : "System Auditor";
+    const statusText = item.complianceScore >= 80 ? "Passed" : item.complianceScore >= 60 ? "Under Review" : "Action Needed";
+    const statusBadgeClass = item.complianceScore >= 80 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : item.complianceScore >= 60 ? "bg-amber-500/20 text-amber-400 border-amber-500/30" : "bg-red-500/20 text-red-400 border-red-500/30";
 
     return (
       <div
         key={item._id}
-        className="bg-[#14123A] border border-[#3A3760] p-5 flex flex-col justify-between min-h-[160px] hover:border-[#F68E2D]/40 transition-all rounded space-y-3"
+        onClick={() => setSelectedAuditModal(item)}
+        className="bg-[#14112E] border border-gray-800 p-5 flex flex-col justify-between hover:border-[#F68E2D] transition-all rounded-xl cursor-pointer shadow-lg space-y-4 group"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h4 className="text-sm font-bold text-white tracking-wide uppercase leading-tight">
+            <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#F68E2D] transition-colors leading-snug">
               {item.categoryName}
             </h4>
             <span className="text-xs text-white/50 block mt-1">
-              Audited by: {typeof item.auditedBy === "object" ? item.auditedBy.name : "System Admin"}
+              Audited by: {auditorName}
             </span>
           </div>
           {isLatest && (
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#F68E2D]/20 text-[#F68E2D] border border-[#F68E2D]/30">
-              Latest
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-[#F68E2D]/20 text-[#F68E2D] border border-[#F68E2D]/30 shrink-0">
+              Latest Audit
             </span>
           )}
         </div>
 
-        {/* Centered Status Badge in Middle */}
-        <div className="my-2 flex items-center justify-center text-center">
-          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 shadow-sm">
-            <span>{item.complianceScore.toFixed(2)}% Score</span>
+        {/* Centered Score Badge */}
+        <div className="flex items-center justify-between py-2 border-y border-gray-800/80">
+          <div className="text-left">
+            <span className="text-[10px] text-gray-400 uppercase font-semibold block">Compliance Score</span>
+            <span className="text-2xl font-extrabold text-white">{item.complianceScore.toFixed(0)}%</span>
           </div>
+          <span className={`text-xs px-3.5 py-1 rounded-full font-bold border ${statusBadgeClass}`}>
+            {statusText}
+          </span>
         </div>
 
-        {/* Admin Comments / Verification Notes */}
-        {commentsList.length > 0 ? (
-          <div className="bg-[#1A163E] border border-[#383B63] p-2.5 rounded text-xs text-white/80">
-            <span className="font-semibold text-[#F68E2D] block mb-1">Admin Verification Notes / Comments:</span>
-            <p className="whitespace-pre-line text-white/75">{commentsList.join(" | ")}</p>
-          </div>
-        ) : null}
-
-        <div className="flex items-center justify-between text-xs text-white/60 pt-2 border-t border-[#3A3760]/30">
+        {/* Footer info & Download Report button */}
+        <div className="flex items-center justify-between text-xs text-white/60 pt-1">
           <div className="flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-white/40" />
-            <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+            <Calendar className="w-3.5 h-3.5 text-[#F68E2D]" />
+            <span>{new Date(item.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</span>
           </div>
-          <span className="text-[11px] text-[#F68E2D] font-medium">
-            {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
-          </span>
+          <button
+            onClick={(e) => handleDownloadReport(item, e)}
+            disabled={downloadingId === item._id}
+            className="bg-[#0A0724] hover:bg-[#1A163E] text-white border border-white/20 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <Download className="w-3 h-3 text-[#F68E2D]" />
+            {downloadingId === item._id ? "Downloading..." : "Report"}
+          </button>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Filter Navigation Bar (Own / All / Sub-Agents) */}
-      <div className="flex items-center gap-8 border-b border-[#2C2A45] pb-2 text-sm overflow-x-auto">
-        <button
-          onClick={() => setActiveSubTab("own")}
-          className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeSubTab === "own" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
-          }`}
-        >
-          Own
-        </button>
-        <button
-          onClick={() => setActiveSubTab("all")}
-          className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeSubTab === "all" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
-          }`}
-        >
-          All
-        </button>
-        {agenciesList.map((agency) => (
-          <button
-            key={agency.id}
-            onClick={() => setActiveSubTab(agency.name)}
-            className={`font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeSubTab === agency.name ? "text-[#F68E2D] border-[#F68E2D]" : "text-white/70 hover:text-white border-transparent"
-            }`}
-          >
-            {agency.name}
-          </button>
-        ))}
-      </div>
-
+    <div className="space-y-6 text-white pb-10">
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 border border-[#3A3760] bg-[#14123A] divide-y md:divide-y-0 md:divide-x divide-[#3A3760]">
+      <div className="grid grid-cols-1 md:grid-cols-4 border border-gray-800 bg-[#14112E] rounded-xl overflow-hidden shadow-xl divide-y md:divide-y-0 md:divide-x divide-gray-800">
         {/* Overall Score */}
-        <div className="px-6 py-5 flex flex-col gap-3">
+        <div className="px-6 py-5 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
-              {summary ? `${summary.complianceScore.toFixed(2)}%` : "100.00%"}
+            <span className="font-bold text-lg text-[#F68E2D]">
+              {summary?.complianceScore != null ? `${summary.complianceScore.toFixed(0)}%` : "N/A"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Overall Score</span>
+          <span className="text-xs text-gray-400 font-semibold uppercase">Overall Compliance Score</span>
         </div>
 
-        {/* Total Audits */}
-        <div className="px-6 py-5 flex flex-col gap-3">
+        {/* Number of Audits */}
+        <div className="px-6 py-5 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
-              {summary?.numberOfAudits ?? 0}
+            <Calendar className="w-5 h-5 text-blue-400" />
+            <span className="font-bold text-lg text-white">
+              {summary?.numberOfAudits ?? completedChecks.length}
             </span>
           </div>
-          <span className="text-white/70 text-sm">No. of Audits</span>
+          <span className="text-xs text-gray-400 font-semibold uppercase">Total Audits Completed</span>
         </div>
 
-        {/* Active Issues */}
-        <div className="px-6 py-5 flex flex-col gap-3">
+        {/* Active Alerts */}
+        <div className="px-6 py-5 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <span className="font-bold text-lg text-amber-400">
               {summary?.activeAlerts ?? 0}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Active Issues</span>
+          <span className="text-xs text-gray-400 font-semibold uppercase">Active Non-Compliant Alerts</span>
         </div>
 
         {/* Risk Level */}
-        <div className="px-6 py-5 flex flex-col gap-3">
+        <div className="px-6 py-5 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className={`font-bold text-base uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
-              {summary?.riskLevel ?? "LOW"}
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <span className={`font-bold text-lg uppercase ${getRiskColor(summary?.riskLevel || "LOW")}`}>
+              {summary?.riskLevel || "LOW"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Risk Level</span>
+          <span className="text-xs text-gray-400 font-semibold uppercase">Assessed Risk Rating</span>
         </div>
       </div>
 
-      {/* Completed History sections */}
-      <div className="space-y-8">
-        {/* 1. Latest Audits */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
-            1. Latest Audits ({latestChecks.length})
-          </h3>
+      {/* Latest Audits Section */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-white border-l-4 border-[#F68E2D] pl-3">
+          Latest Audits
+        </h3>
 
-          {latestChecks.length === 0 ? (
-            <div className="text-center py-12 text-white/50 border border-[#3A3760] bg-[#14123A] rounded">
-              No compliance audits recorded for this profile.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {latestChecks.map((item) => renderAuditCard(item, true))}
-            </div>
-          )}
-        </div>
-
-        {/* 2. Previous Audits History */}
-        {previousChecks.length > 0 && (
-          <div className="space-y-4 pt-4 border-t border-[#3A3760]/50">
-            <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
-              2. Previous Audits History ({previousChecks.length})
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {previousChecks.map((item) => renderAuditCard(item, false))}
-            </div>
+        {latestChecks.length === 0 ? (
+          <div className="bg-[#14112E] border border-gray-800 rounded-xl p-8 text-center text-gray-400 text-sm">
+            No audits recorded yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {latestChecks.map((item) => renderAuditCard(item, true))}
           </div>
         )}
       </div>
+
+      {/* Previous Audits Section */}
+      {previousChecks.length > 0 && (
+        <div className="space-y-4 pt-4">
+          <h3 className="text-xl font-bold text-white border-l-4 border-gray-600 pl-3">
+            Previous Audit History
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {previousChecks.map((item) => renderAuditCard(item, false))}
+          </div>
+        </div>
+      )}
+
+      {/* INTERACTIVE AUDIT DETAILS MODAL */}
+      {selectedAuditModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#14112E] border border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto text-white space-y-5 shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div>
+                <h3 className="text-xl font-bold text-[#F68E2D]">{selectedAuditModal.categoryName}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Audited Date: {new Date(selectedAuditModal.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedAuditModal(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg bg-gray-800/50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Score Overview */}
+            <div className="bg-[#0A0724] border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-gray-400 uppercase font-semibold block">Category Compliance Score</span>
+                <span className="text-3xl font-extrabold text-[#F68E2D]">
+                  {selectedAuditModal.complianceScore.toFixed(0)}%
+                </span>
+              </div>
+              <button
+                onClick={() => handleDownloadReport(selectedAuditModal)}
+                className="bg-[#F68E2D] hover:bg-[#e28124] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" /> Download Full Report
+              </button>
+            </div>
+
+            {/* Questions & Verification Notes Breakdown */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider">Audit Category Answers &amp; Verification Notes</h4>
+
+              {selectedAuditModal.answers?.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No specific questions recorded for this audit category.</p>
+              ) : (
+                selectedAuditModal.answers?.map((ans, idx) => {
+                  const isCompliant = ans.status === "compliant";
+                  const note = ans.comment || ans.verificationNote;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-[#0A0724] border border-gray-800 rounded-lg p-4 space-y-2 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-white">
+                          {idx + 1}. {ans.questionText || `Compliance Checklist Item #${idx + 1}`}
+                        </span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
+                            isCompliant
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                              : "bg-red-500/20 text-red-400 border border-red-500/30"
+                          }`}
+                        >
+                          {ans.status}
+                        </span>
+                      </div>
+
+                      {note && (
+                        <div className="bg-[#14112E] border border-gray-800 p-2.5 rounded text-gray-300 italic">
+                          <span className="text-[#F68E2D] font-bold not-italic block mb-0.5">
+                            Admin Verification Note:
+                          </span>
+                          "{note}"
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Close Button */}
+            <div className="flex justify-end pt-3 border-t border-gray-800">
+              <button
+                onClick={() => setSelectedAuditModal(null)}
+                className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-bold cursor-pointer"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

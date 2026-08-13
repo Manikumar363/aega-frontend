@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/ui/dashboard-layout";
-import { getMyEnrolledCourses } from "@/lib/api/cdpService";
-import type { CdpEnrollment } from "@/lib/api/types";
+import { getMyEnrolledCourses, getCdpCourses } from "@/lib/api/cdpService";
+import toast from "react-hot-toast";
 
 const getFullImageUrl = (path?: string) => {
   if (!path) return '';
@@ -11,22 +11,48 @@ const getFullImageUrl = (path?: string) => {
   if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
     return cleanPath;
   }
-  const base = process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || 'https://divine-care.ap-south-1.storage.onantryk.com';
+  const base = process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://divine-care.ap-south-1.storage.onantryk.com';
   return `${base.replace(/\/$/, '')}/${cleanPath.replace(/^\//, '')}`;
 };
 
 export default function UniversityCertificationsPage() {
-  const [certifications, setCertifications] = useState<CdpEnrollment[]>([]);
+  const [certifications, setCertifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadCertifications() {
       try {
         setLoading(true);
-        const data = await getMyEnrolledCourses();
-        // Filter for completed courses
-        const completed = data.filter((course) => course.status === "completed");
-        setCertifications(completed);
+        const enrolledData = await getMyEnrolledCourses().catch(() => []);
+        const allCoursesData = await getCdpCourses().catch(() => []);
+
+        const coursesMap = new Map<string, any>();
+        allCoursesData.forEach((c: any) => {
+          if (c._id || c.id) coursesMap.set(String(c._id || c.id), c);
+        });
+
+        const completedList: any[] = [];
+
+        enrolledData.forEach((item: any) => {
+          const courseIdObj = item.courseId;
+          const cid = typeof courseIdObj === "object" && courseIdObj ? (courseIdObj._id || courseIdObj.id) : courseIdObj;
+          const courseDetail = coursesMap.get(String(cid)) || (typeof courseIdObj === "object" ? courseIdObj : null);
+          const isCompleted = item.status === "completed" || !!item.certificateUrl;
+
+          if (isCompleted) {
+            completedList.push({
+              _id: item._id || item.id,
+              courseName: courseDetail?.courseName || item.courseName || "CDP Training Course",
+              certificateUrl: item.certificateUrl || courseDetail?.certificateUrl || null,
+              notes: item.notes || item.completionNote || "",
+              completionDate: item.completionDate || item.startDate || item.createdAt,
+              dueDate: item.dueDate || item.endDate,
+            });
+          }
+        });
+
+        setCertifications(completedList);
       } catch (err) {
         console.error("Failed to load certifications:", err);
       } finally {
@@ -35,6 +61,40 @@ export default function UniversityCertificationsPage() {
     }
     void loadCertifications();
   }, []);
+
+  const handleDownloadCertificate = async (certUrl: string, certName: string, certId: string) => {
+    if (!certUrl) {
+      toast.error("Certificate file URL is invalid.");
+      return;
+    }
+
+    setDownloadingId(certId);
+    try {
+      const fullUrl = getFullImageUrl(certUrl);
+      const res = await fetch(fullUrl);
+      if (!res.ok) throw new Error("File fetch failed");
+
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${certName.replace(/[^a-z0-9]/gi, '_')}_Certificate.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+
+      toast.success(`Downloaded ${certName} Certificate`);
+    } catch (error) {
+      console.error("Download error:", error);
+      const fullUrl = getFullImageUrl(certUrl);
+      window.open(fullUrl, "_blank");
+      toast.success(`Opened ${certName} Certificate`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A";
@@ -54,7 +114,7 @@ export default function UniversityCertificationsPage() {
     <DashboardLayout role="university">
       <h1 className="text-white font-medium text-3xl mb-2">My Certifications</h1>
       <p className="text-white/60 text-sm mb-6">View all of your completed CDP courses and certificates.</p>
-      
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-white/60">
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#F68E2D]" fill="none" viewBox="0 0 24 24">
@@ -74,16 +134,18 @@ export default function UniversityCertificationsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {certifications.map((cert) => {
-            const courseName = typeof cert.courseId === 'object' && cert.courseId ? cert.courseId.courseName : 'CDP Course';
+            const certId = cert._id || 'cert';
+            const cleanNotes = cert.notes && cert.notes.trim() !== "Starting from today" ? cert.notes.trim() : null;
+
             return (
               <div
-                key={cert._id}
+                key={certId}
                 className="bg-[#14112E] border border-gray-800 rounded-lg p-6 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start gap-3 mb-4">
                     <svg
-                      className="w-6 h-6 text-[#F68E2D] shrink-0 animate-pulse"
+                      className="w-6 h-6 text-[#F68E2D] shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -96,13 +158,13 @@ export default function UniversityCertificationsPage() {
                       />
                     </svg>
                     <h3 className="text-lg font-semibold text-[#F68E2D] line-clamp-2">
-                      {courseName}
+                      {cert.courseName}
                     </h3>
                   </div>
 
-                  {cert.notes && (
+                  {cleanNotes && (
                     <p className="text-white/70 text-sm leading-relaxed mb-4 whitespace-pre-wrap">
-                      {cert.notes}
+                      {cleanNotes}
                     </p>
                   )}
 
@@ -110,21 +172,25 @@ export default function UniversityCertificationsPage() {
                     <p className="text-white/80 text-xs font-medium">
                       Issue Date : <span className="text-white">{formatDate(cert.completionDate)}</span>
                     </p>
-                    <p className="text-white/80 text-xs font-medium">
-                      Valid Till : <span className="text-white">{formatDate(cert.dueDate)}</span>
-                    </p>
+                    {cert.dueDate && (
+                      <p className="text-white/80 text-xs font-medium">
+                        Valid Till : <span className="text-white">{formatDate(cert.dueDate)}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {cert.certificateUrl && (
-                  <a
-                    href={getFullImageUrl(cert.certificateUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full text-center block bg-[#0a0820] hover:bg-[#1a1640] border border-gray-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors cursor-pointer"
+                {cert.certificateUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadCertificate(cert.certificateUrl, cert.courseName, certId)}
+                    disabled={downloadingId === certId}
+                    className="w-full text-center block bg-[#0a0820] hover:bg-[#1a1640] border border-gray-700 text-white px-4 py-2.5 rounded-md text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    Download Certificate
-                  </a>
+                    {downloadingId === certId ? "Downloading..." : "Download Certificate ↓"}
+                  </button>
+                ) : (
+                  <span className="text-center text-xs text-gray-500 italic py-2">Certificate Completed</span>
                 )}
               </div>
             );

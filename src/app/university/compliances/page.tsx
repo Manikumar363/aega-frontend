@@ -26,7 +26,7 @@ export default function UniversityCompliancesPage() {
         }
 
         // 1. Fetch compliance summary
-        const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/compliance-indicators/summary`, {
+        const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-summary`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (summaryRes.ok) {
@@ -41,8 +41,8 @@ export default function UniversityCompliancesPage() {
           }
         }
 
-        // 2. Fetch audit checks list to dynamically update indicators
-        const checksRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/audits/checks/list`, {
+        // 2. Fetch compliance status indicators
+        const checksRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/profile/compliance-status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -50,15 +50,10 @@ export default function UniversityCompliancesPage() {
           const checksData = await checksRes.json();
           if (checksData.success && Array.isArray(checksData.data) && checksData.data.length > 0) {
             const mappedIndicators = checksData.data.map((chk: any) => {
-              const issues = chk.answers?.filter((a: any) => a.status === "non-compliant").length ?? 0;
-              let status = "Compliant";
-              if (issues > 0) status = "Non-Compliant";
-              else if (chk.complianceScore < 70) status = "Under Review";
-
               return {
-                name: chk.categoryName || "University Compliance Standard",
-                status,
-                score: chk.complianceScore ?? 100,
+                name: chk.name || "University Compliance Standard",
+                status: chk.status || "Compliant",
+                score: chk.status === "Compliant" ? 100 : 0,
               };
             });
             setIndicators(mappedIndicators);

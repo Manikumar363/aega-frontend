@@ -44,7 +44,7 @@ const RevenueManagementHome: React.FC = () => {
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/stripe/subscription-status`, {
+      const res = await fetch(`${API_BASE_URL}/api/subscription/subscription-status`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -72,8 +72,8 @@ const RevenueManagementHome: React.FC = () => {
     setActionLoading(true);
     const token = typeof window !== "undefined" ? localStorage.getItem("token") || sessionStorage.getItem("token") : null;
     const endpoint = subscription.cancelAtPeriodEnd
-      ? `${API_BASE_URL}/api/stripe/reactivate-subscription`
-      : `${API_BASE_URL}/api/stripe/cancel-subscription`;
+      ? `${API_BASE_URL}/api/subscription/reactivate-subscription`
+      : `${API_BASE_URL}/api/subscription/cancel-subscription`;
 
     try {
       const res = await fetch(endpoint, {

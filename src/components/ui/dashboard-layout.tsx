@@ -199,15 +199,15 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     const userRole = userState?.role || (role === "agent" ? "agent" : "university");
     const bizType = userState?.businessType || parseBusinessTypeFromToken(token);
 
-    let platformPrefix = "AEGA B2B Platform";
+    let platformPrefix = "B2B";
     if (userRole === "counsellor") {
-      platformPrefix = "AEGA Counsellor Platform";
+      platformPrefix = "Counsellor";
     } else if (userRole === "university") {
-      platformPrefix = "AEGA University Platform";
+      platformPrefix = "University";
     } else if (bizType === "b2c" || pathname.includes("/public") || pathname.includes("/student")) {
-      platformPrefix = "AEGA B2C Platform";
+      platformPrefix = "B2C";
     } else {
-      platformPrefix = "AEGA B2B Platform";
+      platformPrefix = "B2B";
     }
 
     document.title = `${platformPrefix} | ${label}`;

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { login, storeAuthToken, storeUserData } from "@/lib/api";
@@ -16,7 +16,18 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Load Remember Me data
+    const savedEmail = localStorage.getItem("aega_remember_email");
+    const savedRemember = localStorage.getItem("aega_remember_me") === "true";
+    if (savedRemember && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +51,15 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
 
       loadingToastId = toast.loading("Signing in...");
       const response = await login(loginData);
+
+      // Handle Remember Me storage
+      if (rememberMe) {
+        localStorage.setItem("aega_remember_email", email.trim());
+        localStorage.setItem("aega_remember_me", "true");
+      } else {
+        localStorage.removeItem("aega_remember_email");
+        localStorage.removeItem("aega_remember_me");
+      }
 
       storeAuthToken(response.token);
       storeUserData(response.user);
@@ -141,18 +161,25 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
                 />
               </div>
 
-              <div className="mb-4 text-right">
+              {/* Remember Me & Forget Password Row */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="remember-me-cmp"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-white/20 bg-transparent text-[#f7941d] focus:ring-[#f7941d] cursor-pointer"
+                  />
+                  <label htmlFor="remember-me-cmp" className="text-sm text-white/70 select-none cursor-pointer">
+                    Remember Me
+                  </label>
+                </div>
+
                 <span className="cursor-pointer text-sm text-white/60 hover:text-[#f7941d]">
                   Forget Password
                 </span>
-              </div>
-
-              <div className="mb-6 flex items-center justify-between bg-white px-4 py-3">
-                <label className="flex items-center gap-2 text-sm text-gray-700">
-                  <input type="checkbox" required />
-                  I'm not a robot
-                </label>
-                <span className="text-xs text-gray-500">reCAPTCHA</span>
               </div>
 
               <button

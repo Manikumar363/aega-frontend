@@ -10,6 +10,7 @@ import {
   type CdpCourse,
   uploadFile,
   updateProgress,
+  updateCourseSchedule,
 } from "@/lib/api";
 import { Edit2, Play, Pause, Video, CheckCircle2, Calendar, FileText, X } from "lucide-react";
 
@@ -23,6 +24,7 @@ export default function AgentCDPPage() {
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [isViewCertificateModalOpen, setIsViewCertificateModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [watchVideoUrl, setWatchVideoUrl] = useState<string | null>(null);
 
@@ -158,23 +160,10 @@ export default function AgentCDPPage() {
 
     try {
       setSubmitting(true);
-      const token = localStorage.getItem("authToken");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/cdp-courses/enrolled/${selectedCourse.progressId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            startDate,
-            notes: note.trim(),
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to update schedule");
+      await updateCourseSchedule(selectedCourse.progressId, {
+        startDate,
+        notes: note.trim()
+      });
 
       toast.success("Course schedule updated!");
       setIsEditModalOpen(false);
@@ -369,6 +358,10 @@ export default function AgentCDPPage() {
                       <div className="p-5 space-y-3">
                         <div
                           onClick={() => {
+                            if (!isRegistered) {
+                              toast.error("Please register/enroll in this course first to access details and view the video.");
+                              return;
+                            }
                             if (course.hyperLink) {
                               const url = course.hyperLink.startsWith("http") ? course.hyperLink : `https://${course.hyperLink}`;
                               window.open(url, "_blank");
@@ -418,13 +411,25 @@ export default function AgentCDPPage() {
                         </button>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
-                          {/* Edit Schedule Button */}
-                          <button
-                            onClick={() => handleOpenEditModal(course)}
-                            className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" /> Edit
-                          </button>
+                          {/* Edit Schedule or View Certificate Button */}
+                          {isCompleted ? (
+                            <button
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setIsViewCertificateModalOpen(true);
+                              }}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                            >
+                              View Certificate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenEditModal(course)}
+                              className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" /> Edit
+                            </button>
+                          )}
 
                           {/* Complete Course Button */}
                           {!isCompleted ? (
@@ -552,7 +557,8 @@ export default function AgentCDPPage() {
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     required
-                    className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2.5 text-white outline-none focus:border-[#F68E2D]"
+                    disabled={selectedCourse ? (new Date().getTime() >= new Date(selectedCourse.registrationStartDate || "").getTime() || selectedCourse.enrollmentStatus === "completed") : false}
+                    className={`w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2.5 text-white outline-none focus:border-[#F68E2D] ${(selectedCourse && (new Date().getTime() >= new Date(selectedCourse.registrationStartDate || "").getTime() || selectedCourse.enrollmentStatus === "completed")) ? "opacity-50 cursor-not-allowed" : ""}`}
                   />
                 </div>
 

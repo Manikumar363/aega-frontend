@@ -38,7 +38,7 @@ const RecentTransactions: React.FC = () => {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") || sessionStorage.getItem("token") : null;
         if (!token) return;
 
-        const res = await fetch(`${API_BASE_URL}/api/stripe/subscription-status`, {
+        const res = await fetch(`${API_BASE_URL}/api/subscription/subscription-status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

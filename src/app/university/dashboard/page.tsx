@@ -5,7 +5,7 @@ import { ComplianceIcon } from "@/components/ui/icons";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getStoredUserData, getAuthToken } from "@/lib/api";
+import { getAuthToken } from "@/lib/api";
 
 export default function UniversityDashboardPage() {
   const router = useRouter();
@@ -21,79 +21,60 @@ export default function UniversityDashboardPage() {
   });
 
   const [complianceDistribution, setComplianceDistribution] = useState([
-    { name: "Agent Compliance", score: 90, color: "#10B981" },
-    { name: "University Compliance", score: 94, color: "#F59E0B" },
-    { name: "UKVI Compliance", score: 85, color: "#3B82F6" },
-    { name: "Rules & Regulations", score: 88, color: "#8B5CF6" },
+    { name: "Agent Compliance", score: 0, color: "#10B981" },
+    { name: "University Compliance", score: 0, color: "#F59E0B" },
+    { name: "UKVI Compliance", score: 0, color: "#3B82F6" },
+    { name: "Rules & Regulations", score: 0, color: "#8B5CF6" },
   ]);
 
   const [revenueDistribution, setRevenueDistribution] = useState([
-    { label: "Total Revenue", value: "£0 GBP", progress: 100, color: "#10B981" },
-    { label: "Pro Tier Revenue", value: "£0 GBP", progress: 0, color: "#3B82F6" },
-    { label: "Elements Tier Revenue", value: "£0 GBP", progress: 0, color: "#F59E0B" },
-    { label: "Active Subscriptions", value: "0 Subscriptions", progress: 0, color: "#8B5CF6" },
+    { label: "Total Potential Tuition", value: "£0 GBP", progress: 100, color: "#10B981" },
+    { label: "Enrolled Tuition Revenue", value: "£0 GBP", progress: 0, color: "#3B82F6" },
+    { label: "Active Students Recruited", value: "0 Students", progress: 0, color: "#F59E0B" },
+    { label: "Enrolled Student Count", value: "0 Enrolled", progress: 0, color: "#8B5CF6" },
   ]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const token = getAuthToken();
-    const storedUser = getStoredUserData();
 
-    if (!token || !storedUser) {
+    if (!token) {
       router.push("/login");
       return;
     }
-
-    const u = storedUser as any;
-    const fullName = u?.fullName || `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || u?.universityName || u?.name || "University";
-    setUserName(fullName);
 
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
 
-        // Fetch compliance summary
-        const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/compliance-indicators/summary`, {
+        const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/universities/me/dashboard-stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (summaryRes.ok) {
-          const summaryData = await summaryRes.json();
-          if (summaryData.success && summaryData.data) {
-            const audits = summaryData.data.numberOfAudits ?? 0;
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (statsData.success && statsData.data) {
+            const d = statsData.data;
+            setUserName(d.userName || "University");
             setSummary({
-              overallScore: audits > 0 ? (summaryData.data.overallScore ?? null) : null,
-              numberOfAudits: audits,
-              activeIssues: summaryData.data.activeIssues ?? 0,
-              riskLevel: audits > 0 ? (summaryData.data.riskLevel || "LOW") : "N/A",
-              completedCdpHours: summaryData.data.completedCdpHours ?? 0,
-              targetCdpHours: summaryData.data.targetCdpHours ?? 120
+              overallScore: d.overallScore,
+              numberOfAudits: d.numberOfAudits ?? 0,
+              activeIssues: d.activeIssues ?? 0,
+              riskLevel: d.riskLevel || "N/A",
+              completedCdpHours: d.completedCdpHours ?? 0,
+              targetCdpHours: d.targetCdpHours ?? 120
             });
-          }
-        }
-
-        // Fetch admin stats for dynamic total hours and distributions
-        const adminStatsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/dashboard/stats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (adminStatsRes.ok) {
-          const adminData = await adminStatsRes.json();
-          if (adminData.success && adminData.data) {
-            if (adminData.data.totalCdpHours) {
-              setSummary((prev) => ({ ...prev, targetCdpHours: adminData.data.totalCdpHours }));
+            if (d.complianceDistribution) {
+              setComplianceDistribution(d.complianceDistribution);
             }
-            if (adminData.data.complianceDistribution) {
-              setComplianceDistribution(adminData.data.complianceDistribution);
-            }
-            if (adminData.data.revenueDistribution) {
-              setRevenueDistribution(adminData.data.revenueDistribution);
+            if (d.revenueDistribution) {
+              setRevenueDistribution(d.revenueDistribution);
             }
           }
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("Error fetching university dashboard stats:", error);
       } finally {
         setIsLoading(false);
       }
@@ -125,7 +106,7 @@ export default function UniversityDashboardPage() {
     <DashboardLayout role="university">
       <div className="space-y-8">
         {/* Header */}
-        <div>
+        <div className="text-left">
           <h1 className="text-3xl font-semibold text-white mb-2">Hi, {userName}</h1>
           <p className="text-white/60 text-sm">
             Overview of platform activity, performance, and highlights.
@@ -144,7 +125,7 @@ export default function UniversityDashboardPage() {
                 <div className="text-2xl" style={{ color: stat.color }}>
                   {stat.icon}
                 </div>
-                <div>
+                <div className="text-left">
                   <p className="text-gray-400 text-sm">{stat.label}</p>
                 </div>
               </div>
@@ -164,12 +145,12 @@ export default function UniversityDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Compliances Distribution */}
           <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6 space-y-6">
-            <h2 className="text-xl font-semibold text-white">Compliances Distribution</h2>
+            <h2 className="text-xl font-semibold text-white text-left">Compliances Distribution</h2>
             <div className="space-y-4">
               {complianceDistribution.map((item, idx) => (
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-350">{item.name}</span>
+                    <span className="text-gray-300">{item.name}</span>
                     <span className="font-semibold" style={{ color: item.color }}>{item.score}%</span>
                   </div>
                   <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
@@ -185,12 +166,12 @@ export default function UniversityDashboardPage() {
 
           {/* Revenue Distribution */}
           <div className="bg-[#14112E] border border-gray-800 rounded-lg p-6 space-y-6">
-            <h2 className="text-xl font-semibold text-white">Revenue Distribution</h2>
+            <h2 className="text-xl font-semibold text-white text-left">Revenue Distribution</h2>
             <div className="space-y-4">
               {revenueDistribution.map((item, idx) => (
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-350">{item.label}</span>
+                    <span className="text-gray-300">{item.label}</span>
                     <span className="font-semibold text-white">{item.value}</span>
                   </div>
                   <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">

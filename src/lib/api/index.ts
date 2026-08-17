@@ -29,7 +29,7 @@ export { getUniversities, deleteUniversity, updateUniversity } from "./universit
 
 // CDP Courses Service
 export { getCdpCourses } from "./cdpCourses";
-export { enrollInCourse, getMyEnrolledCourses, getProgress, updateProgress, getMyStats } from "./cdpService";
+export { enrollInCourse, getMyEnrolledCourses, getProgress, updateProgress, updateCourseSchedule, getMyStats } from "./cdpService";
 
 // API Client (for authenticated requests)
 export { apiRequest, apiGet, apiPost, apiPut, apiDelete } from "./apiClient";

@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { login, storeAuthToken, storeUserData } from "@/lib/api";
 import { Eye, EyeOff } from "lucide-react";
-import Captcha from "@/components/auth/Captcha";
 
 function SignInContent() {
   const [activeRole, setActiveRole] = useState<"agent" | "university">("agent");
@@ -15,9 +14,7 @@ function SignInContent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const [captchaCode, setCaptchaCode] = useState("");
-  const [captchaInput, setCaptchaInput] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,13 +25,20 @@ function SignInContent() {
     if (roleParam === "university" || roleParam === "agent") {
       setActiveRole(roleParam);
     }
+
+    // Load Remember Me data
+    const savedEmail = localStorage.getItem("aega_remember_email");
+    const savedRemember = localStorage.getItem("aega_remember_me") === "true";
+    if (savedRemember && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, [roleParam]);
 
   const handleRoleSwitch = (role: "agent" | "university") => {
     setActiveRole(role);
     setEmail("");
     setPassword("");
-    setCaptchaInput("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,9 +49,6 @@ function SignInContent() {
       // Validate spaces
       if (email.includes(" ") || password.includes(" ")) {
         toast.error("Spaces are not allowed in both fields");
-        setEmail("");
-        setPassword("");
-        setCaptchaInput("");
         setIsLoading(false);
         return;
       }
@@ -55,26 +56,12 @@ function SignInContent() {
       // Validate inputs
       if (!email || !password) {
         toast.error("Please fill in all fields");
-        setEmail("");
-        setPassword("");
-        setCaptchaInput("");
         setIsLoading(false);
         return;
       }
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast.error("Please enter a valid email");
-        setEmail("");
-        setPassword("");
-        setCaptchaInput("");
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate Captcha
-      if (captchaInput.trim().toUpperCase() !== captchaCode.trim().toUpperCase()) {
-        toast.error("Invalid Captcha code. Please try again.");
-        setCaptchaInput("");
         setIsLoading(false);
         return;
       }
@@ -89,6 +76,15 @@ function SignInContent() {
       // Call login API
       toast.loading("Signing in...");
       const response = await login(loginData);
+
+      // Handle Remember Me storage
+      if (rememberMe) {
+        localStorage.setItem("aega_remember_email", email.trim());
+        localStorage.setItem("aega_remember_me", "true");
+      } else {
+        localStorage.removeItem("aega_remember_email");
+        localStorage.removeItem("aega_remember_me");
+      }
 
       // Store auth token and user data
       storeAuthToken(response.token);
@@ -106,11 +102,6 @@ function SignInContent() {
       }, 1500);
     } catch (error) {
       toast.dismiss();
-      // Erase submitted fields on failure
-      setEmail("");
-      setPassword("");
-      setCaptchaInput("");
-      
       const errorMessage = error instanceof Error ? error.message : "Login failed";
       toast.error(errorMessage);
       console.error("Login error:", error);
@@ -227,20 +218,28 @@ function SignInContent() {
                 </div>
               </div>
 
-              <div className="mb-4 text-right">
+              {/* Remember Me & Forget Password Row */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-white/20 bg-transparent text-[#f7941d] focus:ring-[#f7941d] cursor-pointer"
+                  />
+                  <label htmlFor="remember-me" className="text-sm text-white/70 select-none cursor-pointer">
+                    Remember Me
+                  </label>
+                </div>
+
                 <Link href="/forgot-password">
                   <span className="cursor-pointer text-sm text-white/60 hover:text-[#f7941d]">
                     Forget Password
                   </span>
                 </Link>
               </div>
-
-              {/* Captcha */}
-              <Captcha
-                onChange={setCaptchaCode}
-                onUserInputChange={setCaptchaInput}
-                userInput={captchaInput}
-              />
 
               {/* Sign In Button */}
               <button

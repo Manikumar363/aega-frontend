@@ -32,3 +32,7 @@ export async function getMyStats(): Promise<CdpStats> {
   const res = await apiGet<any>("/api/cdp-courses/me/stats");
   return res || { total: 0, completed: 0, ongoing: 0, due: 0 };
 }
+
+export async function updateCourseSchedule(progressId: string, body: { startDate: string; notes?: string }) {
+  return apiPut<any>(`/api/cdp-courses/progress/${progressId}/schedule`, body);
+}

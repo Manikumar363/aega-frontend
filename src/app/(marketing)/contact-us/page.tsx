@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { apiPost } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -10,11 +12,56 @@ export default function ContactPage() {
     subject: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add your form submission logic here
+    
+    // Validations
+    if (!formData.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+    const emailRegex = /^[^s@]+@[^s@]+.[^s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (formData.email.includes(" ")) {
+      toast.error("Email must not contain spaces");
+      return;
+    }
+    if (!formData.message.trim()) {
+      toast.error("Message is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await apiPost("/api/support/contact", {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+      });
+      toast.success("Thank you for reaching out! Your inquiry has been submitted successfully.");
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit inquiry. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -33,7 +80,7 @@ export default function ContactPage() {
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-16 md:px-10 md:py-20">
         {/* Top Section - Hero */}
-        <div className="mb-20">
+        <div className="mb-20 text-left">
           <div className="mb-6">
             <p className="text-[10px] tracking-[0.3em] uppercase text-white/60">
               CONTACT US
@@ -53,8 +100,8 @@ export default function ContactPage() {
 
         {/* Form Section */}
         <div className="mx-auto max-w-3xl">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
+          <div className="mb-12 text-left">
+            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl uppercase tracking-wide leading-tight">
               WE'RE HERE TO
               <br />
               SUPPORT YOU EVERY
@@ -68,24 +115,12 @@ export default function ContactPage() {
             </p>
           </div>
 
-          {/* Google Sheet Form Button */}
-          <div className="flex justify-center mt-8">
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSeF9SveVvynnjsPA_ZTeJiA3tcGexYOAqiuHOYqbSDV_bPTVw/viewform?usp=publish-editor" // Replace with your actual Google Form link
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[#F58A07] hover:bg-[#C86A2A] text-white font-bold py-3 px-8 rounded transition-colors duration-200 shadow-lg text-lg"
-            >
-              Fill the Form (Google Sheet)
-            </a>
-          </div>
-
           {/* Contact Form */}
-          {/* <form onSubmit={handleSubmit} className="space-y-6"> */}
+          <form onSubmit={handleSubmit} className="space-y-6 text-left">
             {/* Name, Email, Phone Row */}
-            {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div>
-                <label className="mb-2 block text-xs text-white/60">
+                <label className="mb-2 block text-xs font-semibold text-white/60">
                   Name*
                 </label>
                 <input
@@ -94,26 +129,28 @@ export default function ContactPage() {
                   placeholder="Jane Smith"
                   value={formData.name}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   required
-                  className="w-full border-b-2 border-white/20 bg-transparent py-3 text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs text-white/60">
+                <label className="mb-2 block text-xs font-semibold text-white/60">
                   Email*
                 </label>
                 <input
                   type="email"
                   name="email"
-                  placeholder="js@example.com"
+                  placeholder="jane@example.com"
                   value={formData.email}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   required
-                  className="w-full border-b-2 border-white/20 bg-transparent py-3 text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs text-white/60">
+                <label className="mb-2 block text-xs font-semibold text-white/60">
                   Phone
                 </label>
                 <input
@@ -122,14 +159,15 @@ export default function ContactPage() {
                   placeholder="+1 (142) 575-1008"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full border-b-2 border-white/20 bg-transparent py-3 text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+                  disabled={isSubmitting}
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* Subject 
+            {/* Subject */}
             <div>
-              <label className="mb-2 block text-xs text-white/60">
+              <label className="mb-2 block text-xs font-semibold text-white/60">
                 Subject
               </label>
               <input
@@ -138,36 +176,39 @@ export default function ContactPage() {
                 placeholder="what is this regarding ?"
                 value={formData.subject}
                 onChange={handleChange}
-                className="w-full border-b-2 border-white/20 bg-transparent py-3 text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+                disabled={isSubmitting}
+                className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
 
-            {/* Message
+            {/* Message */}
             <div>
-              <label className="mb-2 block text-xs text-white/60">
-                Message
+              <label className="mb-2 block text-xs font-semibold text-white/60">
+                Message*
               </label>
               <textarea
                 name="message"
                 placeholder="Message"
                 value={formData.message}
                 onChange={handleChange}
+                disabled={isSubmitting}
+                required
                 rows={5}
-                className="w-full resize-none border-b-2 border-white/20 bg-transparent py-3 text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+                className="w-full resize-none border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
 
-            {/* Submit Button 
+            {/* Submit Button */}
             <div className="pt-4">
               <button
                 type="submit"
-                className="bg-white px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0A1628] transition-colors hover:bg-[#F58A07] hover:text-white"
+                disabled={isSubmitting}
+                className="bg-white hover:bg-[#F58A07] text-[#0A1628] hover:text-white px-8 py-3 text-sm font-bold uppercase tracking-wider transition-colors duration-200 cursor-pointer disabled:opacity-50"
               >
-                SUBMIT
+                {isSubmitting ? "Submitting..." : "SUBMIT"}
               </button>
             </div>
           </form>
-          </form> */}
         </div>
       </div>
     </div>

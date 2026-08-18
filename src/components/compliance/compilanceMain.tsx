@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, BookOpen, CheckCircle } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface CourseCard {
   id: string;
@@ -70,6 +70,7 @@ const STATIC_COURSES: CourseCard[] = [
 ];
 
 export default function ComplianceMain({ initialCourses }: ComplianceMainProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const hasFilters = searchParams.get('category') || searchParams.get('duration');
 
@@ -173,7 +174,10 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
                 </div>
 
                 {/* Enroll Button */}
-                <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded transition-colors duration-300">
+                <button 
+                  onClick={() => router.push("/login")}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded transition-colors duration-300"
+                >
                   ENROLL NOW
                 </button>
               </div>

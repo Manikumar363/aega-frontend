@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { Eye, EyeOff } from 'lucide-react';
 
 interface AgentFormData {
   businessType: "b2b" | "b2c";
@@ -22,12 +23,20 @@ interface AgentBasicFormProps {
 
 export default function AgentBasicForm({ formData, setFormData, onNext }: AgentBasicFormProps) {
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = (): boolean => {
     // Validate required fields
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
       setError("Please fill in all required fields");
       toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (formData.email.trim() !== formData.email) {
+      setError("Leading/Trailing spaces are not allowed in the email field");
+      toast.error("Leading/Trailing spaces are not allowed in the email field");
       return false;
     }
 
@@ -108,7 +117,14 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
               value="b2b"
               checked={formData.businessType === "b2b"}
               onChange={(e) =>
-                setFormData({ ...formData, businessType: e.target.value as "b2b" | "b2c" })
+                setFormData({
+                  businessType: e.target.value as "b2b" | "b2c",
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  password: "",
+                  confirmPassword: "",
+                })
               }
               className="h-4 w-4 accent-[#F58A07]"
               required
@@ -122,7 +138,14 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
               value="b2c"
               checked={formData.businessType === "b2c"}
               onChange={(e) =>
-                setFormData({ ...formData, businessType: e.target.value as "b2b" | "b2c" })
+                setFormData({
+                  businessType: e.target.value as "b2b" | "b2c",
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  password: "",
+                  confirmPassword: "",
+                })
               }
               className="h-4 w-4 accent-[#F58A07]"
             />
@@ -173,14 +196,23 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
       {/* Password */}
       <div className="text-left">
         <label className="mb-2 block text-xs text-white/70">Password*</label>
-        <input
-          type="password"
-          placeholder="••••••••••••"
-          value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value.replace(/\s/g, "") })}
-          required
-          className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
-        />
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••••••"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value.replace(/\s/g, "") })}
+            required
+            className="w-full border border-white/30 bg-transparent pl-4 pr-12 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+          >
+            {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+          </button>
+        </div>
         <p className="mt-1 text-[10px] text-white/60 leading-normal">
           Password must contain at least 8 characters, including uppercase, lowercase, numbers, and special characters. No spaces allowed.
         </p>
@@ -189,14 +221,23 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
       {/* Retype Password */}
       <div className="text-left">
         <label className="mb-2 block text-xs text-white/70">Retype Password*</label>
-        <input
-          type="password"
-          placeholder="••••••••••••"
-          value={formData.confirmPassword}
-          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value.replace(/\s/g, "") })}
-          required
-          className="w-full border border-white/30 bg-transparent px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
-        />
+        <div className="relative">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="••••••••••••"
+            value={formData.confirmPassword}
+            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value.replace(/\s/g, "") })}
+            required
+            className="w-full border border-white/30 bg-transparent pl-4 pr-12 py-3 text-sm text-white placeholder-white/40 focus:border-[#F58A07] focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+          >
+            {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+          </button>
+        </div>
       </div>
 
       {/* Next Button */}

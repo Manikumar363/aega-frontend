@@ -22,6 +22,7 @@ export default function ComplaintPage() {
 
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -36,10 +37,43 @@ export default function ComplaintPage() {
     }
   };
 
+  const processFiles = (newFiles: File[]) => {
+    const validFiles: File[] = [];
+    newFiles.forEach((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File "${file.name}" exceeds the 10MB size limit.`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (validFiles.length > 0) {
+      setFiles((prev) => [...prev, ...validFiles]);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setFiles([...files, ...newFiles]);
+      processFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files));
     }
   };
 
@@ -386,7 +420,12 @@ export default function ComplaintPage() {
               </div>
 
               {/* File Upload Area */}
-              <div className="border-2 border-dashed border-white/20 bg-[#0A1628] p-10 text-center transition-colors hover:border-[#F58A07]/50">
+              <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed p-10 text-center transition-all ${isDragging ? "border-[#F58A07] bg-[#0A1628]/80 scale-[1.01]" : "border-white/20 bg-[#0A1628] hover:border-[#F58A07]/50"}`}
+              >
                 <div className="mx-auto flex flex-col items-center justify-center space-y-4">
                   <div className="rounded-full bg-white/5 p-6">
                     <Upload className="h-10 w-10 text-[#F58A07]" />

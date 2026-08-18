@@ -98,8 +98,9 @@ export default function ForgotPasswordPage() {
       toast.error("Passwords do not match");
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!strongPasswordRegex.test(newPassword)) {
+      toast.error("Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return;
     }
 
@@ -225,7 +226,7 @@ export default function ForgotPasswordPage() {
                   <div className="flex justify-between items-center pt-2">
                     <button
                       type="button"
-                      onClick={() => setStep("request")}
+                      onClick={() => { setStep("request"); setOtp(""); }}
                       className="text-sm text-white/60 hover:text-[#f7941d]"
                     >
                       Change Email
@@ -267,9 +268,12 @@ export default function ForgotPasswordPage() {
                         onClick={() => setShowPassword1(!showPassword1)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                       >
-                        {showPassword1 ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {showPassword1 ? <Eye size={16} /> : <EyeOff size={16} />}
                       </button>
                     </div>
+                    <p className="mt-1 text-[10px] text-white/60 leading-normal">
+                      Password must contain at least 8 characters, including uppercase, lowercase, numbers, and special characters. No spaces allowed.
+                    </p>
                   </div>
 
                   {/* Confirm Password */}
@@ -292,7 +296,7 @@ export default function ForgotPasswordPage() {
                         onClick={() => setShowPassword2(!showPassword2)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                       >
-                        {showPassword2 ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {showPassword2 ? <Eye size={16} /> : <EyeOff size={16} />}
                       </button>
                     </div>
                   </div>

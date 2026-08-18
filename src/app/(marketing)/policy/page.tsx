@@ -1,8 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import TestimonialSection from "@/components/members/TestimonialSection";
-import Leadership from "@/components/about/Leadership";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,145 +8,74 @@ export const metadata: Metadata = {
 };
 
 interface PolicyItem {
+  key: string;
   title: string;
   description: string;
   link: string;
 }
 
-const DEFAULT_AGENT_POLICIES: PolicyItem[] = [
+const DEFAULT_POLICIES = [
   {
-    title: "Sponsorship Management Policy",
-    description: "Defines the rigorous standards for managing the Sponsor Management System (SMS) and issuing CAS to genuine students.",
-    link: "#",
+    key: 'privacy',
+    title: 'Privacy Policy',
+    description: 'Outlines how AEGA collects, utilizes, and secures user data.',
+    link: '/policy/privacy'
   },
   {
-    title: "Basic Compliance Assessment (BCA) Policy",
-    description: "Outlines the relationship of visa refusal rates, enrollment rates, and course completion metrics to prevent sponsor licenses.",
-    link: "#",
+    key: 'website',
+    title: 'Website Policy',
+    description: 'Standard usage guidelines for visiting and interacting with the AEGA platform.',
+    link: '/policy/website'
   },
   {
-    title: "Student Readiness & Intentionality Policy",
-    description: "Mandates 'Layer 3' credibility checks and Pre-CAS interviews to ensure students are genuine and linguistically prepared.",
-    link: "#",
+    key: 'terms',
+    title: 'Terms of Use',
+    description: 'The legal agreement governing membership, user obligations, and platform usage.',
+    link: '/policy/terms'
   },
   {
-    title: "UKVi Audit Readiness Policy",
-    description: "Establishes the framework for regular internal audits to identify and mitigate institutional risk before official inspections.",
-    link: "#",
+    key: 'conduct',
+    title: 'Code of Conduct',
+    description: 'Ethical standards and compliance metrics required for all AEGA members.',
+    link: '/policy/conduct'
   },
   {
-    title: "Immigration Law Alignment Policy",
-    description: "Ensures all recruitment strategies are updated in line with recent regulatory changes (UKVI laws and White Paper announcements).",
-    link: "#",
+    key: 'confidentiality',
+    title: 'Confidentiality Policy',
+    description: 'Data protection standards for handling sensitive student and corporate data.',
+    link: '/policy/confidentiality'
   },
   {
-    title: "Duty of Care & Attendance Policy",
-    description: "Sets standards for monitoring student engagement post-arrival to maintain sponsor legal compliance and student welfare.",
-    link: "#",
-  },
+    key: 'gdpr',
+    title: 'GDPR Policy',
+    description: 'Strict adherence protocols for handling European Union student data.',
+    link: '/policy/gdpr'
+  }
 ];
 
-const DEFAULT_UNIVERSITY_POLICIES: PolicyItem[] = [
-  {
-    title: "Global Ethics Code",
-    description: "Defines the rigorous standards for managing the Sponsor Management System (SMS) and issuing CAS to genuine students.",
-    link: "#",
-  },
-  {
-    title: "Professional Conduct",
-    description: "Outlines the relationship of visa refusal rates, enrollment rates, and course completion metrics to prevent sponsor licenses.",
-    link: "#",
-  },
-  {
-    title: "Conflict of Interest Regulation",
-    description: "Mandates 'Layer 3' credibility checks and Pre-CAS interviews to ensure students are genuine and linguistically prepared.",
-    link: "#",
-  },
-  {
-    title: "Anti-Bribery & Corruption Rule",
-    description: "Establishes the framework for regular internal audits to identify and mitigate institutional risk before official inspections.",
-    link: "#",
-  },
-  {
-    title: "Continuous Professional Development (CPD) Rule",
-    description: "Mandates a set number of training hours every 12 months to maintain active AEGA certification.",
-    link: "#",
-  },
-  {
-    title: "Disciplinary & Appeals Procedure Rule",
-    description: "Outlines the formal process for investigating complaints and removing members who breach alliance standards.",
-    link: "#",
-  },
-];
-
-const DEFAULT_DOCUMENTATION: PolicyItem[] = [
-  {
-    title: "Whole Business Health Check Framework",
-    description: "A comprehensive assessment tool for auditing an agency's operational readiness and process gaps.",
-    link: "#",
-  },
-  {
-    title: "Agent Quality Framework (AQF) Alignment",
-    description: "A structured documentation set that ensures all agents meet the specific regulatory benchmarks of the UK and Australia.",
-    link: "#",
-  },
-  {
-    title: "Success Mapping Templates",
-    description: "Strategic documents used to map the student journey and optimize institutional/organizational structures.",
-    link: "#",
-  },
-  {
-    title: "Real-Time Compliance Dashboards",
-    description: "Technology-driven frameworks that provide sponsors with auditable data on their global partner networks.",
-    link: "#",
-  },
-  {
-    title: "Global Insights Reporting",
-    description: "A standardized format for delivering data-driven reports on student mobility and geopolitical risk markers.",
-    link: "#",
-  },
-  {
-    title: "Standardized MOU/MSA Templates",
-    description: "Legal frameworks for establishing transparent and compliant partnerships between agents and educational sponsors.",
-    link: "#",
-  },
-];
-
-async function getPublicCompliances() {
+async function getPolicyContent() {
   try {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-    const res = await fetch(`${base.replace(/\/$/, '')}/api/public-compliances`, { cache: 'no-store' });
-    if (!res.ok) return [];
+    const res = await fetch(`${base.replace(/\/$/, '')}/api/policy-cms`, { cache: 'no-store' });
+    if (!res.ok) return null;
     const json = await res.json();
-    return json.success ? json.data : [];
+    return json.success ? json.data : null;
   } catch (err) {
-    console.error('Error fetching public compliances:', err);
-    return [];
+    console.error('Error fetching policy content:', err);
+    return null;
   }
 }
 
 export default async function PolicyPage() {
-  const compliances = await getPublicCompliances();
-
-  // Filter dynamic compliance items by target audience
-  const agentCompliances = compliances.filter((item: any) => item.target === 'agent');
-  const universityCompliances = compliances.filter((item: any) => item.target === 'university');
-
-  const agentPolicies = agentCompliances.length > 0
-    ? agentCompliances.map((item: any) => ({
-      title: item.name,
-      description: item.description,
-      link: "#",
-    }))
-    : DEFAULT_AGENT_POLICIES;
-
-  const universityPolicies = universityCompliances.length > 0
-    ? universityCompliances.map((item: any) => ({
-      title: item.name,
-      description: item.description,
-      link: "#",
-    }))
-    : DEFAULT_UNIVERSITY_POLICIES;
+  const contentDoc = await getPolicyContent();
+  const policiesList = contentDoc && contentDoc.policies && contentDoc.policies.length > 0
+    ? contentDoc.policies.map((item: any) => ({
+        key: item.key,
+        title: item.title,
+        description: item.description,
+        link: `/policy/${item.key}`
+      }))
+    : DEFAULT_POLICIES;
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#050B1F]">
@@ -174,27 +101,29 @@ export default async function PolicyPage() {
             POLICY & DOCUMENTATION
           </h1>
           <p className="max-w-3xl text-sm leading-relaxed text-white/70 md:text-base">
-            Access regulatory frameworks, compliance standards, and official documentation
+            Access regulatory frameworks, compliance standards, and official documentation.
           </p>
         </div>
 
-        {/* Section 1: Agent Compliance Policies */}
+        {/* Policies Section */}
         <section className="mb-12 border border-white/20 p-8 md:p-10">
           <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl text-left">
-            AGENT COMPLIANCE POLICIES
+            STANDARDS & POLICIES
           </h2>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 text-left">
-            {agentPolicies.map((policy: PolicyItem, index: number) => (
-              <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6">
-                <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
-                  {policy.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-white/60 min-h-[64px]">
-                  {policy.description}
-                </p>
+            {policiesList.map((policy: PolicyItem, index: number) => (
+              <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6 flex flex-col justify-between min-h-[180px]">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
+                    {policy.title}
+                  </h3>
+                  <p className="text-xs leading-relaxed text-white/60">
+                    {policy.description}
+                  </p>
+                </div>
                 <Link
                   href={policy.link}
-                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:text-[#F58A07]"
+                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:text-[#F58A07] mt-4"
                 >
                   LEARN MORE
                   <ArrowRight className="h-3 w-3" />
@@ -203,60 +132,6 @@ export default async function PolicyPage() {
             ))}
           </div>
         </section>
-
-        {/* Section 2: Rules & Regulations */}
-        <section className="mb-12 border border-white/20 p-8 md:p-10">
-          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl text-left">
-            RULES & REGULATIONS
-          </h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 text-left">
-            {universityPolicies.map((rule: PolicyItem, index: number) => (
-              <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6">
-                <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
-                  {rule.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-white/60 min-h-[64px]">
-                  {rule.description}
-                </p>
-                <Link
-                  href={rule.link}
-                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:text-[#F58A07]"
-                >
-                  LEARN MORE
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Section 3: Documentation & Frameworks
-        <section className="border border-white/20 p-8 md:p-10">
-          <h2 className="mb-8 text-2xl font-bold uppercase tracking-wide text-white md:text-3xl text-left">
-            DOCUMENTATION & FRAMEWORKS
-          </h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 text-left">
-            {DEFAULT_DOCUMENTATION.map((doc, index) => (
-              <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6">
-                <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
-                  {doc.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-white/60 min-h-[64px]">
-                  {doc.description}
-                </p>
-                <Link
-                  href={doc.link}
-                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:text-[#F58A07]"
-                >
-                  LEARN MORE
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </section>
-        */}
-        <Leadership />
       </div>
     </div>
   );

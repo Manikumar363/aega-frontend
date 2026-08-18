@@ -47,6 +47,12 @@ function SignInContent() {
 
     try {
       // Validate spaces
+      if (email.trim() !== email) {
+        toast.error("Leading/Trailing spaces are not allowed in the email field");
+        setIsLoading(false);
+        return;
+      }
+
       if (email.includes(" ") || password.includes(" ")) {
         toast.error("Spaces are not allowed in both fields");
         setIsLoading(false);
@@ -213,7 +219,7 @@ function SignInContent() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                 </div>
               </div>

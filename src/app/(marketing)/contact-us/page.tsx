@@ -26,13 +26,26 @@ export default function ContactPage() {
       toast.error("Email is required");
       return;
     }
-    const emailRegex = /^[^s@]+@[^s@]+.[^s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email.trim())) {
       toast.error("Please enter a valid email address");
       return;
     }
     if (formData.email.includes(" ")) {
       toast.error("Email must not contain spaces");
+      return;
+    }
+    if (!formData.phone.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+    const phoneRegex = /^[0-9+]+$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      toast.error("Phone number should only contain numbers and '+' symbol");
+      return;
+    }
+    if (!formData.subject.trim()) {
+      toast.error("Subject is required");
       return;
     }
     if (!formData.message.trim()) {
@@ -67,9 +80,13 @@ export default function ContactPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    let value = e.target.value;
+    if (e.target.name === "phone") {
+      value = value.replace(/[^0-9+]/g, "");
+    }
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
   };
 
@@ -121,7 +138,7 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div>
                 <label className="mb-2 block text-xs font-semibold text-white/60">
-                  Name*
+                  Name<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -136,7 +153,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <label className="mb-2 block text-xs font-semibold text-white/60">
-                  Email*
+                  Email<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -151,15 +168,16 @@ export default function ContactPage() {
               </div>
               <div>
                 <label className="mb-2 block text-xs font-semibold text-white/60">
-                  Phone
+                  Phone<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
                   name="phone"
-                  placeholder="+1 (142) 575-1008"
+                  placeholder="+447123456789"
                   value={formData.phone}
                   onChange={handleChange}
                   disabled={isSubmitting}
+                  required
                   className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
@@ -168,7 +186,7 @@ export default function ContactPage() {
             {/* Subject */}
             <div>
               <label className="mb-2 block text-xs font-semibold text-white/60">
-                Subject
+                Subject<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -177,6 +195,7 @@ export default function ContactPage() {
                 value={formData.subject}
                 onChange={handleChange}
                 disabled={isSubmitting}
+                required
                 className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
@@ -184,7 +203,7 @@ export default function ContactPage() {
             {/* Message */}
             <div>
               <label className="mb-2 block text-xs font-semibold text-white/60">
-                Message*
+                Message<span className="text-red-500">*</span>
               </label>
               <textarea
                 name="message"
@@ -203,7 +222,7 @@ export default function ContactPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-white hover:bg-[#F58A07] text-[#0A1628] hover:text-white px-8 py-3 text-sm font-bold uppercase tracking-wider transition-colors duration-200 cursor-pointer disabled:opacity-50"
+                className="bg-[#F7941D] hover:bg-[#E08315] text-white px-8 py-3 text-sm font-bold uppercase tracking-wider transition-colors duration-200 cursor-pointer disabled:opacity-50 rounded-md"
               >
                 {isSubmitting ? "Submitting..." : "SUBMIT"}
               </button>

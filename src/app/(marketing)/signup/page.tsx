@@ -28,6 +28,14 @@ interface UniversityFormData {
 function SignUpContent() {
   const [userType, setUserType] = useState<"agent" | "university">("agent");
   const [step, setStep] = useState<"basic" | "documents">("basic");
+  const [agentFiles, setAgentFiles] = useState<{ doc1: File | null; doc2: File | null }>({
+    doc1: null,
+    doc2: null,
+  });
+  const [universityFiles, setUniversityFiles] = useState<{ doc1: File | null; doc2: File | null }>({
+    doc1: null,
+    doc2: null,
+  });
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role");
 
@@ -74,6 +82,8 @@ function SignUpContent() {
       password: "",
       confirmPassword: "",
     });
+    setAgentFiles({ doc1: null, doc2: null });
+    setUniversityFiles({ doc1: null, doc2: null });
   };
 
   const renderForm = () => {
@@ -85,7 +95,7 @@ function SignUpContent() {
           onNext={() => setStep("documents")}
         />
       ) : (
-        <AgentDocumentsForm formData={agentData} onBack={() => setStep("basic")} />
+        <AgentDocumentsForm formData={agentData} onBack={() => setStep("basic")} uploadedFiles={agentFiles} setUploadedFiles={setAgentFiles} />
       );
     } else {
       return step === "basic" ? (
@@ -95,7 +105,7 @@ function SignUpContent() {
           onNext={() => setStep("documents")}
         />
       ) : (
-        <UniversityDocumentsForm formData={universityData} onBack={() => setStep("basic")} />
+        <UniversityDocumentsForm formData={universityData} onBack={() => setStep("basic")} uploadedFiles={universityFiles} setUploadedFiles={setUniversityFiles} />
       );
     }
   };

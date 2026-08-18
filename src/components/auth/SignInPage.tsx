@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { login, storeAuthToken, storeUserData } from "@/lib/api";
+import { Eye, EyeOff } from 'lucide-react';
 import type { LoginRequest } from "@/lib/api/types";
 
 type SignInPageProps = {
@@ -17,6 +18,7 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +39,12 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
     try {
       if (!email || !password) {
         toast.error("Please fill in all fields");
+        setIsLoading(false);
+        return;
+      }
+
+      if (email.trim() !== email) {
+        toast.error("Leading/Trailing spaces are not allowed in the email field");
         setIsLoading(false);
         return;
       }
@@ -149,16 +157,25 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
                 />
               </div>
 
-              <div className="mb-2">
+              <div className="mb-2 text-left">
                 <label className="mb-1 block text-sm text-white/70">Password*</label>
-                <input
-                  type="password"
-                  placeholder="********"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="w-full border border-white/20 bg-transparent px-4 py-2 text-white placeholder-white/40 outline-none focus:border-[#f7941d] disabled:opacity-50"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="********"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="w-full border border-white/20 bg-transparent pl-4 pr-12 py-2 text-white placeholder-white/40 outline-none focus:border-[#f7941d] disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                  >
+                    {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                  </button>
+                </div>
               </div>
 
               {/* Remember Me & Forget Password Row */}

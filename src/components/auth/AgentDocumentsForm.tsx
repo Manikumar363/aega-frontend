@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { signup, storeAuthToken } from "@/lib/api/authService";
@@ -22,15 +22,14 @@ interface AgentFormData {
 interface AgentDocumentsFormProps {
   formData: AgentFormData;
   onBack?: () => void;
+  uploadedFiles: { doc1: File | null; doc2: File | null };
+  setUploadedFiles: React.Dispatch<React.SetStateAction<{ doc1: File | null; doc2: File | null }>>;
 }
 
-export default function AgentDocumentsForm({ formData, onBack }: AgentDocumentsFormProps) {
+export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, setUploadedFiles }: AgentDocumentsFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<{ doc1: File | null; doc2: File | null }>({
-    doc1: null,
-    doc2: null,
-  });
+
   const [uploadProgress, setUploadProgress] = useState({
     doc1: false,
     doc2: false,
@@ -39,6 +38,15 @@ export default function AgentDocumentsForm({ formData, onBack }: AgentDocumentsF
   const fileInputRef2 = useRef<HTMLInputElement>(null);
   const [captchaCode, setCaptchaCode] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
+
+  const handleRemoveFile = (e: React.MouseEvent, docNum: "doc1" | "doc2") => {
+    e.stopPropagation();
+    setUploadedFiles((prev) => ({
+      ...prev,
+      [docNum]: null,
+    }));
+    toast.success(`Removed Document ${docNum === "doc1" ? "1" : "2"}`);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, docNum: "doc1" | "doc2") => {
     const file = e.target.files?.[0];
@@ -161,7 +169,7 @@ export default function AgentDocumentsForm({ formData, onBack }: AgentDocumentsF
         // Redirect after a brief delay to role-based login route!
         setTimeout(() => {
           router.push("/login?role=agent");
-        }, 1000);
+        }, 2500);
 
         return "Account created successfully!";
       } catch (error) {
@@ -217,8 +225,19 @@ export default function AgentDocumentsForm({ formData, onBack }: AgentDocumentsF
           onClick={() => !isLoading && fileInputRef1.current?.click()}
           onDragOver={handleDragOver}
           onDrop={(e) => !isLoading && handleDrop(e, "doc1")}
-          className="flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
+          className="relative flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
         >
+          {uploadedFiles.doc1 && (
+            <button
+              type="button"
+              onClick={(e) => handleRemoveFile(e, "doc1")}
+              className="absolute top-2 right-2 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+              disabled={isLoading}
+              title="Remove document"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <Upload className="mb-2 h-8 w-8 text-white/55" />
           <span className="text-sm text-white/80">
             {uploadedFiles.doc1 ? uploadedFiles.doc1.name : "Choose file or drag & drop here"}
@@ -245,8 +264,19 @@ export default function AgentDocumentsForm({ formData, onBack }: AgentDocumentsF
           onClick={() => !isLoading && fileInputRef2.current?.click()}
           onDragOver={handleDragOver}
           onDrop={(e) => !isLoading && handleDrop(e, "doc2")}
-          className="flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
+          className="relative flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
         >
+          {uploadedFiles.doc2 && (
+            <button
+              type="button"
+              onClick={(e) => handleRemoveFile(e, "doc2")}
+              className="absolute top-2 right-2 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+              disabled={isLoading}
+              title="Remove document"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <Upload className="mb-2 h-8 w-8 text-white/55" />
           <span className="text-sm text-white/80">
             {uploadedFiles.doc2 ? uploadedFiles.doc2.name : "Choose file or drag & drop here"}

@@ -20,6 +20,10 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      router.replace('/contact-us');
+      return;
+    }
     document.title = "AEGA - Forgot Password";
   }, []);
 

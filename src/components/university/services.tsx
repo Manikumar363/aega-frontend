@@ -12,7 +12,7 @@ interface ServicesProps {
 export default function Services({ data }: ServicesProps) {
   const title = data?.title || "SERVICES FOR UNIVERSITY PARTNERS";
   const description = data?.description || "As a university partner, you gain access to comprehensive agent management tools, compliance reporting, and governance support.";
-  
+
   const services = Array.isArray(data?.points) && data.points.length > 0 ? data.points : [
     { numbering: "01.", title: "Access to Verified Agent Database" },
     { numbering: "02.", title: "Real-Time Compliance Dashboards" },
@@ -50,10 +50,10 @@ export default function Services({ data }: ServicesProps) {
               key={index}
               className="border border-white/10 p-6 md:p-8 bg-[#0A1628]/40 text-left"
             >
-              <h3 className="text-white font-semibold text-sm md:text-base uppercase mb-6">
+              <h3 className="text-white font-semibold text-lg md:text-xl uppercase mb-6">
                 {service.title}
               </h3>
-              <div className="text-[#F68E2D] text-2xl md:text-3xl font-bold">
+              <div className="text-[#F68E2D] text-xl md:text-2xl font-bold">
                 {service.numbering || `${String(index + 1).padStart(2, "0")}.`}
               </div>
             </div>

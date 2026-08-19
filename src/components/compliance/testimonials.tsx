@@ -14,19 +14,19 @@ export default function Testimonials() {
       <div className="mx-auto max-w-5xl px-6 md:px-10">
         {/* Small Label */}
         <div className="mb-6 text-center">
-          <span className="text-[10px] tracking-[0.3em] uppercase text-white/70">
+          <span className="text-lg md:text-xl tracking-[0.3em] uppercase text-white/70">
             WHAT OUR CLIENTS SAY
           </span>
         </div>
 
 
-       {/* Reviews Grid - Two Columns */}
+        {/* Reviews Grid - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
           {/* First Review Card */}
           <div>
             <blockquote className="mb-8 text-left">
               <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
-                 Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.
+                Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.
               </p>
             </blockquote>
             <div className="flex items-center gap-4">
@@ -38,7 +38,7 @@ export default function Testimonials() {
                   className="object-cover"
                 />
               </div>
-                <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
+              <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
             </div>
           </div>
           {/* Second Review Card */}
@@ -56,7 +56,7 @@ export default function Testimonials() {
                   fill
                   className="object-cover"
                 />
-              </div>            
+              </div>
               <div className="text-left">
                 <p className="text-base text-white/60">Chief Financial Officer/Executive Board member</p>
               </div>

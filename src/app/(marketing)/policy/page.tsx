@@ -70,11 +70,11 @@ export default async function PolicyPage() {
   const contentDoc = await getPolicyContent();
   const policiesList = contentDoc && contentDoc.policies && contentDoc.policies.length > 0
     ? contentDoc.policies.map((item: any) => ({
-        key: item.key,
-        title: item.title,
-        description: item.description,
-        link: `/policy/${item.key}`
-      }))
+      key: item.key,
+      title: item.title,
+      description: item.description,
+      link: `/policy/${item.key}`
+    }))
     : DEFAULT_POLICIES;
 
   return (
@@ -114,10 +114,10 @@ export default async function PolicyPage() {
             {policiesList.map((policy: PolicyItem, index: number) => (
               <div key={index} className="space-y-3 border border-white/10 bg-[#0A1628] p-6 flex flex-col justify-between min-h-[180px]">
                 <div className="space-y-2">
-                  <h3 className="text-sm font-bold text-white uppercase min-h-[40px] flex items-center">
+                  <h3 className="text-md md:text-lg font-bold text-white uppercase min-h-[40px] flex items-center">
                     {policy.title}
                   </h3>
-                  <p className="text-xs leading-relaxed text-white/60">
+                  <p className="text-sm leading-relaxed text-white/60">
                     {policy.description}
                   </p>
                 </div>

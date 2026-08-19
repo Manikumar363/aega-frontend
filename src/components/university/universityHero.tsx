@@ -17,7 +17,7 @@ export default function UniversityHero({ data }: UniversityHeroProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="z-10 text-left">
-            <h1 className="text-5xl md:text-4xl font-bold text-white mb-6 uppercase leading-tight whitespace-pre-line">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 uppercase leading-tight whitespace-pre-line">
               {title}
             </h1>
             <p className="text-lg text-white/80 leading-relaxed max-w-lg whitespace-pre-line">

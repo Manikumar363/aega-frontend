@@ -15,7 +15,7 @@ export default function Footer() {
           </h2>
         </div>
 
-        <a href={"/signup"}>
+        <a href={process.env.NODE_ENV === 'production' ? '/contact-us' : '/signup'}>
           <button className="mt-8 lg:mt-0 bg-[#F58A07] hover:bg-[#e07b06] text-white px-8 py-4 flex items-center gap-2 text-sm font-bold tracking-wide transition-all">
             REGISTER NOW
             <ArrowUpRight className="w-4 h-4" />

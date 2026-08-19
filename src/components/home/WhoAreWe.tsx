@@ -45,7 +45,7 @@ export default function WhoAreWe({ data }: WhoAreWeProps) {
           >
             STORY OF US
           </span>
-          <div className="relative ml-5 -mt-10 w-full max-w-xs aspect-3/4 shadow-2xl overflow-hidden">
+          <div className="relative ml-5 -mt-10 w-full max-w-sm aspect-3/4 shadow-2xl overflow-hidden">
             <img
               src={imageSrc}
               alt="peter speech"

@@ -21,6 +21,10 @@ function SignInContent() {
   const roleParam = searchParams.get("role");
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      router.replace('/contact-us');
+      return;
+    }
     document.title = "AEGA - Sign In";
     if (roleParam === "university" || roleParam === "agent") {
       setActiveRole(roleParam);

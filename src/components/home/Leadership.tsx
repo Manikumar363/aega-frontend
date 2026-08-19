@@ -35,7 +35,7 @@ export default function Leadership1({ data }: LeadershipProps) {
       <div className="mx-auto max-w-5xl px-6 md:px-10">
         {/* Small Label */}
         <div className="mb-6 text-center">
-          <span className="text-[10px] tracking-[0.3em] uppercase text-white/70">
+          <span className="text-lg md:text-xl tracking-[0.3em] uppercase text-white/70">
             WHAT OUR CLIENTS SAY
           </span>
         </div>

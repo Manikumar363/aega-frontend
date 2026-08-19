@@ -23,7 +23,7 @@ export default function AgentLearning({ data }: AgentLearningProps) {
   const imageSrc = formatImage(data?.image, "/peter-founders.png");
   const title = data?.title || "AEGA LEARNING PATH";
   const description = data?.description || "Comprehensive support at every stage of your agent development journey";
-  
+
   const LEARNING_PATHS = Array.isArray(data?.points) && data.points.length > 0 ? data.points : [
     {
       numbering: "01.",
@@ -67,8 +67,8 @@ export default function AgentLearning({ data }: AgentLearningProps) {
       <div className="mx-auto w-full max-w-7xl px-4 md:px-10">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-white font-bold text-3xl md:text-5xl uppercase">{title}</h2>
-          <p className="text-white/80 mt-3">{description}</p>
+          <h2 className="text-white font-bold text-4xl md:text-6xl uppercase">{title}</h2>
+          <p className="text-white/80 mt-3 text-base md:text-lg">{description}</p>
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-center w-full gap-10 md:gap-20">
@@ -78,11 +78,11 @@ export default function AgentLearning({ data }: AgentLearningProps) {
               {LEARNING_PATHS.map((item, index) => (
                 <div key={index}>
                   <div className="flex items-baseline gap-4 py-4">
-                    <span className="text-[#F68E2D] font-bold text-5xl md:text-6xl leading-none shrink-0">
+                    <span className="text-[#F68E2D] font-bold text-2xl md:text-3xl leading-none shrink-0">
                       {item.numbering || `${String(index + 1).padStart(2, "0")}.`}
                     </span>
                     <div className="flex flex-col gap-1">
-                      <span className="text-[#F68E2D] text-lg md:text-xl font-semibold">{item.title}</span>
+                      <span className="text-[#F68E2D] text-2xl md:text-3xl font-semibold">{item.title}</span>
                       <span className="text-white/70 text-sm md:text-base font-light leading-relaxed">{item.description}</span>
                     </div>
                   </div>

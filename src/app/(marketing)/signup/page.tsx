@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SignUpLayout from "@/components/auth/SignUpLayout";
 import AgentBasicForm from "@/components/auth/AgentBasicForm";
 import AgentDocumentsForm from "@/components/auth/AgentDocumentsForm";
@@ -36,7 +36,13 @@ function SignUpContent() {
     doc1: null,
     doc2: null,
   });
+  const router = useRouter();
   const searchParams = useSearchParams();
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      router.replace('/contact-us');
+    }
+  }, [router]);
   const roleParam = searchParams.get("role");
 
   const [agentData, setAgentData] = useState<AgentFormData>({

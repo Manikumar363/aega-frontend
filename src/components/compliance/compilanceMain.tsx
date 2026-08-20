@@ -175,7 +175,7 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
 
                 {/* Enroll Button */}
                 <button 
-                  onClick={() => router.push(process.env.NODE_ENV === 'production' ? '/contact-us' : '/login')}
+                  onClick={() => router.push("/login")}
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded transition-colors duration-300"
                 >
                   ENROLL NOW

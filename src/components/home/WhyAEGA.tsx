@@ -44,7 +44,7 @@ export const WhyAEGA = ({ data }: WhyAEGAProps) => {
           {description}
         </p>
         <div className="pt-6 items-center justify-center flex">
-          <a href={process.env.NODE_ENV === 'production' ? '/contact-us' : '/signup'}>
+          <a href={"/signup"}>
             <button className="bg-[#F58A07] hover:bg-[#d67806] text-white text-[13px] font-bold px-4 py-3 flex items-center gap-2 transition-all shadow-lg shadow-orange-900/20 uppercase">
               Join Us Now
               <ArrowDownRight className="w-6 h-6" />

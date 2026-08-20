@@ -187,7 +187,7 @@ export default function PricingPage() {
 
     if (!token) {
       toast.info("Please sign in or register to complete your subscription checkout.");
-      window.location.href = process.env.NODE_ENV === 'production' ? '/contact-us' : '/login?redirect=/pricing';
+      window.location.href = "/login?redirect=/pricing";
       return;
     }
 

@@ -21,7 +21,14 @@ function SignInContent() {
   const roleParam = searchParams.get("role");
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
+    const hostname = window.location.hostname;
+    const isLocalOrDev = hostname === 'localhost' || 
+                         hostname === '127.0.0.1' || 
+                         hostname.startsWith('192.168.') ||
+                         hostname === 'aega-frontend.vercel.app' ||
+                         hostname.endsWith('.vercel.app');
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_MODE === 'production';
+    if (!isLocalOrDev && isProduction) {
       router.replace('/contact-us');
       return;
     }

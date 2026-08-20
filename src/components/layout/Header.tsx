@@ -124,7 +124,7 @@ export default function Header() {
       {/* RIGHT: CTA Button */}
       <div className="hidden md:flex items-center shrink-0">
         <Link
-          href={process.env.NODE_ENV === 'production' ? '/contact-us' : '/login'}
+          href="/login"
           className="flex items-center gap-2 group pb-1 border-b border-white hover:border-[#F58A07] transition-colors"
         >
           <span className="text-white text-[12px] font-bold tracking-widest group-hover:text-[#F58A07] transition-colors">

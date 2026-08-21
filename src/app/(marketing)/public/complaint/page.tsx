@@ -33,7 +33,11 @@ export default function ComplaintPage() {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData({ ...formData, [name]: checked });
     } else {
-      setFormData({ ...formData, [name]: value });
+      let val = value;
+      if (name === "firstName" || name === "lastName") {
+        val = val.replace(/[0-9]/g, "");
+      }
+      setFormData({ ...formData, [name]: val });
     }
   };
 
@@ -103,6 +107,19 @@ export default function ComplaintPage() {
 
     if (!formData.email.trim()) {
       toast.error("Email address is required");
+      return false;
+    }
+    if (formData.email.startsWith(" ") || formData.email.endsWith(" ")) {
+      toast.error("Email must not contain leading or trailing spaces");
+      return false;
+    }
+    if (formData.email.includes(" ")) {
+      toast.error("Email must not contain spaces");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address");
       return false;
     }
 
@@ -265,7 +282,7 @@ export default function ComplaintPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -279,7 +296,7 @@ export default function ComplaintPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                   />
                 </div>
               </div>
@@ -296,7 +313,7 @@ export default function ComplaintPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -310,7 +327,7 @@ export default function ComplaintPage() {
                     value={formData.phoneNumber}
                     onChange={handleChange}
                     required
-                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                    className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                   />
                 </div>
               </div>
@@ -326,7 +343,7 @@ export default function ComplaintPage() {
                   value={formData.countryOfResidence}
                   onChange={handleChange}
                   required
-                  className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                  className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                 />
               </div>
             </div>
@@ -348,7 +365,7 @@ export default function ComplaintPage() {
                   value={formData.agentName}
                   onChange={handleChange}
                   required
-                  className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                  className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                 />
               </div>
 
@@ -362,7 +379,7 @@ export default function ComplaintPage() {
                   placeholder="Or any detail to help identify the agent or counsellor"
                   value={formData.agentReference}
                   onChange={handleChange}
-                  className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                  className="w-full border-b-2 border-white/20 bg-transparent px-0 py-3 text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                 />
                 <p className="mt-2 text-xs text-white/50">
                   Include website, social media, or any reference materials you have
@@ -408,7 +425,7 @@ export default function ComplaintPage() {
                   onChange={handleChange}
                   required
                   rows={8}
-                  className="w-full resize-none border border-white/20 bg-[#0A1628] px-4 py-3 text-sm text-white placeholder-white/30 transition-colors focus:border-[#F58A07] focus:outline-none"
+                  className="w-full resize-none border border-white/20 bg-[#0A1628] px-4 py-3 text-sm text-white placeholder-white/55 transition-colors focus:border-[#F58A07] focus:outline-none"
                 />
               </div>
             </div>

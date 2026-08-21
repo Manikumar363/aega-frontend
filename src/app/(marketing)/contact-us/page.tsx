@@ -22,17 +22,25 @@ export default function ContactPage() {
       toast.error("Name is required");
       return;
     }
+    if (/[0-9]/.test(formData.name)) {
+      toast.error("Name must not contain numbers");
+      return;
+    }
     if (!formData.email.trim()) {
       toast.error("Email is required");
+      return;
+    }
+    if (formData.email.startsWith(" ") || formData.email.endsWith(" ")) {
+      toast.error("Email must not contain leading or trailing spaces");
+      return;
+    }
+    if (formData.email.includes(" ")) {
+      toast.error("Email must not contain spaces");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email.trim())) {
       toast.error("Please enter a valid email address");
-      return;
-    }
-    if (formData.email.includes(" ")) {
-      toast.error("Email must not contain spaces");
       return;
     }
     if (!formData.phone.trim()) {
@@ -81,7 +89,9 @@ export default function ContactPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     let value = e.target.value;
-    if (e.target.name === "phone") {
+    if (e.target.name === "name") {
+      value = value.replace(/[0-9]/g, "");
+    } else if (e.target.name === "phone") {
       value = value.replace(/[^0-9+]/g, "");
     }
     setFormData({
@@ -148,7 +158,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   required
-                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
               <div>
@@ -163,7 +173,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   required
-                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
               <div>
@@ -178,7 +188,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   required
-                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
             </div>
@@ -196,7 +206,7 @@ export default function ContactPage() {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
 
@@ -213,7 +223,7 @@ export default function ContactPage() {
                 disabled={isSubmitting}
                 required
                 rows={5}
-                className="w-full resize-none border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/20 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                className="w-full resize-none border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
 

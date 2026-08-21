@@ -25,8 +25,8 @@ export default function Hero({ data }: HeroProps) {
   const redirect = data?.redirectionUrl || "/about";
 
   return (
-    <section className="relative w-full h-[95vh] flex items-center bg-[#03091F] overflow-hidden">
-      <div className="absolute inset-0 z-0">
+    <section className="relative w-full min-h-[95vh] md:h-[95vh] flex items-center bg-[#03091F] overflow-hidden">
+<div className="absolute inset-0 z-0 hidden md:block">
         <img
           src={bgImage}
           alt="Background"
@@ -34,7 +34,7 @@ export default function Hero({ data }: HeroProps) {
         />
       </div>
 
-      <div className="relative z-10 container mx-auto px-8 md:px-12 grid grid-cols-12 h-full items-center">
+      <div className="relative z-10 container mx-auto px-8 md:px-12 grid grid-cols-12 h-full items-center py-16 md:py-0">
         <div className="col-span-12 lg:col-span-7 flex flex-col justify-center space-y-6">
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-bold text-white leading-[1.1] uppercase tracking-wide whitespace-pre-line">
             {heading}
@@ -52,6 +52,16 @@ export default function Hero({ data }: HeroProps) {
               EXPLORE MORE
               <ArrowUpRight className="w-4 h-4" />
             </a>
+          </div>
+
+          {/* Mobile bottom image */}
+          {/* Mobile bottom image */}
+          <div className="md:hidden relative left-1/2 -translate-x-1/2 w-screen mt-8 overflow-hidden">
+            <img
+              src="/landingPage/peter.png"
+              alt="Peter"
+              className="block w-full h-auto max-w-none"
+            />
           </div>
         </div>
       </div>

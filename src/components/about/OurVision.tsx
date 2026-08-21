@@ -24,7 +24,7 @@ export default function OurVision({ data }: OurVisionProps) {
   return (
     <section className="relative w-full min-h-screen bg-[#03091F] overflow-hidden flex items-center justify-center py-12 md:py-24">
       {/* Background Geometric Design */}
-      <div className="absolute left-5 right-5 top-0 w-1/2 h-full opacity-80">
+      <div className="absolute left-0 right-0 mx-auto top-0 w-[90%] md:w-1/2 h-full opacity-80">
         <Image
           src="/ourVision-design.png"
           alt="Background design"
@@ -38,12 +38,12 @@ export default function OurVision({ data }: OurVisionProps) {
         {/* Left: Photo with label */}
         <div className="flex flex-col items-center md:items-start w-full md:w-5/12 pt-8">
           <span 
-            className="text-white font-semibold ml-8 text-sm -mt-6 md:text-base mb-6 md:mb-13" 
+            className="text-white font-semibold md:ml-8 ml-0 text-center md:text-left text-sm -mt-6 md:text-base mb-6 md:mb-13" 
             style={{letterSpacing: '0.08em'}}
           >
             STORY OF US
           </span>
-          <div className="relative ml-5 -mt-10 w-full max-w-xs aspect-3/4 shadow-2xl overflow-hidden">
+          <div className="relative md:ml-5 ml-0 mx-auto md:mx-0 -mt-10 w-full max-w-sm aspect-3/4 shadow-2xl overflow-hidden">
             <img
               src={imageSrc}
               alt="Our Vision Photo"

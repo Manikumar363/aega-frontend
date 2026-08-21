@@ -41,7 +41,7 @@ export default function PreCase({ data }: PreCaseProps) {
   return (
     <section className="relative w-full min-h-screen bg-[#03091F] overflow-hidden flex items-center justify-center py-12 md:py-24">
       {/* Background Geometric Design */}
-      <div className="absolute left-5 right-5 top-0 w-1/2 h-full opacity-80">
+      <div className="absolute left-0 md:left-5 right-auto top-0 w-[90%] md:w-[40%] h-full opacity-80 pointer-events-none -z-10">
         <Image
           src="/ourVision-design.png"
           alt="Background design"
@@ -54,7 +54,7 @@ export default function PreCase({ data }: PreCaseProps) {
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-center w-full max-w-7xl px-4 md:px-10 gap-8 md:gap-16">
         {/* Left: Photo with label */}
         <div className="flex flex-col items-center md:items-start w-full md:w-5/12 pt-8">
-          <div className="relative ml-5 -mt-10 w-full max-w-xs aspect-3/4 shadow-2xl overflow-hidden rounded-lg">
+          <div className="relative md:ml-5 ml-0 mx-auto md:mx-0 -mt-10 w-full max-w-sm aspect-3/4 shadow-2xl overflow-hidden rounded-lg">
             <img
               src={imageSrc}
               alt={title}

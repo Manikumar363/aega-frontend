@@ -40,7 +40,7 @@ export default function Commitment({ data }: CommitmentProps) {
   ];
 
   return (
-    <section className="relative w-full bg-[#03091F] overflow-hidden py-16 px-2 md:px-0">
+    <section className="relative w-full bg-[#03091F] overflow-hidden py-16 px-4 md:px-12 lg:px-0">
       {/* Diagonal Orange Background */}
       <div className="absolute right-0 -top-13 w-[70vw] h-[70vw] max-w-5xl max-h-[800px] z-0" style={{ clipPath: 'polygon(40% 0, 100% 0, 100% 100%, 0 100%)' }}>
         <Image

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ChevronDown, ArrowDownRight } from 'lucide-react';
+import { ChevronDown, ArrowDownRight, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 // Navigation data with dropdown items
@@ -96,6 +96,8 @@ const NavItem = ({
 };
 
 export default function Header() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <header className="w-full bg-[#03091F] h-[88px] px-8 md:px-12 flex items-center justify-between sticky top-0 z-50 border-b border-white/5">
 
@@ -133,6 +135,68 @@ export default function Header() {
           <ArrowDownRight className="w-4 h-4 text-white group-hover:text-[#F58A07] transition-colors" />
         </Link>
       </div>
+
+      {/* Mobile Hamburger Menu Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="xl:hidden flex items-center justify-center p-2 text-white hover:text-[#F58A07] transition-colors outline-none"
+        aria-label="Toggle menu"
+      >
+        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="absolute top-[88px] left-0 w-full bg-[#03091F] border-b border-white/10 z-40 xl:hidden">
+          <nav className="flex flex-col p-6 space-y-4 max-h-[calc(100vh-88px)] overflow-y-auto">
+            {NAV_LINKS.map((link) => (
+              <div key={link.label} className="flex flex-col border-b border-white/5 pb-2 text-left">
+                {link.hasDropdown && link.dropdownItems ? (
+                  <div className="space-y-2">
+                    <span className="text-gray-400 text-[10px] font-bold tracking-widest uppercase">
+                      {link.label}
+                    </span>
+                    <div className="pl-4 flex flex-col space-y-2 mt-1">
+                      {link.dropdownItems.map((subLink) => (
+                        <Link
+                          key={subLink.label}
+                          href={subLink.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="text-gray-200 hover:text-[#F58A07] text-[10px] font-bold tracking-widest transition-colors py-1 block"
+                        >
+                          {subLink.label.toUpperCase()}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={link.href || "#"}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-gray-200 hover:text-[#F58A07] text-[10px] font-bold tracking-widest transition-colors py-1 block"
+                  >
+                    {link.label}
+                  </Link>
+                )}
+              </div>
+            ))}
+
+            {/* Mobile CTA */}
+            <div className="pt-4 text-left">
+              <Link
+                href="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="inline-flex items-center gap-2 group pb-1 border-b border-white hover:border-[#F58A07] transition-colors"
+              >
+                <span className="text-white text-[12px] font-bold tracking-widest group-hover:text-[#F58A07] transition-colors">
+                  JOIN US NOW
+                </span>
+                <ArrowDownRight className="w-4 h-4 text-white group-hover:text-[#F58A07] transition-colors" />
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

@@ -30,9 +30,9 @@ export default function Compliance({ data }: ComplianceProps) {
 
   return (
     <section className="relative w-full min-h-[600px] bg-[#03091F] overflow-hidden flex items-center justify-center py-12 md:py-24">
-      <div className="relative z-10 flex flex-col md:flex-row items-center justify-center w-full max-w-7xl px-4 md:px-10 gap-10 md:gap-20">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center w-full max-w-7xl px-6 md:px-10 gap-10 lg:gap-20">
         {/* Left: Photo with orange corners */}
-        <div className="relative w-full md:w-1/2 max-w-md shrink-0 flex flex-col items-center md:items-start">
+        <div className="relative w-full lg:w-1/2 max-w-md lg:shrink-0 flex flex-col items-center lg:items-start">
           <div className="relative w-full aspect-[2/3] max-w-md shadow-2xl overflow-hidden rounded-lg">
             <img
               src={imageSrc}
@@ -43,8 +43,8 @@ export default function Compliance({ data }: ComplianceProps) {
         </div>
 
         {/* Right: Guidelines */}
-        <div className="flex flex-col justify-center w-full md:w-1/2 max-w-xl text-left">
-          <h2 className="text-white font-bold text-4xl md:text-5xl mb-6 uppercase leading-tight">{title}</h2>
+        <div className="flex flex-col justify-center w-full lg:w-1/2 max-w-xl text-left">
+          <h2 className="text-white font-bold text-3xl md:text-4xl lg:text-5xl mb-6 uppercase leading-tight">{title}</h2>
           <p className="text-white/80 text-base md:text-lg font-normal leading-relaxed mb-8 whitespace-pre-line">
             {description}
           </p>

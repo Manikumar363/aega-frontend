@@ -52,11 +52,14 @@ export default function OurCoreValues({ data }: CoreValuesProps) {
 
   return (
     <section className="relative w-full overflow-hidden bg-[#0A1628] py-16">
+      {/* Centered Orange Glow on Mobile, Corners on Desktop */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-[#8B5A3C]/40 blur-3xl md:hidden" />
+
       {/* Diagonal Orange Corner - Top Left */}
-      <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 bg-gradient-to-br from-[#8B5A3C] to-transparent opacity-70" />
+      <div className="pointer-events-none absolute left-0 top-0 h-64 w-64 bg-gradient-to-br from-[#8B5A3C] to-transparent opacity-70 hidden md:block" />
 
       {/* Diagonal Orange Corner - Bottom Right */}
-      <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 bg-gradient-to-tl from-[#8B5A3C] to-transparent opacity-70" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 bg-gradient-to-tl from-[#8B5A3C] to-transparent opacity-70 hidden md:block" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-10">
         {/* Heading */}

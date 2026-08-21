@@ -47,7 +47,7 @@ export default function TrustCompliance({ data }: TrustComplianceProps) {
         </div>
 
         {/* Banner Image */}
-        <div className="relative mb-16 overflow-hidden shadow-2xl aspect-[21/9] md:aspect-[21/7] rounded-2xl border border-white/10 group">
+        <div className="relative mb-16 overflow-hidden shadow-2xl aspect-[16/9] md:aspect-[21/7] rounded-2xl border border-white/10 group">
           <img
             src={imageSrc}
             alt={sectionTitle}

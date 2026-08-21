@@ -30,7 +30,7 @@ export default function Hero({ data }: HeroProps) {
         <img
           src={bgImage}
           alt="Background"
-          className="w-full h-full object-cover object-[right_50%] opacity-70 scale-100"
+          className="w-full h-full object-cover object-[80%_center] lg:object-[right_50%] opacity-70 scale-100"
         />
       </div>
 

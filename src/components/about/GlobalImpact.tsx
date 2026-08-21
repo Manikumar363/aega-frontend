@@ -67,9 +67,9 @@ export default function GlobalImpact({ data }: GlobalImpactProps) {
       </div>
 
       {/* Heading */}
-      <div className="pt-16 pb-8 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-wide">GLOBAL IMPACT</h2>
-        <p className="text-white/80 max-w-lg items-start text-start ml-80 mx-auto mb-8 mt-20 text-sm md:text-xs whitespace-pre-line">
+      <div className="pt-16 pb-8 text-center flex flex-col items-center justify-center w-full px-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-wide text-center">GLOBAL IMPACT</h2>
+        <p className="text-white/80 max-w-lg mx-auto mb-8 mt-20 px-4 text-sm leading-relaxed text-center !text-center whitespace-pre-line w-full">
           {description}
         </p>
       </div>
@@ -109,7 +109,7 @@ export default function GlobalImpact({ data }: GlobalImpactProps) {
       </div>
 
       {/* Every Impact Counts */}
-      <div className="mb-16 px-15 max-w-2xl ml-40 mx-auto text-left">
+      <div className="mb-16 px-6 max-w-2xl mx-auto text-center md:text-center md:mx-auto md:ml-auto md:mr-auto lg:text-left lg:ml-40 lg:mx-0">
         <h4 className="text-xl md:text-2xl font-bold text-white mb-2">Every Impact Counts</h4>
         <p className="text-white/80 mb-4 text-xs md:text-base">
           When impact is embedded into your service mission, it doesn't depend on motivation or momentum. It grows steadily, alongside your business. And together, every working moment is an impact, creating a better future for all of us.

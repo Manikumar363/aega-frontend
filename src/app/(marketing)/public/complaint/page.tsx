@@ -465,13 +465,13 @@ export default function ComplaintPage() {
                       {files.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between border border-white/10 bg-[#0F1A3A] px-4 py-2"
+                          className="flex items-center justify-between border border-white/10 bg-[#0F1A3A] px-4 py-2 w-full overflow-hidden"
                         >
-                          <span className="text-sm text-white">{file.name}</span>
+                          <span className="text-sm text-white truncate pr-4 flex-1">{file.name}</span>
                           <button
                             type="button"
                             onClick={() => removeFile(index)}
-                            className="text-white/50 transition-colors hover:text-red-400"
+                            className="text-white/50 transition-colors hover:text-red-400 shrink-0"
                           >
                             <X className="h-4 w-4" />
                           </button>

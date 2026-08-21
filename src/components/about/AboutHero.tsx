@@ -45,7 +45,7 @@ export default function AboutHero({ data }: AboutHeroProps) {
 
         {/* Main Heading */}
         <div className="max-w-3xl">
-          <h1 className="mb-8 text-5xl font-bold leading-tight text-white md:text-6xl lg:text-7xl uppercase whitespace-pre-line">
+          <h1 className="mb-8 text-3xl sm:text-4xl font-bold leading-tight text-white md:text-6xl lg:text-7xl uppercase whitespace-pre-line">
             {title}
           </h1>
 

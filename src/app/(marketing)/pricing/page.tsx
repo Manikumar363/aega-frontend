@@ -310,12 +310,12 @@ export default function PricingPage() {
 
           <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-between lg:justify-end">
             {activeCategory === "agents" && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                 <span className="text-xs text-white/70 font-semibold uppercase">Schedule:</span>
                 <select
                   value={pricingModel}
                   onChange={(e) => setPricingModel(e.target.value as any)}
-                  className="bg-[#14112E] border border-white/20 px-3 py-2 text-xs text-white rounded outline-none cursor-pointer"
+                  className="bg-[#14112E] border border-white/20 px-3 py-2 text-xs text-white rounded outline-none cursor-pointer w-full max-w-[240px] sm:max-w-none truncate"
                 >
                   <option value="overview">Overview Base Rate (£500 / £1,200 per office)</option>
                   <option value="detailed">Detailed Schedule (£1,000 / £2,500 1st office)</option>

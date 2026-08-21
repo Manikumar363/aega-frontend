@@ -29,12 +29,14 @@ export const WhyAEGA = ({ data }: WhyAEGAProps) => {
   return (
     <section className="relative py-20 bg-zinc-800 flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
-      <div className="absolute inset-0 opacity-40">
+      <div className="absolute inset-0 opacity-25 pointer-events-none">
         <img
           src={imageSrc}
           alt="Why AEGA Background"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-bottom"
         />
+        {/* Seamless gradient overlay to fade top and bottom edges into section background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-800 via-transparent to-zinc-800" />
       </div>
 
       {/* Content */}

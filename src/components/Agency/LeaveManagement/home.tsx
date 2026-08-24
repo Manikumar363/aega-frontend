@@ -38,6 +38,7 @@ interface ApiLeaveResponse {
     email?: string;
     role?: string;
     profilePic?: string;
+    profileImage?: string;
   } | string;
   ownerAgentId?: any;
   startDate: string;
@@ -116,9 +117,17 @@ export default function LeaveManagement() {
         let name = "Counsellor";
         let image = null;
 
+        const formatImageUrl = (img?: string) => {
+          if (!img) return null;
+          if (img.startsWith("http://") || img.startsWith("https://")) return img;
+          const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
+          const rel = img.startsWith("/") ? img : `/${img}`;
+          return `${base}${rel}`;
+        };
+
         if (leave.counsellorId && typeof leave.counsellorId === "object") {
           name = leave.counsellorId.name || `${leave.counsellorId.firstName || ""} ${leave.counsellorId.lastName || ""}`.trim() || "Counsellor";
-          image = leave.counsellorId.profilePic || null;
+          image = formatImageUrl(leave.counsellorId.profileImage) || null;
         } else {
           name = getLoggedInUserName();
         }
@@ -159,6 +168,18 @@ export default function LeaveManagement() {
     e.preventDefault();
     if (!title.trim() || !reason.trim() || !startDate || !endDate) {
       toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error("Start Date cannot be greater than End Date.");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(startDate) < today) {
+      toast.error("Start Date cannot be in the past.");
       return;
     }
 
@@ -489,7 +510,7 @@ export default function LeaveManagement() {
               </div>
               <div>
                 <span className="text-gray-400 font-semibold block">Reason</span>
-                <p className="bg-[#0A0724] border border-gray-800 p-3 rounded text-gray-300 italic mt-1 leading-relaxed">
+                <p className="bg-[#0A0724] border border-gray-800 p-3 rounded text-gray-300 italic mt-1 leading-relaxed max-h-[150px] overflow-y-auto">
                   "{selectedLeave.reason}"
                 </p>
               </div>
@@ -537,6 +558,7 @@ export default function LeaveManagement() {
                   <input
                     type="date"
                     value={startDate}
+                    min={new Date().toISOString().split("T")[0]}
                     onChange={(e) => setStartDate(e.target.value)}
                     required
                     className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-[#F68E2D]"
@@ -547,6 +569,7 @@ export default function LeaveManagement() {
                   <input
                     type="date"
                     value={endDate}
+                    min={startDate || new Date().toISOString().split("T")[0]}
                     onChange={(e) => setEndDate(e.target.value)}
                     required
                     className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-[#F68E2D]"

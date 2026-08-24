@@ -58,7 +58,7 @@ export default function Hero({ data }: HeroProps) {
           {/* Mobile bottom image */}
           <div className="md:hidden relative left-1/2 -translate-x-1/2 w-screen mt-8 overflow-hidden">
             <img
-              src="/landingPage/peter.png"
+              src={bgImage}
               alt="Peter"
               className="block w-full h-auto max-w-none"
             />

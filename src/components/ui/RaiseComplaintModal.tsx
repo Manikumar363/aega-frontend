@@ -55,7 +55,7 @@ export default function RaiseComplaintModal({
             agentNameOrCompany: companyName.trim(),
             office: office.trim(),
             typeOfComplaint: reason.trim(),
-            complaintDescription: message.trim(),
+            description: message.trim(),
             targetType,
             targetId,
             acceptedDeclaration: true,
@@ -90,13 +90,13 @@ export default function RaiseComplaintModal({
           {/* Company Name */}
           <div>
             <label className="block font-semibold mb-1.5 text-gray-300">
-              Company Name <span className="text-red-500">*</span>
+              {targetType === "university" ? "University Name" : targetType === "agent" ? "Agent Name" : "Company Name"} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Company Name"
+              placeholder={targetType === "university" ? "University Name" : targetType === "agent" ? "Agent Name" : "Company Name"}
               required
               disabled={isSubmitting}
               className="w-full bg-[#0A0724] border border-gray-800 rounded-lg p-3 text-white placeholder-white/30 outline-none focus:border-[#F68E2D]"

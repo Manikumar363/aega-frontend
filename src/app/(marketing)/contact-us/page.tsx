@@ -93,6 +93,8 @@ export default function ContactPage() {
       value = value.replace(/[0-9]/g, "");
     } else if (e.target.name === "phone") {
       value = value.replace(/[^0-9+]/g, "");
+    } else if (e.target.name === "email") {
+      value = value.replace(/\s/g, "");
     }
     setFormData({
       ...formData,
@@ -158,7 +160,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   required
-                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/75 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
               <div>
@@ -173,7 +175,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   required
-                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/75 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
               <div>
@@ -188,7 +190,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   required
-                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                  className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/75 outline-none focus:border-[#F58A07] transition focus:outline-none"
                 />
               </div>
             </div>
@@ -206,7 +208,7 @@ export default function ContactPage() {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                className="w-full border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/75 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
 
@@ -223,7 +225,7 @@ export default function ContactPage() {
                 disabled={isSubmitting}
                 required
                 rows={5}
-                className="w-full resize-none border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/55 outline-none focus:border-[#F58A07] transition focus:outline-none"
+                className="w-full resize-none border border-white/20 bg-[#060D18] px-4 py-3 rounded-md text-sm text-white placeholder-white/75 outline-none focus:border-[#F58A07] transition focus:outline-none"
               />
             </div>
 

@@ -37,6 +37,9 @@ export default function ComplaintPage() {
       if (name === "firstName" || name === "lastName") {
         val = val.replace(/[0-9]/g, "");
       }
+      if (name === "email") {
+        val = val.replace(/\s/g, "");
+      }
       setFormData({ ...formData, [name]: val });
     }
   };

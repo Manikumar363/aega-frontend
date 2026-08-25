@@ -1,6 +1,50 @@
+"use client";
+
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { ArrowUpRight } from 'lucide-react';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/subscribers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email.trim() })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to subscribe');
+      }
+
+      toast.success('Thank you for subscribing to our newsletter!');
+      setEmail('');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to subscribe. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="bg-[#03091F] text-white pt-20 pb-8 px-6 md:px-16 overflow-hidden">
 
@@ -62,14 +106,25 @@ export default function Footer() {
           <h4 className="font-medium text-sm text-white mb-4">
             Subscribe to be in touch with news.
           </h4>
-          <div className="relative">
+          <form onSubmit={handleSubscribe} className="relative">
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value.replace(/\s/g, ""))}
               placeholder="Email Address*"
-              className="w-full bg-[#050B26] border border-white/20 p-4 pr-12 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#F58A07] transition-colors"
+              disabled={isSubmitting}
+              required
+              className="w-full bg-[#050B26] border border-white/20 p-4 pr-12 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#F58A07] transition-colors disabled:opacity-50"
             />
-            <ArrowUpRight className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-          </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#F58A07] transition-colors cursor-pointer disabled:opacity-50"
+              title="Subscribe"
+            >
+              <ArrowUpRight className="w-5 h-5" />
+            </button>
+          </form>
         </div>
       </div>
 

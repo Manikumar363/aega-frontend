@@ -122,22 +122,20 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
                 <button
                   type="button"
                   onClick={() => setActiveRole("agent")}
-                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                    activeRole === "agent"
-                      ? "bg-[#f7941d] text-white"
-                      : "border border-white/30 text-white"
-                  }`}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${activeRole === "agent"
+                    ? "bg-[#f7941d] text-white"
+                    : "border border-white/30 text-white"
+                    }`}
                 >
                   AGENT
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveRole("university")}
-                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                    activeRole === "university"
-                      ? "bg-[#f7941d] text-white"
-                      : "border border-white/30 text-white"
-                  }`}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${activeRole === "university"
+                    ? "bg-[#f7941d] text-white"
+                    : "border border-white/30 text-white"
+                    }`}
                 >
                   UNIVERSITY
                 </button>
@@ -146,19 +144,19 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="mb-4">
-                <label className="mb-1 block text-sm text-white/70">Email*</label>
+                <label className="mb-1 block text-sm text-white/70">Email<span className="text-red-500 pl-2">*</span></label>
                 <input
                   type="email"
                   placeholder="jane@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.replace(/\s/g, ""))}
                   disabled={isLoading}
                   className="w-full border border-white/20 bg-transparent px-4 py-2 text-white placeholder-white/40 outline-none focus:border-[#f7941d] disabled:opacity-50"
                 />
               </div>
 
               <div className="mb-2 text-left">
-                <label className="mb-1 block text-sm text-white/70">Password*</label>
+                <label className="mb-1 block text-sm text-white/70">Password<span className="text-red-500 pl-2">*</span></label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}

@@ -58,9 +58,9 @@ export const WhyAEGA = ({ data }: WhyAEGAProps) => {
         <div className="w-full flex flex-col md:flex-row items-center justify-center gap-27 mt-20 px-1">
           {bottomTitles.map((title, idx) => (
             title ? (
-              <div key={idx} className="flex items-center gap-3">
+              <div key={idx} className="flex items-center gap-4">
                 <Check size={28} className="text-white" />
-                <span className="text-white/80 font-bold text-lg md:text-xs uppercase">{title}</span>
+                <span className="text-white/80 font-bold text-lg md:text-xs uppercase whitespace-nowrap">{title}</span>
               </div>
             ) : null
           ))}

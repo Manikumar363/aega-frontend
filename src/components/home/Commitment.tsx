@@ -53,7 +53,7 @@ export default function Commitment({ data }: CommitmentProps) {
       </div>
 
       {/* Stats Row */}
-      <div className="relative z-10 flex flex-col md:flex-row items-stretch justify-center gap-0 md:gap-0 max-w-5xl mx-auto mb-16 bg-[#03091F]/30 backdrop-blur-sm rounded-lg border border-white/5">
+      <div className="relative z-10 flex flex-col md:flex-row items-stretch justify-center gap-0 md:gap-0 max-w-7xl mx-auto mb-16 bg-[#03091F]/30 backdrop-blur-sm rounded-lg border border-white/5">
         {kpiValues.slice(0, 4).map((value, i) => (
           <div
             key={i}

@@ -18,7 +18,7 @@ export default function Impact({ data }: ImpactProps) {
   };
 
   const imageSrc = formatImage(data?.image, "/landingPage/peter-explaining.png");
-  
+
   const description = data?.description || "AT AEGA, WE BELIEVE THAT INTERNATIONAL STUDENT RECRUITMENT IS NOT MERELY A TRANSACTION—IT IS A LIFE-CHANGING JOURNEY THAT DEMANDS THE HIGHEST STANDARDS OF PROTECTION AND ETHICS. OUR IMPACT IS MEASURED BY THE STABILITY WE BRING TO INSTITUTIONS AND THE FUTURES WE SECURE FOR STUDENTS WORLDWIDE.";
   const points = Array.isArray(data?.points) ? data.points : [
     {
@@ -40,11 +40,17 @@ export default function Impact({ data }: ImpactProps) {
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         {/* Section Heading and Content Row */}
         <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-8">
-          <div className="w-full md:w-1/2">
-            <h2 className="text-left text-3xl md:text-2xl font-bold text-white mb-4 md:mb-0 tracking-tight">OUR IMPACT</h2>
+          <div className="w-full md:w-[25%]">
+            <h2 className="text-left text-3xl md:text-2xl font-bold text-white mb-4 md:mb-0 tracking-tight">
+              OUR IMPACT
+            </h2>
           </div>
-          <div className="w-full md:w-1/2 flex flex-col items-start">
-            <p className="text-white/95 text-lg md:text-xl font-bold leading-snug text-left whitespace-pre-line" style={{lineHeight: '1.3'}}>
+
+          <div className="w-full md:w-[55%]">
+            <p
+              className="text-white/95 text-lg md:text-xl font-semibold leading-snug text-left whitespace-pre-line"
+              style={{ lineHeight: '1.1' }}
+            >
               {description}
             </p>
           </div>

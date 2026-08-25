@@ -22,11 +22,11 @@ function SignInContent() {
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const isLocalOrDev = hostname === 'localhost' || 
-                         hostname === '127.0.0.1' || 
-                         hostname.startsWith('192.168.') ||
-                         hostname === 'aega-frontend.vercel.app' ||
-                         hostname.endsWith('.vercel.app');
+    const isLocalOrDev = hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname === 'aega-frontend.vercel.app' ||
+      hostname.endsWith('.vercel.app');
     const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_MODE === 'production';
     if (!isLocalOrDev && isProduction) {
       router.replace('/contact-us');
@@ -174,22 +174,20 @@ function SignInContent() {
               <button
                 type="button"
                 onClick={() => handleRoleSwitch("agent")}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  activeRole === "agent"
-                    ? "bg-[#f7941d] text-white"
-                    : "border border-white/30 text-white"
-                }`}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${activeRole === "agent"
+                  ? "bg-[#f7941d] text-white"
+                  : "border border-white/30 text-white"
+                  }`}
               >
                 AGENT
               </button>
               <button
                 type="button"
                 onClick={() => handleRoleSwitch("university")}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  activeRole === "university"
-                    ? "bg-[#f7941d] text-white"
-                    : "border border-white/30 text-white"
-                }`}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${activeRole === "university"
+                  ? "bg-[#f7941d] text-white"
+                  : "border border-white/30 text-white"
+                  }`}
               >
                 UNIVERSITY
               </button>
@@ -199,7 +197,7 @@ function SignInContent() {
               {/* Email */}
               <div className="mb-4 text-left">
                 <label className="mb-1 block text-sm text-white/70">
-                  Email*
+                  Email<span className="text-red-500 pl-1">*</span>
                 </label>
                 <input
                   type="email"
@@ -214,7 +212,7 @@ function SignInContent() {
               {/* Password */}
               <div className="mb-2 text-left">
                 <label className="mb-1 block text-sm text-white/70">
-                  Password*
+                  Password<span className="text-red-500 pl-1">*</span>
                 </label>
                 <div className="relative">
                   <input

@@ -45,7 +45,7 @@ export default function WhatWeDo({ data }: WhatWeDoProps) {
               <div className="w-8 h-[2px] bg-[#F58A07]"></div>
               <span className="text-[#F58A07] font-bold tracking-widest text-xs uppercase">Our Expertise</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-wide">
+            <h2 className="text-4xl md:text-6xl font-bold text-white uppercase tracking-wide">
               WHAT WE DO
             </h2>
           </div>

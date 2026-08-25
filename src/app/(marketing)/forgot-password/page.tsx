@@ -21,11 +21,11 @@ export default function ForgotPasswordPage() {
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const isLocalOrDev = hostname === 'localhost' || 
-                         hostname === '127.0.0.1' || 
-                         hostname.startsWith('192.168.') ||
-                         hostname === 'aega-frontend.vercel.app' ||
-                         hostname.endsWith('.vercel.app');
+    const isLocalOrDev = hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname === 'aega-frontend.vercel.app' ||
+      hostname.endsWith('.vercel.app');
     const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_MODE === 'production';
     if (!isLocalOrDev && isProduction) {
       router.replace('/contact-us');
@@ -187,7 +187,7 @@ export default function ForgotPasswordPage() {
                   </p>
                   <div className="text-left">
                     <label className="mb-1 block text-sm text-white/70">
-                      Email Address*
+                      Email Address<span className="text-red-500 pl-2">*</span>
                     </label>
                     <input
                       type="email"
@@ -258,7 +258,7 @@ export default function ForgotPasswordPage() {
                   <p className="text-sm text-white/70 text-left">
                     Choose a strong new password for your account.
                   </p>
-                  
+
                   {/* New Password */}
                   <div className="text-left">
                     <label className="mb-1 block text-sm text-white/70">

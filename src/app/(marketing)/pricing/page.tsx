@@ -178,7 +178,7 @@ export default function PricingPage() {
 
   const handleCheckout = async (planName: "Elements" | "Pro" | "Customised", customOfficesCount: number = 1, isStartupFlag: boolean = false) => {
     if (planName === "Customised") {
-      window.location.href = "/contact";
+      window.location.href = "/contact-us";
       return;
     }
 

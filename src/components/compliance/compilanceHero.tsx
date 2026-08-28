@@ -9,17 +9,23 @@ export default function ComplianceHero() {
 
   const [category, setCategory] = useState("");
   const [duration, setDuration] = useState("");
+  const [participationType, setParticipationType] = useState("");
+  const [trainingFormat, setTrainingFormat] = useState("");
 
   // Sync state with URL search params on mount or param change
   useEffect(() => {
     setCategory(searchParams.get("category") || "");
     setDuration(searchParams.get("duration") || "");
+    setParticipationType(searchParams.get("participationType") || "");
+    setTrainingFormat(searchParams.get("trainingFormat") || "");
   }, [searchParams]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
     if (duration) params.set("duration", duration);
+    if (participationType) params.set("participationType", participationType);
+    if (trainingFormat) params.set("trainingFormat", trainingFormat);
 
     router.push(`/compliance?${params.toString()}`);
   };
@@ -58,21 +64,27 @@ export default function ComplianceHero() {
               className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
             >
               <option value="">All Categories</option>
-              <option value="mandatory">Mandatory</option>
-              <option value="optional">Optional</option>
+              <option value="agents">Agents</option>
+              <option value="educators">Educators</option>
+              <option value="partners">Partners</option>
+              <option value="agents-educators">Agents & Educators</option>
             </select>
           </div>
 
-          {/* Participation Type */}
+{/* Participation Type */}
           <div>
             <label className="text-sm font-semibold text-white/80 block mb-3">
               Participation Type
             </label>
             <select
-              disabled
-              className="w-full bg-[#03091F] border border-white/10 rounded px-4 py-3 text-white/40 cursor-not-allowed focus:outline-none"
+              value={participationType}
+              onChange={(e) => setParticipationType(e.target.value)}
+              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
             >
               <option value="">All Types</option>
+              <option value="Course">Course</option>
+              <option value="Exam">Exam</option>
+              <option value="Professional Training">Professional Training</option>
             </select>
           </div>
 
@@ -82,10 +94,14 @@ export default function ComplianceHero() {
               Training Format
             </label>
             <select
-              disabled
-              className="w-full bg-[#03091F] border border-white/10 rounded px-4 py-3 text-white/40 cursor-not-allowed focus:outline-none"
+              value={trainingFormat}
+              onChange={(e) => setTrainingFormat(e.target.value)}
+              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
             >
               <option value="">All Formats</option>
+              <option value="Destination Courses">Destination Courses</option>
+              <option value="Educator Courses">Educator Courses</option>
+              <option value="Partner Courses">Partner Courses</option>
             </select>
           </div>
 

@@ -14,20 +14,31 @@ interface CourseCard {
   modules: string;
   assessment: string;
   accessLevel: string;
+  permalink: string;
+}
+
+interface IcefCourse {
+  wp_course_id: number;
+  training_type_id: string;
+  title: string;
+  card_title: string;
+  card_description: string;
+  card_image: string;
+  certified_graduates: number;
+  hours_of_content: string;
+  course_fee: string;
+  exam_fee: string;
+  coming_soon: boolean;
+  coming_soon_label: string;
+  coming_soon_date: string;
+  sales_points: string[];
+  permalink: string;
+  main_filter_category: string;
+  terms: string[];
 }
 
 interface ComplianceMainProps {
-  initialCourses?: Array<{
-    _id?: string;
-    id?: string;
-    courseName: string;
-    type: string;
-    timeInHr: number;
-    modules: number;
-    hyperLink: string;
-    description: string;
-    coverPicture: string;
-  }>;
+  initialCourses?: IcefCourse[];
 }
 
 export default function ComplianceMain({ initialCourses }: ComplianceMainProps) {
@@ -43,21 +54,47 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
     return `${base}${rel}`;
   };
 
+  const extractImageSrc = (imgHtml: string) => {
+    if (!imgHtml) return "/presentation-1.png";
+    const match = imgHtml.match(/src=["']([^"']+)["']/);
+    return match ? match[1] : "/presentation-1.png";
+  };
+
   // Convert initial courses to CourseCard format if present
   const displayCourses: CourseCard[] = Array.isArray(initialCourses)
-    ? initialCourses.map((course, idx) => {
-        const isMandatory = String(course.type).toLowerCase() === 'mandatory';
+    ? initialCourses.map((course) => {
+        const cat = course.main_filter_category || 'general';
+        let categoryLabel = 'GENERAL';
+        let categoryColor = 'bg-orange-500';
+
+        if (cat === 'agents') {
+          categoryLabel = 'AGENTS';
+          categoryColor = 'bg-orange-500';
+        } else if (cat === 'educators') {
+          categoryLabel = 'EDUCATORS';
+          categoryColor = 'bg-purple-500';
+        } else if (cat === 'partners') {
+          categoryLabel = 'PARTNERS';
+          categoryColor = 'bg-blue-500';
+        } else if (cat === 'agents-educators') {
+          categoryLabel = 'AGENTS & EDUCATORS';
+          categoryColor = 'bg-emerald-500';
+        }
+
+        const isComingSoon = course.coming_soon;
+
         return {
-          id: course._id || course.id || String(idx),
-          image: formatImage(course.coverPicture),
-          category: isMandatory ? 'MANDATORY' : 'OPTIONAL',
-          categoryColor: isMandatory ? 'bg-orange-500' : 'bg-purple-500',
-          duration: `${course.timeInHr} HR${course.timeInHr > 1 ? 'S' : ''}`,
-          title: course.courseName,
-          hours: `${course.timeInHr} Hour${course.timeInHr > 1 ? 's' : ''}`,
-          modules: `${course.modules} Module${course.modules > 1 ? 's' : ''}`,
-          assessment: 'Online Assessment',
-          accessLevel: isMandatory ? 'Core Requirement' : 'Recommended Access',
+          id: String(course.wp_course_id),
+          image: extractImageSrc(course.card_image),
+          category: categoryLabel,
+          categoryColor: categoryColor,
+          duration: `${course.hours_of_content} HOURS`,
+          title: course.title,
+          hours: `Hours of Content: ${course.hours_of_content}`,
+          modules: `Course Fee: ${course.course_fee}`,
+          assessment: `Exam Fee: ${course.exam_fee}`,
+          accessLevel: isComingSoon ? 'Coming Soon' : 'Active Training',
+          permalink: course.permalink,
         };
       })
     : [];
@@ -141,12 +178,14 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
                   </div>
 
                   {/* Enroll Button */}
-                  <button 
-                    onClick={() => router.push(process.env.NODE_ENV === 'production' ? '/contact-us' : '/login')}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded transition-colors duration-300"
+                  <a 
+                    href={course.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center font-semibold py-2.5 rounded transition-colors duration-300"
                   >
                     ENROLL NOW
-                  </button>
+                  </a>
                 </div>
               </div>
             ))}

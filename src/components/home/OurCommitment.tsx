@@ -46,7 +46,7 @@ export default function OurMission() {
               key={index}
               className="space-y-4 border-l-2 border-white/20 pl-6"
             >
-              <h3 className="text-lg font-bold uppercase tracking-wide text-white md:text-2xl">
+              <h3 className="text-lg font-bold uppercase tracking-wide text-white md:text-xl">
                 {mission.title}
               </h3>
               <p className="text-sm leading-relaxed text-white/70 md:text-base">

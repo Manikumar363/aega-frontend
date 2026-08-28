@@ -7,30 +7,75 @@ export const metadata: Metadata = {
   title: "Compliances & Courses",
 };
 
-async function getCdpCourses(searchParams: { category?: string; duration?: string }) {
+async function getIcefCourses(searchParams: { 
+  category?: string; 
+  duration?: string;
+  participationType?: string;
+  trainingFormat?: string;
+}) {
   try {
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-    const query = new URLSearchParams();
-    if (searchParams?.category) query.append('category', searchParams.category);
-    if (searchParams?.duration) query.append('duration', searchParams.duration);
+    let url = 'https://www.icef.com/academy/wp-json/export/v1/courses';
+    const category = searchParams?.category;
+    if (category && ['agents', 'educators', 'partners', 'agents-educators'].includes(category)) {
+      url = `${url}/${category}`;
+    }
 
-    const queryString = query.toString() ? `?${query.toString()}` : '';
-    const res = await fetch(`${base.replace(/\/$/, '')}/api/cdp-courses${queryString}`, { cache: 'no-store' });
+    const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
-    return await res.json();
+    let courses = await res.json();
+
+    if (!Array.isArray(courses)) return [];
+
+    const duration = searchParams?.duration;
+    if (duration) {
+      courses = courses.filter((course: any) => {
+        const hoursStr = course.hours_of_content || '';
+        const hours = parseInt(hoursStr.replace(/\D/g, ''), 10) || 0;
+        if (duration === 'short') return hours < 5;
+        if (duration === 'medium') return hours >= 5 && hours <= 20;
+        if (duration === 'long') return hours > 20;
+        return true;
+      });
+    }
+
+    const participationType = searchParams?.participationType;
+    if (participationType) {
+      courses = courses.filter((course: any) => 
+        Array.isArray(course.terms) && course.terms.includes(participationType)
+      );
+    }
+
+    const trainingFormat = searchParams?.trainingFormat;
+    if (trainingFormat) {
+      courses = courses.filter((course: any) => 
+        Array.isArray(course.terms) && course.terms.includes(trainingFormat)
+      );
+    }
+
+    return courses;
   } catch (err) {
-    console.error('Error fetching public cdp courses:', err);
+    console.error('Error fetching ICEF courses:', err);
     return [];
   }
 }
 
 interface PageProps {
-  searchParams?: Promise<{ category?: string; duration?: string }> | { category?: string; duration?: string };
+  searchParams?: Promise<{ 
+    category?: string; 
+    duration?: string;
+    participationType?: string;
+    trainingFormat?: string;
+  }> | { 
+    category?: string; 
+    duration?: string;
+    participationType?: string;
+    trainingFormat?: string;
+  };
 }
 
 export default async function page({ searchParams }: PageProps) {
   const resolvedParams = searchParams instanceof Promise ? await searchParams : (searchParams || {});
-  const courses = await getCdpCourses(resolvedParams);
+  const courses = await getIcefCourses(resolvedParams);
 
   return (
     <>

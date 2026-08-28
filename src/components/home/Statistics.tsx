@@ -62,7 +62,7 @@ export default function OurCoreValues({ data }: StatisticsProps) {
               </p>
 
               {/* Number */}
-              <p className="text-3xl font-bold text-[#F58A07] md:text-6xl">
+              <p className="text-3xl font-bold text-[#F58A07] md:text-4xl">
                 {String(value.numbering || index + 1).padStart(2, '0')}.
               </p>
             </div>

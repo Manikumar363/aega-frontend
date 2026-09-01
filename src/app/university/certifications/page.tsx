@@ -11,7 +11,7 @@ const getFullImageUrl = (path?: string) => {
   if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
     return cleanPath;
   }
-  const base = process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://divine-care.ap-south-1.storage.onantryk.com';
+  const base = process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://aega.ap-south-1.storage.onantryk.com';
   return `${base.replace(/\/$/, '')}/${cleanPath.replace(/^\//, '')}`;
 };
 

@@ -37,29 +37,48 @@ export default function UniversityCDPPage() {
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [completing, setCompleting] = useState(false);
 
+  const extractImageSrc = (imgHtml?: string) => {
+    if (!imgHtml) return "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80";
+    if (imgHtml.startsWith("http://") || imgHtml.startsWith("https://")) return imgHtml;
+    const match = imgHtml.match(/src=["']([^"']+)["']/);
+    return match ? match[1] : "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80";
+  };
+
   const fetchCourses = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getCdpCourses();
+      
+      const icefRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cdp-courses/icef`);
+      if (!icefRes.ok) throw new Error("Failed to fetch ICEF courses");
+      const data = await icefRes.json();
+      
       const enrolled = await getMyEnrolledCourses().catch(() => []);
 
-      const enrolledById = new Map<string, any>();
+      const enrolledByWpId = new Map<number, any>();
       enrolled.forEach((e: any) => {
-        const cid = e.courseId && (e.courseId._id || e.courseId);
-        if (cid) enrolledById.set(String(cid), e);
+        const wpId = e.courseId && e.courseId.wpCourseId;
+        if (wpId) enrolledByWpId.set(Number(wpId), e);
       });
 
-      // Filter courses specific to Universities
-      const universityCourses = data.filter(
-        (c: any) => c.courseFor === "universities" || c.courseFor === "university"
-      );
+      const normalized = data.map((c: any) => {
+        const match = enrolledByWpId.get(Number(c.wp_course_id));
+        const hoursStr = c.hours_of_content || "";
+        const hours = parseInt(hoursStr.replace(/\D/g, ""), 10) || 1;
+        const img = c.card_image ? extractImageSrc(c.card_image) : "";
 
-      const normalized = universityCourses.map((c) => {
-        const match = enrolledById.get(c._id || c.id);
         if (match) {
           return {
             ...c,
+            _id: String(c.wp_course_id),
+            id: String(c.wp_course_id),
+            courseName: c.title,
+            type: "optional",
+            timeInHr: hours,
+            modules: 1,
+            hyperLink: c.permalink,
+            description: c.card_description || c.title,
+            coverPicture: img,
             registered: true,
             progressId: match._id || match.id,
             registrationStartDate: match.startDate || match.enrollmentDate,
@@ -68,7 +87,19 @@ export default function UniversityCDPPage() {
             certificateUrl: match.certificateUrl || null,
           };
         }
-        return c;
+        return {
+          ...c,
+          _id: String(c.wp_course_id),
+          id: String(c.wp_course_id),
+          courseName: c.title,
+          type: "optional",
+          timeInHr: hours,
+          modules: 1,
+          hyperLink: c.permalink,
+          description: c.card_description || c.title,
+          coverPicture: img,
+          registered: false,
+        };
       });
 
       setCourses(normalized);
@@ -128,6 +159,13 @@ export default function UniversityCDPPage() {
 
       toast.success(res.message || "Enrolled in course successfully!");
       setIsRegistrationModalOpen(false);
+      
+      const courseUrl = selectedCourse.hyperLink || (selectedCourse as any).permalink;
+      if (courseUrl) {
+        const url = courseUrl.startsWith("http") ? courseUrl : `https://${courseUrl}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+      
       await fetchCourses();
     } catch (err: any) {
       toast.error(err.message || "Failed to register for course.");
@@ -200,6 +238,18 @@ export default function UniversityCDPPage() {
     setWatchVideoUrl(videoUrl);
     setSelectedCourse(course);
     setIsVideoModalOpen(true);
+  };
+
+  const handleViewCertificate = (course: CdpCourse) => {
+    if (!course.certificateUrl) {
+      toast.error("No certificate file uploaded for this course.");
+      return;
+    }
+    const baseUrl = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+    const fullUrl = course.certificateUrl.startsWith("http")
+      ? course.certificateUrl
+      : `${baseUrl}/${course.certificateUrl.replace(/^\/+/, "")}`;
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleCertificateFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -328,7 +378,12 @@ export default function UniversityCDPPage() {
                     <div>
                       <div className="relative h-44 w-full bg-gray-900">
                         <img src={imageSrc} alt={course.courseName} className="w-full h-full object-cover" />
-                        <div className="absolute top-3 right-3 flex gap-2">
+                        <div className="absolute top-3 right-3 flex gap-2 flex-wrap justify-end items-center max-w-[80%]">
+                          {(course.coming_soon || course.coming_soon === "yes") && (
+                            <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow bg-amber-500 text-white">
+                              Coming Soon
+                            </span>
+                          )}
                           <span
                             className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded shadow ${
                               course.type === "mandatory"
@@ -372,6 +427,30 @@ export default function UniversityCDPPage() {
                           </h3>
                         </div>
                         <p className="text-xs text-gray-400 line-clamp-2">{course.description}</p>
+                        
+                        <div className="bg-[#0A0724]/60 border border-gray-800/40 p-2.5 rounded-lg text-[11px] space-y-1.5 text-gray-300">
+                          <div className="flex items-center justify-between">
+                            <span>💰 Course Fee:</span>
+                            <span className="font-semibold text-emerald-400">{course.course_fee || "Free"}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>📝 Exam Fee:</span>
+                            <span className="font-semibold text-amber-400">{course.exam_fee || "Free"}</span>
+                          </div>
+                          {course.certified_graduates && (
+                            <div className="flex items-center justify-between">
+                              <span>🎓 Certified Graduates:</span>
+                              <span className="font-semibold text-blue-400">{course.certified_graduates}</span>
+                            </div>
+                          )}
+                          {course.main_filter_category && (
+                            <div className="flex items-center justify-between">
+                              <span>🏷️ Category:</span>
+                              <span className="font-semibold text-purple-400 capitalize">{course.main_filter_category}</span>
+                            </div>
+                          )}
+                        </div>
+
                         <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
                           <span>{course.modules} Modules</span>
                           <span>⏱ {course.timeInHr} Hours</span>
@@ -407,13 +486,22 @@ export default function UniversityCDPPage() {
                         </button>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
-                          {/* Edit Schedule Button */}
-                          <button
-                            onClick={() => handleOpenEditModal(course)}
-                            className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" /> Edit
-                          </button>
+                          {/* Edit Schedule or View Certificate Button */}
+                          {isCompleted ? (
+                            <button
+                              onClick={() => handleViewCertificate(course)}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                            >
+                              View Certificate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenEditModal(course)}
+                              className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" /> Edit
+                            </button>
+                          )}
 
                           {/* Complete Course Button */}
                           {!isCompleted ? (
@@ -467,6 +555,35 @@ export default function UniversityCDPPage() {
                   {selectedCourse.description}
                 </div>
               </div>
+
+              {/* Additional ICEF Fields (Modal View) */}
+              {((selectedCourse.sales_points && selectedCourse.sales_points.length > 0) || (selectedCourse.terms && selectedCourse.terms.length > 0)) && (
+                <div className="space-y-3">
+                  {(selectedCourse.sales_points && selectedCourse.sales_points.length > 0) && (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Key Learning Outcomes</label>
+                      <ul className="list-disc pl-4 space-y-1 text-xs text-gray-300 max-h-32 overflow-y-auto bg-[#0A0724] border border-gray-800 p-3 rounded-lg">
+                        {selectedCourse.sales_points.map((point: string, idx: number) => (
+                          <li key={idx}>{point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {(selectedCourse.terms && selectedCourse.terms.length > 0) && (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Course Details &amp; Formats</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedCourse.terms.map((term: string, idx: number) => (
+                          <span key={idx} className="bg-[#0A0724] border border-gray-800 text-[10px] text-gray-400 px-2 py-0.5 rounded">
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div>

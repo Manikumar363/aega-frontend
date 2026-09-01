@@ -1,141 +1,51 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import Image from "next/image";
 
-export default function ComplianceHero() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const [category, setCategory] = useState("");
-  const [duration, setDuration] = useState("");
-  const [participationType, setParticipationType] = useState("");
-  const [trainingFormat, setTrainingFormat] = useState("");
-
-  // Sync state with URL search params on mount or param change
-  useEffect(() => {
-    setCategory(searchParams.get("category") || "");
-    setDuration(searchParams.get("duration") || "");
-    setParticipationType(searchParams.get("participationType") || "");
-    setTrainingFormat(searchParams.get("trainingFormat") || "");
-  }, [searchParams]);
-
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (category) params.set("category", category);
-    if (duration) params.set("duration", duration);
-    if (participationType) params.set("participationType", participationType);
-    if (trainingFormat) params.set("trainingFormat", trainingFormat);
-
-    router.push(`/compliance?${params.toString()}`);
+interface ComplianceHeroProps {
+  data?: {
+    title?: string;
+    description?: string;
   };
+}
+
+export default function ComplianceHero({ data }: ComplianceHeroProps) {
+  const title = data?.title || "COMPLIANCE COURSES";
+  const description = data?.description || "Comprehensive CPD training for agents, universities, and compliance professionals";
 
   return (
-    <section className="relative w-full bg-[#03091F] py-16 md:py-24 overflow-hidden">
-      {/* Background diagonal shape */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-orange-500/10 to-transparent skew-x-12"></div>
-      </div>
-
+    <section className="relative w-full bg-[#03091F] py-24 overflow-hidden">
       <div className="mx-auto max-w-6xl px-6 md:px-10 relative z-10">
-        {/* Header Section */}
-        <div className="mb-12">
-          <p className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-4">
+        <div className="max-w-4xl text-left">
+          <p className="text-[11px] md:text-xs font-semibold text-white/70 uppercase tracking-[0.25em] mb-4">
             COMPLIANCE & COURSES
           </p>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            COMPLIANCE COURSES
+          <h1 className="text-4xl sm:text-5xl md:text-[66px] font-bold text-white uppercase tracking-tight leading-none mb-6">
+            {title}
           </h1>
-          <p className="text-lg text-white/80 leading-relaxed max-w-2xl">
-            Comprehensive CPD training for agents, universities, and compliance professionals
+          <p className="text-sm sm:text-base md:text-lg text-white/85 leading-relaxed max-w-3xl mb-6">
+            {description}
+          </p>
+          <p className="text-xs sm:text-sm text-white/60 leading-relaxed max-w-2xl">
+            In partnership with <strong>ICEF Academy</strong>, AEGA provides direct access to world-recognized professional training courses and qualifications designed specifically for the international education industry.
           </p>
         </div>
+      </div>
 
-        {/* Filter Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-12">
-          {/* Training Category */}
-          <div>
-            <label className="text-sm font-semibold text-white/80 block mb-3">
-              Training Category
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
-            >
-              <option value="">All Categories</option>
-              <option value="agents">Agents</option>
-              <option value="educators">Educators</option>
-              <option value="partners">Partners</option>
-              <option value="agents-educators">Agents & Educators</option>
-            </select>
-          </div>
-
-{/* Participation Type */}
-          <div>
-            <label className="text-sm font-semibold text-white/80 block mb-3">
-              Participation Type
-            </label>
-            <select
-              value={participationType}
-              onChange={(e) => setParticipationType(e.target.value)}
-              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
-            >
-              <option value="">All Types</option>
-              <option value="Course">Course</option>
-              <option value="Exam">Exam</option>
-              <option value="Professional Training">Professional Training</option>
-            </select>
-          </div>
-
-          {/* Training Format */}
-          <div>
-            <label className="text-sm font-semibold text-white/80 block mb-3">
-              Training Format
-            </label>
-            <select
-              value={trainingFormat}
-              onChange={(e) => setTrainingFormat(e.target.value)}
-              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
-            >
-              <option value="">All Formats</option>
-              <option value="Destination Courses">Destination Courses</option>
-              <option value="Educator Courses">Educator Courses</option>
-              <option value="Partner Courses">Partner Courses</option>
-            </select>
-          </div>
-
-          {/* Training Duration */}
-          <div>
-            <label className="text-sm font-semibold text-white/80 block mb-3">
-              Training Duration
-            </label>
-            <select
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="w-full bg-[#03091F] border border-white/20 rounded px-4 py-3 text-white/80 hover:border-white/40 transition focus:outline-none focus:border-[#F68E2D]"
-            >
-              <option value="">All Durations</option>
-              <option value="short">Short (&lt; 5 Hours)</option>
-              <option value="medium">Medium (5 - 20 Hours)</option>
-              <option value="long">Long (&gt; 20 Hours)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Search Button */}
-        <div className="mt-6 flex justify-start md:justify-start">
-          <button
-            onClick={handleSearch}
-            className="bg-[#F68E2D] hover:bg-[#E87A1F] text-white font-semibold px-8 py-3 rounded transition cursor-pointer"
-          >
-            SEARCH
-          </button>
-        </div>
+      {/* Right Diagonal Orange Shape */}
+      <div className="pointer-events-none absolute right-0 top-0 h-auto w-auto z-0">
+        <Image
+          src="/members-design.png"
+          alt="Background"
+          width={900}
+          height={600}
+          className="h-auto w-auto object-contain opacity-80"
+          priority
+        />
       </div>
 
       {/* Mobile Orange Accent */}
-      <div className="md:hidden absolute bottom-0 right-0 w-48 h-48 bg-linear-to-tl from-[#F68E2D] to-[#D97B3C] opacity-20 rounded-full blur-3xl"></div>
+      <div className="md:hidden absolute bottom-0 right-0 w-48 h-48 bg-linear-to-tl from-[#F68E2D] to-[#D97B3C] opacity-20 rounded-full blur-3xl z-0"></div>
     </section>
   );
 }

@@ -188,7 +188,6 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
         error: (err) => `${err.message}`,
       });
     } catch (error) {
-      // Error already handled by toast.promise
       console.error("Toast promise error:", error);
     } finally {
       setIsLoading(false);
@@ -220,7 +219,9 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
 
       {/* Document 1 */}
       <div>
-        <label className="mb-2 block text-xs text-white/70">Supporting Document 1*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Supporting Document 1 <span className="text-red-500 pl-1">*</span>
+        </label>
         <div
           onClick={() => !isLoading && fileInputRef1.current?.click()}
           onDragOver={handleDragOver}
@@ -259,7 +260,9 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
 
       {/* Document 2 */}
       <div>
-        <label className="mb-2 block text-xs text-white/70">Supporting Document 2*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Supporting Document 2 <span className="text-red-500 pl-1">*</span>
+        </label>
         <div
           onClick={() => !isLoading && fileInputRef2.current?.click()}
           onDragOver={handleDragOver}

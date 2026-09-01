@@ -1,5 +1,5 @@
 import Image from "next/image";
-import bgImage from "../../../public/about-bg.png"; 
+import bgImage from "../../../public/about-bg.png";
 
 interface AboutHeroProps {
   data?: {
@@ -12,7 +12,7 @@ interface AboutHeroProps {
 export default function AboutHero({ data }: AboutHeroProps) {
   const title = data?.title || "ELEVATING INTEGRITY IN\nINTERNATIONAL\nRECRUITMENT";
   const description = data?.description || "AEGA is the first global alliance led by UKVi and higher-education experts to professionalize international recruitment through independent guidance, operational oversight, and innovative technology to ensure ethical integrity and student success.";
-  
+
   const kpis = Array.isArray(data?.kpiValues) && data.kpiValues.length > 0 ? data.kpiValues : [
     { value: "500+", description: "Successful consultations" },
     { value: "200+", description: "Hours of expert-led investment" },
@@ -35,10 +35,10 @@ export default function AboutHero({ data }: AboutHeroProps) {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-32 md:px-12 lg:py-40 text-left">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 py-32 md:px-12 lg:py-15 text-left">
         {/* Breadcrumb / Section Label */}
-        <div className="mb-8">
-          <p className="text-xs tracking-[0.3em] uppercase text-white/60">
+        <div className="mb-5">
+          <p className="text-md tracking-[0.3em] uppercase text-white/80">
             ABOUT US
           </p>
         </div>

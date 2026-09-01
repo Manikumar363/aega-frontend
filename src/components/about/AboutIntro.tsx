@@ -2,14 +2,14 @@
 import Image from "next/image";
 
 const TAGS = [
-  { label: "VISIONARY", position: "top-[25%] left-[5%]" },
-  { label: "MENTOR", position: "top-[15%] left-[35%]" },
-  { label: "LEADER", position: "top-[12%] right-[12%]" },
-  { label: "INNOVATOR", position: "top-[40%] right-[8%]" },
-  { label: "EMPOWERER", position: "bottom-[25%] right-[5%]" },
-  { label: "INFLUENCER", position: "bottom-[18%] right-[18%]" },
-  { label: "STRATEGIST", position: "bottom-[30%] left-[8%]" },
-  { label: "ADVISOR", position: "top-[50%] left-[3%]" },
+  { label: "VISIONARY", position: "top-[22%] left-[-22%]" },
+  { label: "MENTOR", position: "top-[4%] left-[-15%]" },
+  { label: "LEADER", position: "top-[10%] right-[-24%]" },
+  { label: "INNOVATOR", position: "top-[35%] right-[-22%]" },
+  { label: "EMPOWERER", position: "bottom-[22%] right-[-20%]" },
+  { label: "INFLUENCER", position: "bottom-[8%] right-[-15%]" },
+  { label: "STRATEGIST", position: "bottom-[25%] left-[-22%]" },
+  { label: "ADVISOR", position: "top-[52%] left-[-18%]" },
 ];
 
 interface AboutIntroProps {

@@ -16,7 +16,7 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validations
     if (!formData.name.trim()) {
       toast.error("Name is required");
@@ -129,7 +129,7 @@ export default function ContactPage() {
 
         {/* Form Section */}
         <div className="mx-auto max-w-3xl">
-          <div className="mb-12 text-left">
+          <div className="mb-12 text-center items-center">
             <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl uppercase tracking-wide leading-tight">
               WE'RE HERE TO
               <br />
@@ -149,7 +149,7 @@ export default function ContactPage() {
             {/* Name, Email, Phone Row */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div>
-                <label className="mb-2 block text-xs font-semibold text-white/60">
+                <label className="mb-2 block text-md font-semibold text-white/60">
                   Name<span className="text-red-500">*</span>
                 </label>
                 <input
@@ -164,7 +164,7 @@ export default function ContactPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold text-white/60">
+                <label className="mb-2 block text-md font-semibold text-white/60">
                   Email<span className="text-red-500">*</span>
                 </label>
                 <input
@@ -179,7 +179,7 @@ export default function ContactPage() {
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold text-white/60">
+                <label className="mb-2 block text-md font-semibold text-white/60">
                   Phone<span className="text-red-500">*</span>
                 </label>
                 <input
@@ -197,7 +197,7 @@ export default function ContactPage() {
 
             {/* Subject */}
             <div>
-              <label className="mb-2 block text-xs font-semibold text-white/60">
+              <label className="mb-2 block text-md font-semibold text-white/60">
                 Subject<span className="text-red-500">*</span>
               </label>
               <input
@@ -214,7 +214,7 @@ export default function ContactPage() {
 
             {/* Message */}
             <div>
-              <label className="mb-2 block text-xs font-semibold text-white/60">
+              <label className="mb-2 block text-md font-semibold text-white/60">
                 Message<span className="text-red-500">*</span>
               </label>
               <textarea

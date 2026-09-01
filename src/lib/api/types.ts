@@ -147,6 +147,13 @@ export interface CdpCourse {
   createdBy?: string;
   createdAt?: string;
   __v?: number;
+  course_fee?: string;
+  exam_fee?: string;
+  certified_graduates?: string | number;
+  sales_points?: string[];
+  coming_soon?: boolean | string;
+  main_filter_category?: string;
+  terms?: string[];
 }
 
 export type CdpCourseListResponse = CdpCourse[] | { data?: CdpCourse[] } | { courses?: CdpCourse[] };

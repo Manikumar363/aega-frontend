@@ -159,26 +159,27 @@ export default function ForgotPasswordPage() {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
-        <h1 className="mb-10 text-3xl font-semibold tracking-wide text-white uppercase">
-          Forgot Password
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 py-12 md:py-16">
+        <h1 className="mb-8 md:mb-12 text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide text-white uppercase text-center">
+          FORGOT PASSWORD
         </h1>
 
-        <div className="flex w-full max-w-[1300px] gap-10">
+        <div className="flex w-full max-w-[1100px] justify-center items-start gap-8 lg:gap-14">
           {/* Left Image */}
-          <div className="hidden md:flex w-[360px] justify-center">
-            <div className="relative h-[460px] w-[320px] rounded-md">
+          <div className="hidden md:flex w-[340px] lg:w-[360px] justify-center shrink-0">
+            <div className="relative h-[480px] w-[320px] lg:w-[340px] rounded-md overflow-hidden shadow-2xl">
               <Image
                 src="/peter-speech.png"
                 alt="Peter Speech"
                 fill
                 className="object-cover"
+                priority
               />
             </div>
           </div>
 
           {/* Right Form */}
-          <div className="flex-1 max-w-[620px]">
+          <div className="flex-1 max-w-[620px] w-full">
             <div className="bg-[#0A1628]/80 border border-white/10 p-8 md:p-10 shadow-2xl">
               {step === "request" && (
                 <form onSubmit={handleRequestReset} className="space-y-6">
@@ -187,7 +188,7 @@ export default function ForgotPasswordPage() {
                   </p>
                   <div className="text-left">
                     <label className="mb-1 block text-sm text-white/70">
-                      Email Address<span className="text-red-500 pl-2">*</span>
+                      Email Address<span className="text-red-500 pl-2"><span style={{ color: "red" }}>*</span></span>
                     </label>
                     <input
                       type="email"

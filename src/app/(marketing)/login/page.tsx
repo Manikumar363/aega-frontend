@@ -147,28 +147,29 @@ function SignInContent() {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 py-12 md:py-16">
         {/* Title */}
-        <h1 className="mb-10 text-3xl font-semibold tracking-wide text-white">
+        <h1 className="mb-8 md:mb-12 text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide text-white uppercase text-center">
           SIGN IN
         </h1>
 
         {/* Main Card */}
-        <div className="flex w-full max-w-[1300px] gap-10">
+        <div className="flex w-full max-w-[1100px] justify-center items-start gap-8 lg:gap-14">
           {/* Left Image */}
-          <div className="hidden md:flex w-[360px] justify-center">
-            <div className="relative h-[460px] w-[320px] rounded-md">
+          <div className="hidden md:flex w-[340px] lg:w-[360px] justify-center shrink-0">
+            <div className="relative h-[520px] w-[320px] lg:w-[340px] rounded-md overflow-hidden shadow-2xl">
               <Image
                 src="/peter-speech.png"
                 alt="peter-seminar"
                 fill
                 className="object-cover"
+                priority
               />
             </div>
           </div>
 
           {/* Right Form */}
-          <div className="flex-1 max-w-[620px]">
+          <div className="flex-1 max-w-[620px] w-full">
             {/* Toggle */}
             <div className="flex mb-6">
               <button

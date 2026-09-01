@@ -63,44 +63,44 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
   // Convert initial courses to CourseCard format if present
   const displayCourses: CourseCard[] = Array.isArray(initialCourses)
     ? initialCourses.map((course) => {
-        const cat = course.main_filter_category || 'general';
-        let categoryLabel = 'GENERAL';
-        let categoryColor = 'bg-orange-500';
+      const cat = course.main_filter_category || 'general';
+      let categoryLabel = 'GENERAL';
+      let categoryColor = 'bg-orange-500';
 
-        if (cat === 'agents') {
-          categoryLabel = 'AGENTS';
-          categoryColor = 'bg-orange-500';
-        } else if (cat === 'educators') {
-          categoryLabel = 'EDUCATORS';
-          categoryColor = 'bg-purple-500';
-        } else if (cat === 'partners') {
-          categoryLabel = 'PARTNERS';
-          categoryColor = 'bg-blue-500';
-        } else if (cat === 'agents-educators') {
-          categoryLabel = 'AGENTS & EDUCATORS';
-          categoryColor = 'bg-emerald-500';
-        }
+      if (cat === 'agents') {
+        categoryLabel = 'AGENTS';
+        categoryColor = 'bg-orange-500';
+      } else if (cat === 'educators') {
+        categoryLabel = 'EDUCATORS';
+        categoryColor = 'bg-purple-500';
+      } else if (cat === 'partners') {
+        categoryLabel = 'PARTNERS';
+        categoryColor = 'bg-blue-500';
+      } else if (cat === 'agents-educators') {
+        categoryLabel = 'AGENTS & EDUCATORS';
+        categoryColor = 'bg-emerald-500';
+      }
 
-        const isComingSoon = course.coming_soon;
+      const isComingSoon = course.coming_soon;
 
-        return {
-          id: String(course.wp_course_id),
-          image: extractImageSrc(course.card_image),
-          category: categoryLabel,
-          categoryColor: categoryColor,
-          duration: `${course.hours_of_content} HOURS`,
-          title: course.title,
-          hours: `Hours of Content: ${course.hours_of_content}`,
-          modules: `Course Fee: ${course.course_fee}`,
-          assessment: `Exam Fee: ${course.exam_fee}`,
-          accessLevel: isComingSoon ? 'Coming Soon' : 'Active Training',
-          permalink: course.permalink,
-        };
-      })
+      return {
+        id: String(course.wp_course_id),
+        image: extractImageSrc(course.card_image),
+        category: categoryLabel,
+        categoryColor: categoryColor,
+        duration: `${course.hours_of_content} HOURS`,
+        title: course.title,
+        hours: `Hours of Content: ${course.hours_of_content}`,
+        modules: `Course Fee: ${course.course_fee}`,
+        assessment: `Exam Fee: ${course.exam_fee}`,
+        accessLevel: isComingSoon ? 'Coming Soon' : 'Active Training',
+        permalink: course.permalink,
+      };
+    })
     : [];
 
   return (
-    <section className="w-full bg-[#03091F] py-16 md:py-24">
+    <section className="w-full bg-[#03091F] pt-13 pb-16 md:pb-24">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         {displayCourses.length === 0 ? (
           hasFilters ? (
@@ -178,7 +178,7 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
                   </div>
 
                   {/* Enroll Button */}
-                  <a 
+                  <a
                     href={course.permalink}
                     target="_blank"
                     rel="noopener noreferrer"

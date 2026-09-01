@@ -8,7 +8,7 @@ interface UniversityHeroProps {
 }
 
 export default function UniversityHero({ data }: UniversityHeroProps) {
-  const title = data?.title || "FOR UNIVERSITIES &\nSPONSORS";
+  const title = data?.title || "FOR UNIVERSITIES &\n SPONSORS";
   const description = data?.description || "Partner with AEGA to access verified agents, reduce recruitment risk, and ensure compliance across your international recruitment network";
 
   return (

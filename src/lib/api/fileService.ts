@@ -132,17 +132,26 @@ export async function uploadMultipleFiles(files: File[]): Promise<string[]> {
  * @returns Full URL with Antryk base URL
  */
 export function getFileDisplayUrl(fileUrl: string): string {
+  if (!fileUrl) return "";
+  
+  // Transparently replace legacy divine-care subdomains
+  let fixedUrl = fileUrl.replace("divine-care.ap-south-1.storage.onantryk.com", "aega.ap-south-1.storage.onantryk.com");
+  
+  if (fixedUrl.startsWith("http://") || fixedUrl.startsWith("https://")) {
+    return fixedUrl;
+  }
+
   const ANTRYK_BASE_URL = process.env.NEXT_PUBLIC_ANTRYK_BASE_URL;
 
   if (!ANTRYK_BASE_URL) {
     console.warn(
       "ANTRYK_BASE_URL is not configured. Using relative URL:",
-      fileUrl
+      fixedUrl
     );
-    return fileUrl;
+    return fixedUrl;
   }
 
   // Remove leading slash if present
-  const cleanUrl = fileUrl.startsWith("/") ? fileUrl.slice(1) : fileUrl;
+  const cleanUrl = fixedUrl.startsWith("/") ? fixedUrl.slice(1) : fixedUrl;
   return `${ANTRYK_BASE_URL}/${cleanUrl}`;
 }

@@ -103,7 +103,9 @@ export default function UniversityBasicForm({
 
       {/* University Name */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">University Name*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          University Name <span className="text-red-500 pl-1">*</span>
+        </label>
         <input
           type="text"
           placeholder="Aega Global University"
@@ -116,7 +118,9 @@ export default function UniversityBasicForm({
 
       {/* Email */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">Email*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Email <span className="text-red-500 pl-1">*</span>
+        </label>
         <input
           type="email"
           placeholder="jane@example.com"
@@ -129,7 +133,9 @@ export default function UniversityBasicForm({
 
       {/* Password */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">Password*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Password <span className="text-red-500 pl-1">*</span>
+        </label>
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
@@ -154,7 +160,9 @@ export default function UniversityBasicForm({
 
       {/* Retype Password */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">Retype Password*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Retype Password <span className="text-red-500 pl-1">*</span>
+        </label>
         <div className="relative">
           <input
             type={showConfirmPassword ? "text" : "password"}

@@ -108,7 +108,9 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
 
       {/* Business Type */}
       <div>
-        <label className="mb-3 block text-xs text-white/70 text-left">Business Type*</label>
+        <label className="mb-3 block text-xs text-white/70 text-left">
+          Business Type <span className="text-red-500 pl-1">*</span>
+        </label>
         <div className="grid grid-cols-2 gap-6">
           <label className="flex cursor-pointer items-center gap-2 text-white">
             <input
@@ -157,7 +159,9 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
       {/* First & Last Name */}
       <div className="grid grid-cols-2 gap-6 text-left">
         <div>
-          <label className="mb-2 block text-xs text-white/70">First Name*</label>
+          <label className="mb-2 block text-xs text-white/70">
+            First Name <span className="text-red-500 pl-1">*</span>
+          </label>
           <input
             type="text"
             placeholder="First Name"
@@ -168,7 +172,9 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
           />
         </div>
         <div>
-          <label className="mb-2 block text-xs text-white/70">Last Name*</label>
+          <label className="mb-2 block text-xs text-white/70">
+            Last Name <span className="text-red-500 pl-1">*</span>
+          </label>
           <input
             type="text"
             placeholder="Last Name"
@@ -182,7 +188,9 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
 
       {/* Email */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">Email*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Email <span className="text-red-500 pl-1">*</span>
+        </label>
         <input
           type="email"
           placeholder="jane@example.com"
@@ -195,7 +203,9 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
 
       {/* Password */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">Password*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Password <span className="text-red-500 pl-1">*</span>
+        </label>
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
@@ -220,7 +230,9 @@ export default function AgentBasicForm({ formData, setFormData, onNext }: AgentB
 
       {/* Retype Password */}
       <div className="text-left">
-        <label className="mb-2 block text-xs text-white/70">Retype Password*</label>
+        <label className="mb-2 block text-xs text-white/70">
+          Retype Password <span className="text-red-500 pl-1">*</span>
+        </label>
         <div className="relative">
           <input
             type={showConfirmPassword ? "text" : "password"}

@@ -41,22 +41,22 @@ export default function Testimonials({ data }: TestimonialsProps) {
         {/* Reviews Grid - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
           {reviews.map((item, index) => (
-            <div key={index}>
+            <div key={index} className="flex flex-col justify-between">
               <blockquote className="mb-8 text-left">
-                <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white whitespace-pre-line">
+                <p className="text-lg md:text-lg lg:text-lg font-medium leading-tight text-white/70 whitespace-pre-line">
                   {item.description}
                 </p>
               </blockquote>
-              <div className="flex items-center gap-4">
-                <div className="relative h-15 w-15 overflow-hidden rounded-full border border-white/40">
+              <div className="flex items-center gap-4 mt-auto">
+                <div className="relative h-14 w-14 md:h-16 md:w-16 min-w-[56px] min-h-[56px] md:min-w-[64px] md:min-h-[64px] shrink-0 overflow-hidden rounded-full border border-white/30 bg-[#06101E] flex items-center justify-center p-2 shadow-md">
                   <img
                     src={formatImage(item.image, "/King's_College_London.png")}
                     alt={item.clientName}
-                    className="w-15 h-15 object-cover rounded-full"
+                    className="h-full w-full object-contain"
                   />
                 </div>
-                <div className="text-left">
-                  <p className="text-base text-white/60">{item.clientName}</p>
+                <div className="text-left min-w-0">
+                  <p className="text-sm md:text-base text-white/60 leading-snug">{item.clientName}</p>
                 </div>
               </div>
             </div>

@@ -47,7 +47,7 @@ export default function Leadership1({ data }: LeadershipProps) {
             return (
               <div key={index} className="flex flex-col justify-between">
                 <blockquote className="mb-8 text-left">
-                  <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white whitespace-pre-line">
+                  <p className="text-lg md:text-md lg:text-lg font-medium leading-tight text-white/70 whitespace-pre-line">
                     {item.review}
                   </p>
                 </blockquote>

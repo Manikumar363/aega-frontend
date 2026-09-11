@@ -51,6 +51,10 @@ export default function OurCoreValues({ data }: StatisticsProps) {
               key={index}
               className="space-y-3 bg-[#0A1628] p-6 md:p-8 text-left"
             >
+              {/* Number */}
+              <p className="text-3xl font-bold text-[#F58A07] md:text-4xl">
+                {String(value.numbering || index + 1).padStart(2, '0')}.
+              </p>
               {/* Title */}
               <h3 className="text-sm font-bold uppercase tracking-wide text-white md:text-base">
                 {value.heading}
@@ -61,10 +65,7 @@ export default function OurCoreValues({ data }: StatisticsProps) {
                 {value.description}
               </p>
 
-              {/* Number */}
-              <p className="text-3xl font-bold text-[#F58A07] md:text-4xl">
-                {String(value.numbering || index + 1).padStart(2, '0')}.
-              </p>
+
             </div>
           ))}
         </div>

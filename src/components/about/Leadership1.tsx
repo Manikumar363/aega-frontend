@@ -43,7 +43,7 @@ export default function Leadership1({ data }: Leadership1Props) {
           {reviews.map((item, index) => (
             <div key={index}>
               <blockquote className="mb-8 text-left">
-                <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white whitespace-pre-line">
+                <p className="text-lg md:text-lg lg:text-lg font-medium leading-tight text-white/70 whitespace-pre-line">
                   {item.description}
                 </p>
               </blockquote>

@@ -50,12 +50,13 @@ export default function Services({ data }: ServicesProps) {
               key={index}
               className="border border-white/10 p-6 md:p-8 bg-[#0A1628]/40 text-left"
             >
-              <h3 className="text-white font-semibold text-lg md:text-xl uppercase mb-6">
-                {service.title}
-              </h3>
-              <div className="text-[#F68E2D] text-xl md:text-2xl font-bold">
+              <div className="text-[#F68E2D] text-xl md:text-2xl font-bold mb-3">
                 {service.numbering || `${String(index + 1).padStart(2, "0")}.`}
               </div>
+              <h3 className="text-white font-semibold text-lg md:text-xl uppercase mb-2">
+                {service.title}
+              </h3>
+
             </div>
           ))}
         </div>

@@ -1,18 +1,18 @@
 'use client';
 
 import { Clock, BookOpen, CheckCircle } from 'lucide-react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 interface CourseCard {
   id: string;
   image: string;
   category: string;
   categoryColor: string;
-  duration: string;
+  duration: string | null;
   title: string;
-  hours: string;
-  modules: string;
-  assessment: string;
+  hoursOfContent: string | null;
+  courseFee: string | null;
+  examFee: string | null;
   accessLevel: string;
   permalink: string;
 }
@@ -25,9 +25,9 @@ interface IcefCourse {
   card_description: string;
   card_image: string;
   certified_graduates: number;
-  hours_of_content: string;
-  course_fee: string;
-  exam_fee: string;
+  hours_of_content: string | null;
+  course_fee: string | null;
+  exam_fee: string | null;
   coming_soon: boolean;
   coming_soon_label: string;
   coming_soon_date: string;
@@ -41,62 +41,98 @@ interface ComplianceMainProps {
   initialCourses?: IcefCourse[];
 }
 
+// Excluded external partner/affiliate course IDs:
+// 356241: NAFSA's Essentials of International Credential Evaluation
+// 593495: The Understanding Employability Course for Education Counsellors (Employability / Successful Graduate)
+// 440318: Scale Up Your Leadership in the Age of AI With Lead5050 (Lead 5050)
+const EXCLUDED_COURSE_IDS = [356241, 593495, 440318];
+
+const isExcludedCourse = (course: IcefCourse): boolean => {
+  if (EXCLUDED_COURSE_IDS.includes(course.wp_course_id)) {
+    return true;
+  }
+  const title = (course.title || course.card_title || '').toLowerCase();
+  if (title.includes('nafsa')) return true;
+  if (title.includes('employability') || title.includes('successful graduate')) return true;
+  if (title.includes('lead5050') || title.includes('lead 5050')) return true;
+  return false;
+};
+
+const sanitizeField = (value?: string | null): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (
+    !trimmed ||
+    trimmed.toLowerCase() === 'null' ||
+    trimmed.toLowerCase() === 'undefined' ||
+    trimmed.toLowerCase() === 'n/a'
+  ) {
+    return null;
+  }
+  return trimmed;
+};
+
 export default function ComplianceMain({ initialCourses }: ComplianceMainProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const hasFilters = searchParams.get('category') || searchParams.get('duration');
 
-  const formatImage = (path?: string, fallback: string = "/presentation-1.png") => {
-    if (!path) return fallback;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
-    const rel = path.startsWith("/") ? path : `/${path}`;
-    return `${base}${rel}`;
-  };
-
-  const extractImageSrc = (imgHtml: string) => {
-    if (!imgHtml) return "/presentation-1.png";
+  const extractImageSrc = (imgHtml?: string) => {
+    if (!imgHtml) return '/presentation-1.png';
+    if (imgHtml.startsWith('http://') || imgHtml.startsWith('https://') || imgHtml.startsWith('/')) {
+      return imgHtml;
+    }
     const match = imgHtml.match(/src=["']([^"']+)["']/);
-    return match ? match[1] : "/presentation-1.png";
+    return match ? match[1] : '/presentation-1.png';
   };
 
-  // Convert initial courses to CourseCard format if present
+  // Convert initial courses to CourseCard format, filtering out excluded affiliate courses
   const displayCourses: CourseCard[] = Array.isArray(initialCourses)
-    ? initialCourses.map((course) => {
-      const cat = course.main_filter_category || 'general';
-      let categoryLabel = 'GENERAL';
-      let categoryColor = 'bg-orange-500';
+    ? initialCourses
+      .filter((course) => !isExcludedCourse(course))
+      .map((course) => {
+        const cat = (course.main_filter_category || 'general').toLowerCase();
+        let categoryLabel = 'GENERAL';
+        let categoryColor = 'bg-orange-500';
 
-      if (cat === 'agents') {
-        categoryLabel = 'AGENTS';
-        categoryColor = 'bg-orange-500';
-      } else if (cat === 'educators') {
-        categoryLabel = 'EDUCATORS';
-        categoryColor = 'bg-purple-500';
-      } else if (cat === 'partners') {
-        categoryLabel = 'PARTNERS';
-        categoryColor = 'bg-blue-500';
-      } else if (cat === 'agents-educators') {
-        categoryLabel = 'AGENTS & EDUCATORS';
-        categoryColor = 'bg-emerald-500';
-      }
+        if (cat === 'agents') {
+          categoryLabel = 'AGENTS';
+          categoryColor = 'bg-orange-500';
+        } else if (cat === 'educators') {
+          categoryLabel = 'EDUCATORS';
+          categoryColor = 'bg-purple-500';
+        } else if (cat === 'partners' || cat === 'partner') {
+          categoryLabel = 'PARTNERS';
+          categoryColor = 'bg-blue-500';
+        } else if (cat === 'agents-educators' || cat === 'agents & educators') {
+          categoryLabel = 'AGENTS & EDUCATORS';
+          categoryColor = 'bg-emerald-500';
+        }
 
-      const isComingSoon = course.coming_soon;
+        const isComingSoon = course.coming_soon;
+        const hours = sanitizeField(course.hours_of_content);
+        const courseFee = sanitizeField(course.course_fee);
+        const examFee = sanitizeField(course.exam_fee);
 
-      return {
-        id: String(course.wp_course_id),
-        image: extractImageSrc(course.card_image),
-        category: categoryLabel,
-        categoryColor: categoryColor,
-        duration: `${course.hours_of_content} HOURS`,
-        title: course.title,
-        hours: `Hours of Content: ${course.hours_of_content}`,
-        modules: `Course Fee: ${course.course_fee}`,
-        assessment: `Exam Fee: ${course.exam_fee}`,
-        accessLevel: isComingSoon ? 'Coming Soon' : 'Active Training',
-        permalink: course.permalink,
-      };
-    })
+        const durationStr = hours
+          ? (hours.toLowerCase().includes('hour')
+              ? hours.toUpperCase()
+              : `${hours} HOURS`)
+          : null;
+
+        return {
+          id: String(course.wp_course_id),
+          image: extractImageSrc(course.card_image),
+          category: categoryLabel,
+          categoryColor: categoryColor,
+          duration: durationStr,
+          title: course.card_title || course.title || '',
+          hoursOfContent: hours,
+          courseFee: courseFee,
+          examFee: examFee,
+          accessLevel: isComingSoon ? 'Coming Soon' : 'Active Training',
+          permalink: course.permalink || '#',
+        };
+      })
     : [];
 
   return (
@@ -122,23 +158,27 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
                 className="group bg-[#03091F] rounded-lg overflow-hidden border border-white/10 hover:border-orange-500/50 hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
-                  {/* Image Container */}
-                  <div className="relative h-48 overflow-hidden bg-gray-900">
+                  {/* Image Container - Responsive and fully visible without cropping */}
+                  <div className="relative h-48 w-full overflow-hidden bg-[#0A1628] flex items-center justify-center p-4">
                     <img
                       src={course.image}
                       alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
 
                     {/* Category Badge */}
-                    <div className={`absolute top-4 left-4 ${course.categoryColor} text-white px-3 py-1 rounded text-xs font-semibold`}>
-                      {course.category}
-                    </div>
+                    {course.category && (
+                      <div className={`absolute top-4 left-4 ${course.categoryColor} text-white px-3 py-1 rounded text-xs font-semibold shadow-md z-10`}>
+                        {course.category}
+                      </div>
+                    )}
 
                     {/* Duration Badge */}
-                    <div className="absolute top-4 right-4 bg-white/95 text-orange-500 px-3 py-1 rounded text-xs font-semibold">
-                      {course.duration}
-                    </div>
+                    {course.duration && (
+                      <div className="absolute top-4 right-4 bg-white/95 text-orange-500 px-3 py-1 rounded text-xs font-semibold shadow-md z-10">
+                        {course.duration}
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -148,25 +188,31 @@ export default function ComplianceMain({ initialCourses }: ComplianceMainProps) 
                       {course.title}
                     </h3>
 
-                    {/* Course Details */}
+                    {/* Course Details - Only renders rows with valid, non-null values */}
                     <div className="space-y-3 mb-6">
-                      {/* Hours */}
-                      <div className="flex items-center gap-2 text-sm text-white/70">
-                        <Clock size={16} className="text-white/40" />
-                        <span>{course.hours}</span>
-                      </div>
+                      {/* Hours of Content */}
+                      {course.hoursOfContent && (
+                        <div className="flex items-center gap-2 text-sm text-white/70">
+                          <Clock size={16} className="text-white/40 shrink-0" />
+                          <span>Hours of Content: {course.hoursOfContent}</span>
+                        </div>
+                      )}
 
-                      {/* Modules */}
-                      <div className="flex items-center gap-2 text-sm text-white/70">
-                        <BookOpen size={16} className="text-white/40" />
-                        <span>{course.modules}</span>
-                      </div>
+                      {/* Course Fee */}
+                      {course.courseFee && (
+                        <div className="flex items-center gap-2 text-sm text-white/70">
+                          <BookOpen size={16} className="text-white/40 shrink-0" />
+                          <span>Course Fee: {course.courseFee}</span>
+                        </div>
+                      )}
 
-                      {/* Assessment */}
-                      <div className="flex items-center gap-2 text-sm text-white/70">
-                        <CheckCircle size={16} className="text-white/40" />
-                        <span>{course.assessment}</span>
-                      </div>
+                      {/* Exam Fee */}
+                      {course.examFee && (
+                        <div className="flex items-center gap-2 text-sm text-white/70">
+                          <CheckCircle size={16} className="text-white/40 shrink-0" />
+                          <span>Exam Fee: {course.examFee}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

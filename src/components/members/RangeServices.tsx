@@ -14,7 +14,7 @@ interface RangeServicesProps {
 export default function RangeServices({ data }: RangeServicesProps) {
   const title = data?.title || "RANGE OF SERVICES";
   const description = data?.description || "Everything you need to succeed as an education agent";
-  
+
   const services = Array.isArray(data?.services) && data.services.length > 0 ? data.services : [
     {
       numbering: "01.",
@@ -66,7 +66,7 @@ export default function RangeServices({ data }: RangeServicesProps) {
     <section className="relative w-full bg-[#03091F] py-20 overflow-hidden">
       {/* Top Left Orange Diagonal */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-linear-to-br from-[#D97B3C] to-[#F68E2D] opacity-30 transform -rotate-45 -translate-x-48 -translate-y-48"></div>
-      
+
       {/* Bottom Right Orange Diagonal */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-linear-to-tl from-[#D97B3C] to-[#F68E2D] opacity-30 transform rotate-45 translate-x-48 translate-y-48"></div>
 
@@ -88,6 +88,10 @@ export default function RangeServices({ data }: RangeServicesProps) {
               key={index}
               className="border border-white/10 p-8 rounded-lg bg-[#0A1628]/50 backdrop-blur-sm hover:border-[#F68E2D]/50 transition-all duration-300 text-left"
             >
+              {/* Number Badge */}
+              <div className="text-5xl font-bold text-[#F68E2D] mb-4">
+                {service.numbering}
+              </div>
               {/* Title and Description */}
               <div className="mb-6">
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 uppercase">
@@ -108,10 +112,7 @@ export default function RangeServices({ data }: RangeServicesProps) {
                 ))}
               </ul>
 
-              {/* Number Badge */}
-              <div className="text-5xl font-bold text-[#F68E2D]">
-                {service.numbering}
-              </div>
+
             </div>
           ))}
         </div>

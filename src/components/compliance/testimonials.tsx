@@ -19,69 +19,56 @@ export default function Testimonials() {
           </span>
         </div>
 
-
         {/* Reviews Grid - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
           {/* First Review Card */}
-          <div>
+          <div className="flex flex-col justify-between">
             <blockquote className="mb-8 text-left">
-              <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
+              <p className="text-lg md:text-lg lg:text-lg font-medium leading-tight text-white/70 whitespace-pre-line">
                 Drawing on deep sector experience and an open, honest communication style, Pete quickly identified core business challenges and delivered clear, tailored recommendations across policy, people, and structure. His pragmatic approach, strong governance insight, and ability to align internal and external stakeholders helped strengthen oversight and drive more effective, joined-up compliance.
               </p>
             </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="relative h-12 w-55 overflow-hidden rounded-full border border-white/20">
+            <div className="flex items-center gap-4 mt-auto">
+              <div className="relative h-14 w-14 md:h-16 md:w-16 min-w-[56px] min-h-[56px] md:min-w-[64px] md:min-h-[64px] shrink-0 overflow-hidden rounded-full border border-white/30 bg-[#06101E] flex items-center justify-center p-2 shadow-md">
                 <Image
-                  src="/unsw.png"
-                  alt="University of Stirling"
+                  src="/university of sydney.png"
+                  alt="University of New South Wales"
                   fill
                   className="object-cover"
                 />
               </div>
-              <p className="text-base text-white/60">Academic Registrar and Director of Compliance and Admissions</p>
+              <div className="text-left min-w-0">
+                <p className="text-sm md:text-base text-white/60 leading-snug">
+                  Academic Registrar and Director of Compliance and Admissions
+                </p>
+              </div>
             </div>
           </div>
+
           {/* Second Review Card */}
-          <div>
+          <div className="flex flex-col justify-between">
             <blockquote className="mb-8 text-left">
-              <p className="text-2xl md:text-3xl lg:text-xl font-bold leading-tight text-white">
+              <p className="text-lg md:text-lg lg:text-lg font-medium leading-tight text-white/70 whitespace-pre-line">
                 Pete took the time to understand our business and people, ensuring we developed a truly joined-up, end-to-end approach to UKVI compliance. By engaging widely across teams, he identified what needed to change and helped us implement clear, tailored improvements that strengthened our processes, systems, and overall readiness.
               </p>
             </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="relative h-17 w-20 overflow-hidden rounded-full border border-white/20">
+            <div className="flex items-center gap-4 mt-auto">
+              <div className="relative h-14 w-14 md:h-16 md:w-16 min-w-[56px] min-h-[56px] md:min-w-[64px] md:min-h-[64px] shrink-0 overflow-hidden rounded-full border border-white/30 bg-[#06101E] flex items-center justify-center p-2 shadow-md">
                 <Image
-                  src="/Birmingham_City_University.jpg"
-                  alt="Birmingham_City_University"
+                  src="/university of birmingham.png"
+                  alt="Birmingham City University"
                   fill
                   className="object-cover"
                 />
               </div>
-              <div className="text-left">
-                <p className="text-base text-white/60">Chief Financial Officer/Executive Board member</p>
+              <div className="text-left min-w-0">
+                <p className="text-sm md:text-base text-white/60 leading-snug">
+                  Chief Financial Officer/Executive Board member
+                </p>
               </div>
             </div>
           </div>
         </div>
-
-
-        {/* Logo Strip - Box Layout with Edge Borders 
-        <div className="grid grid-cols-5 w-full border-t border-b border-l border-r border-white/10 mt-8">
-          {LOGOS.map((logo, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-center h-24 border-r border-white/10 last:border-r-0 bg-[#0A1628]"
-            >
-              <Image
-                src={logo.src}
-                alt={`Logo ${index + 1}`}
-                width={120}
-                height={40}
-                className="object-contain"
-              />
-            </div>
-          ))}
-        </div>*/}
       </div>
     </section>
   );

@@ -107,7 +107,7 @@ export default function SignInPage({ fixedRole }: SignInPageProps) {
       <Image src="/common/bg-right-shape.png" alt="3" width={700} height={500} className="absolute right-0 top-0" />
 
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
-        <h1 className="mb-10 text-4xl text-center font-semibold tracking-wide text-white">SIGN IN</h1>
+        <h1 className="mb-10 text-3xl font-semibold tracking-wide text-white">SIGN IN</h1>
         <div className="flex w-full max-w-[1300px] gap-10">
           <div className="hidden md:flex w-[360px] justify-center">
             <div className="relative h-[460px] w-[320px] rounded-md">

@@ -33,11 +33,11 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
   return (
     <div className="space-y-6 text-white">
       {/* Navigation Header */}
-      <div className="flex items-center justify-between border-b border-[#F68E2D] pb-2 mb-6">
-        <div className="flex items-center gap-8 text-sm">
+      <div className="flex flex-nowrap items-center justify-between border-b border-[#F68E2D] pb-2 mb-6 overflow-x-auto whitespace-nowrap scrollbar-none max-w-full gap-4">
+        <div className="flex items-center gap-4 sm:gap-8 text-sm shrink-0">
           <button
             onClick={() => setActiveTab("info")}
-            className={`font-semibold pb-2 border-b-2 transition-colors ${
+            className={`font-semibold pb-2 border-b-2 transition-colors shrink-0 ${
               activeTab === "info" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent hover:text-[#F68E2D]"
             }`}
           >
@@ -45,7 +45,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
           </button>
           <button
             onClick={() => setActiveTab("cdp")}
-            className={`font-semibold pb-2 border-b-2 transition-colors ${
+            className={`font-semibold pb-2 border-b-2 transition-colors shrink-0 ${
               activeTab === "cdp" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent hover:text-[#F68E2D]"
             }`}
           >
@@ -53,7 +53,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
           </button>
           <button
             onClick={() => setActiveTab("compliances")}
-            className={`font-semibold pb-2 border-b-2 transition-colors ${
+            className={`font-semibold pb-2 border-b-2 transition-colors shrink-0 ${
               activeTab === "compliances" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent hover:text-[#F68E2D]"
             }`}
           >
@@ -61,7 +61,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
           </button>
           <button
             onClick={() => setActiveTab("audits")}
-            className={`font-semibold pb-2 border-b-2 transition-colors ${
+            className={`font-semibold pb-2 border-b-2 transition-colors shrink-0 ${
               activeTab === "audits" ? "text-[#F68E2D] border-[#F68E2D]" : "text-white border-transparent hover:text-[#F68E2D]"
             }`}
           >
@@ -71,7 +71,7 @@ const ViewAgent: React.FC<ViewAgentProps> = ({ agent }) => {
 
         <button
           onClick={() => setShowComplaintModal(true)}
-          className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-5 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="bg-[#F68E2D] hover:bg-[#e57d1f] text-white px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
         >
           <span className="text-base font-bold">+</span> Raise Complaint
         </button>

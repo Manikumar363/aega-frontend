@@ -41,7 +41,7 @@ export default function AgentPrivacyPolicyPage() {
 
   return (
     <DashboardLayout role="agent">
-      <div className="mx-auto max-w-4xl px-4 py-8 text-white text-left">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 text-white text-left">
         <div className="border-b border-white/10 pb-6 mb-8">
           <p className="text-[#F58A07] text-xs font-semibold uppercase tracking-widest mb-2">Legal Documentation</p>
           <h1 className="text-3xl font-bold tracking-tight text-white uppercase mb-2">{displayData.title}</h1>

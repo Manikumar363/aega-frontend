@@ -123,9 +123,15 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const businessType = userState?.businessType ?? null;
+  const token = typeof window !== "undefined" ? getAuthToken() : null;
+  const effectiveBusinessType = (
+    userState?.businessType ||
+    parseBusinessTypeFromToken(token) ||
+    (typeof window !== "undefined" ? localStorage.getItem("businessType") : null)
+  )?.toString().toLowerCase() ?? null;
+
   const topNavigationItems = role === "agent"
-    ? agentTopNav.filter((item) => !(businessType === "b2c" && item.label === "Company Management"))
+    ? agentTopNav.filter((item) => !(effectiveBusinessType === "b2c" && item.label === "Company Management"))
     : universityTopNav;
   const bottomNavigationItems = role === "agent" ? agentBottomNav : universityBottomNav;
 
@@ -183,6 +189,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       if (pathname.includes("/profile")) label = "Profile";
       else if (pathname.includes("/certifications")) label = "Certifications";
       else if (pathname.includes("/password")) label = "Password & Security";
+      else if (pathname.includes("/notifications")) label = "Notifications";
       else if (pathname.includes("/help-center")) label = "Help Center";
       else if (pathname.includes("/agent-management") || pathname.includes("/agentManagement")) label = "Agent Management";
       else if (pathname.includes("/student-management")) label = "Student Management";
@@ -195,16 +202,14 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       else if (pathname.includes("/audits")) label = "Audits";
     }
 
-    const token = typeof window !== "undefined" ? getAuthToken() : null;
     const userRole = userState?.role || (role === "agent" ? "agent" : "university");
-    const bizType = userState?.businessType || parseBusinessTypeFromToken(token);
 
     let platformPrefix = "B2B";
     if (userRole === "counsellor") {
       platformPrefix = "Counsellor";
     } else if (userRole === "university") {
       platformPrefix = "University";
-    } else if (bizType === "b2c" || pathname.includes("/public") || pathname.includes("/student")) {
+    } else if (effectiveBusinessType === "b2c" || pathname.includes("/public") || pathname.includes("/student")) {
       platformPrefix = "B2C";
     } else {
       platformPrefix = "B2B";
@@ -250,14 +255,42 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           if (response.ok) {
             const data = await response.json();
             if (data.profileImage) {
-              setProfilePic(`${process.env.NEXT_PUBLIC_ANTRYK_BASE_URL}/${data.profileImage}`);
+              const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+              const rel = data.profileImage.startsWith("/") ? data.profileImage : `/${data.profileImage}`;
+              setProfilePic(data.profileImage.startsWith("http") ? data.profileImage : `${base}${rel}`);
             } else {
               setProfilePic(null);
             }
           }
+        } else if (role === "university") {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/universities/me/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (response.ok) {
+            const resData = await response.json();
+            const uni = resData.data;
+            if (uni) {
+              const uniName = uni.name || uni.userId?.name || uni.userId?.universityName;
+              if (uniName) {
+                setUserState((prev) => ({
+                  ...(prev || {}),
+                  name: uniName,
+                  fullName: uniName,
+                  universityName: uniName,
+                }));
+              }
+              const rawPic = uni.logo || uni.userId?.profileImage;
+              if (rawPic) {
+                const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+                const rel = rawPic.startsWith("/") ? rawPic : `/${rawPic}`;
+                setProfilePic(rawPic.startsWith("http") ? rawPic : `${base}${rel}`);
+              }
+            }
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch header profile pic:", err);
+        console.error("Failed to fetch header profile:", err);
       }
     };
     fetchHeaderProfile();
@@ -385,10 +418,10 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      pathname === item.href
-                        ? "bg-white/10 text-white"
-                        : "text-white/80 hover:bg-white/5 hover:text-white"
+                    className={`flex items-center gap-2 px-3 py-2 transition-colors ${
+                      pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
+                        ? "bg-[#F68E2D] text-white font-semibold"
+                        : "text-white/80 hover:bg-[#F68E2D] hover:text-white"
                     }`}
                   >
                     <span className={`w-6 h-6 flex items-center justify-center ${pathname === item.href ? "text-white" : ""}`}>
@@ -448,11 +481,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
               <SearchIcon className="text-[#A0AEC0] w-4 h-4 shrink-0" />
               <input
                 type="text"
-                placeholder="Search agents, unis, courses..."
+                placeholder={role === "university" ? "Search agents, courses..." : "Search agents, unis, courses..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => { if (searchResults) setShowSearchDropdown(true); }}
-                className="w-full pl-2.5 pr-2 text-xs text-white placeholder-white/40 bg-transparent outline-none border-none"
+                className="w-full pl-2.5 pr-2 text-xs text-white placeholder-white/75 font-semibold bg-transparent outline-none border-none"
               />
               {isSearching && <span className="text-[10px] text-[#F68E2D] animate-pulse shrink-0">...</span>}
             </div>
@@ -482,8 +515,8 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   </div>
                 )}
 
-                {/* Universities */}
-                {searchResults.universities?.length > 0 && (
+                {/* Universities (Agent/Admin role only) */}
+                {role !== "university" && searchResults.universities?.length > 0 && (
                   <div>
                     <h4 className="text-[10px] font-bold text-[#F68E2D] uppercase tracking-wider mb-1">Universities ({searchResults.universities.length})</h4>
                     <div className="space-y-1">
@@ -526,7 +559,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   </div>
                 )}
 
-                {(!searchResults.agents?.length && !searchResults.universities?.length && !searchResults.courses?.length) && (
+                {((role === "university" ? (!searchResults.agents?.length && !searchResults.courses?.length) : (!searchResults.agents?.length && !searchResults.universities?.length && !searchResults.courses?.length))) && (
                   <p className="text-center text-white/60 py-2">No matching results found.</p>
                 )}
               </div>
@@ -537,7 +570,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           <div className="flex items-center gap-4">
             <button
               className="p-0 hover:bg-white/10 rounded cursor-pointer"
-              onClick={() => router.push(`/${role}/help-center`)}
+              onClick={() => router.push(`/${role}/notifications`)}
             >
               <NotificationsIcon className="w-8 h-8" />
             </button>

@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                {!showCurrentPassword ? (
+                {showCurrentPassword ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -223,7 +223,7 @@ export default function ResetPasswordPage() {
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                {!showNewPassword ? (
+                {showNewPassword ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -282,7 +282,7 @@ export default function ResetPasswordPage() {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
               >
-                {!showConfirmPassword ? (
+                {showConfirmPassword ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"

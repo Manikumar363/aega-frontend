@@ -2,6 +2,7 @@
 
 import DashboardLayout from "@/components/ui/dashboard-layout";
 import { useState, useEffect } from "react";
+import { getStoredUserData } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -182,6 +183,23 @@ export default function AgentProfilePage() {
         throw new Error("Failed to update profile");
       }
 
+      const updatedUser = {
+        ...(getStoredUserData() || {}),
+        name: profileData.companyName,
+        fullName: profileData.companyName,
+        firstName,
+        lastName,
+        phone: profileData.phone,
+        mobileNumber: profileData.phone,
+        companyName: profileData.companyName,
+        streetAddress: profileData.companyAddress,
+        profileImage: uploadedPicPath !== undefined ? uploadedPicPath : (profileImage || undefined),
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("userData", JSON.stringify(updatedUser));
+        window.dispatchEvent(new Event("storage"));
+      }
+
       toast.success("Profile updated successfully!");
       setActiveTab("profile");
     } catch (err: any) {
@@ -225,6 +243,12 @@ export default function AgentProfilePage() {
             }`}
           >
             Edit Profile
+          </button>
+          <button
+            onClick={() => router.push("/agent/profile/documents")}
+            className="text-lg font-semibold pb-2 text-gray-400 hover:text-white border-b-2 border-transparent transition-colors cursor-pointer"
+          >
+            Documents
           </button>
           <button
             onClick={() => router.push("/agent/profile/reset-password")}

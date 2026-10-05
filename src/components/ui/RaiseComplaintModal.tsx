@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 type RaiseComplaintModalProps = {
@@ -26,10 +26,18 @@ export default function RaiseComplaintModal({
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (defaultCompanyName) {
+      setCompanyName(defaultCompanyName);
+    }
+  }, [defaultCompanyName]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!companyName.trim() || !reason.trim() || !message.trim()) {
+    const nameToSubmit = companyName.trim() || defaultCompanyName.trim();
+
+    if (!nameToSubmit || !reason.trim() || !message.trim()) {
       toast.error("Please fill in all mandatory fields.");
       return;
     }
@@ -37,6 +45,20 @@ export default function RaiseComplaintModal({
     try {
       setIsSubmitting(true);
       const token = localStorage.getItem("authToken");
+
+      let userFirstName = "Agency";
+      let userLastName = "User";
+      let userEmail = "user@agency.com";
+
+      try {
+        const storedUser = localStorage.getItem("userData");
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          userFirstName = parsed.firstName || parsed.fullName?.split(" ")[0] || parsed.name || "Agency";
+          userLastName = parsed.lastName || parsed.fullName?.split(" ").slice(1).join(" ") || "User";
+          userEmail = parsed.email || "user@agency.com";
+        }
+      } catch (e) {}
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/complaints/public`,
@@ -47,12 +69,12 @@ export default function RaiseComplaintModal({
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            firstName: "Agency",
-            lastName: "User",
-            emailAddress: "user@agency.com",
+            firstName: userFirstName,
+            lastName: userLastName,
+            emailAddress: userEmail,
             phoneNumber: "N/A",
             countryOfResidence: "UK",
-            agentNameOrCompany: companyName.trim(),
+            agentNameOrCompany: nameToSubmit,
             office: office.trim(),
             typeOfComplaint: reason.trim(),
             description: message.trim(),
@@ -79,6 +101,8 @@ export default function RaiseComplaintModal({
     }
   };
 
+  const fieldLabel = targetType === "university" ? "University Name" : targetType === "agent" ? "Agent Name" : "Company Name";
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-[#14112E] border border-gray-800 rounded-xl p-6 max-w-xl w-full text-white space-y-5 shadow-2xl">
@@ -87,16 +111,16 @@ export default function RaiseComplaintModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Company Name */}
+          {/* Target Entity Name */}
           <div>
             <label className="block font-semibold mb-1.5 text-gray-300">
-              {targetType === "university" ? "University Name" : targetType === "agent" ? "Agent Name" : "Company Name"} <span className="text-red-500">*</span>
+              {fieldLabel} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder={targetType === "university" ? "University Name" : targetType === "agent" ? "Agent Name" : "Company Name"}
+              placeholder={fieldLabel}
               required
               disabled={isSubmitting}
               className="w-full bg-[#0A0724] border border-gray-800 rounded-lg p-3 text-white placeholder-white/30 outline-none focus:border-[#F68E2D]"

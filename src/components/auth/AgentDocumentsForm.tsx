@@ -226,7 +226,7 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
           onClick={() => !isLoading && fileInputRef1.current?.click()}
           onDragOver={handleDragOver}
           onDrop={(e) => !isLoading && handleDrop(e, "doc1")}
-          className="relative flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
+          className="relative flex min-h-[160px] h-auto w-full max-w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/30 bg-[#0E1B30] p-4 text-center hover:bg-[#13243F] transition-colors"
         >
           {uploadedFiles.doc1 && (
             <button
@@ -239,11 +239,11 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
               <X className="h-4 w-4" />
             </button>
           )}
-          <Upload className="mb-2 h-8 w-8 text-white/55" />
-          <span className="text-sm text-white/80">
+          <Upload className="mb-2 h-8 w-8 text-white/55 flex-shrink-0" />
+          <span className="text-sm text-white/80 font-medium truncate max-w-[85%] block text-center px-2">
             {uploadedFiles.doc1 ? uploadedFiles.doc1.name : "Choose file or drag & drop here"}
           </span>
-          <p className="mt-1 text-xs text-white/40">
+          <p className="mt-1.5 text-xs text-white/50 px-2 text-center leading-relaxed max-w-full">
             {uploadedFiles.doc1
               ? "File selected"
               : "Business license, registration proof (PDF, JPG, PNG - max 10MB)"}
@@ -267,7 +267,7 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
           onClick={() => !isLoading && fileInputRef2.current?.click()}
           onDragOver={handleDragOver}
           onDrop={(e) => !isLoading && handleDrop(e, "doc2")}
-          className="relative flex h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-white/30 bg-[#0E1B30] hover:bg-[#13243F]"
+          className="relative flex min-h-[160px] h-auto w-full max-w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/30 bg-[#0E1B30] p-4 text-center hover:bg-[#13243F] transition-colors"
         >
           {uploadedFiles.doc2 && (
             <button
@@ -280,11 +280,11 @@ export default function AgentDocumentsForm({ formData, onBack, uploadedFiles, se
               <X className="h-4 w-4" />
             </button>
           )}
-          <Upload className="mb-2 h-8 w-8 text-white/55" />
-          <span className="text-sm text-white/80">
+          <Upload className="mb-2 h-8 w-8 text-white/55 flex-shrink-0" />
+          <span className="text-sm text-white/80 font-medium truncate max-w-[85%] block text-center px-2">
             {uploadedFiles.doc2 ? uploadedFiles.doc2.name : "Choose file or drag & drop here"}
           </span>
-          <p className="mt-1 text-xs text-white/40">
+          <p className="mt-1.5 text-xs text-white/50 px-2 text-center leading-relaxed max-w-full">
             {uploadedFiles.doc2
               ? "File selected"
               : "Emails, documents, screenshots (PDF, JPG, PNG - max 10MB each)"}

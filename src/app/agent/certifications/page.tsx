@@ -164,7 +164,7 @@ export default function AgentCertificationsPage() {
                   </div>
 
                   {cleanNotes && (
-                    <p className="text-white/70 text-sm leading-relaxed mb-4 whitespace-pre-wrap">
+                    <p className="text-base text-white font-medium leading-relaxed mb-4 whitespace-pre-wrap">
                       {cleanNotes}
                     </p>
                   )}

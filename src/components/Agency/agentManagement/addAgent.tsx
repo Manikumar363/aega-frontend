@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { getAuthToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { X, Upload, Plus } from "lucide-react";
@@ -267,7 +267,7 @@ const AddAgent: React.FC<AddAgentProps> = ({ editAgent, onSuccess }) => {
       } else {
         const autoPassword = data?.credentials?.password || data?.password || data?.agent?.password;
         toast.success(`Agent added successfully! ${autoPassword ? `Password: ${autoPassword}` : ''}`, {
-          autoClose: 15000,
+          duration: 15000,
         });
 
         if (autoPassword) {
@@ -464,7 +464,7 @@ const AddAgent: React.FC<AddAgentProps> = ({ editAgent, onSuccess }) => {
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(createdCredentials.password);
-                      toast.info("Password copied to clipboard!");
+                      toast.success("Password copied to clipboard!");
                     }}
                     className="text-xs bg-[#F68E2D] hover:bg-[#e57d1f] px-3 py-1.5 rounded text-white font-semibold transition-colors"
                   >

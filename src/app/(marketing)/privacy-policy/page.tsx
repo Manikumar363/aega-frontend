@@ -41,7 +41,7 @@ export default async function PrivacyPolicyPage() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-4xl px-6 py-20 md:px-10">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-20 md:px-10">
         {/* Title & Metadata */}
         <div className="border-b border-white/10 pb-8 mb-12 text-left">
           <p className="text-[#F58A07] text-xs font-semibold uppercase tracking-widest mb-3">Legal Documentation</p>

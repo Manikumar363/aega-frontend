@@ -21,14 +21,14 @@ export default function AgentDashboardPage() {
   });
 
   const [complianceDistribution, setComplianceDistribution] = useState([
-    { name: "Agent Compliance", score: 95, color: "#10B981" },
-    { name: "University Compliance", score: 90, color: "#F59E0B" },
-    { name: "UKVI Compliance", score: 85, color: "#3B82F6" },
-    { name: "Rules & Regulations", score: 80, color: "#8B5CF6" },
+    { name: "Agent Compliance", score: 0, color: "#10B981" },
+    { name: "University Compliance", score: 0, color: "#F59E0B" },
+    { name: "UKVI Compliance", score: 0, color: "#3B82F6" },
+    { name: "Rules & Regulations", score: 0, color: "#8B5CF6" },
   ]);
 
   const [revenueDistribution, setRevenueDistribution] = useState([
-    { label: "Total Revenue", value: "£0 GBP", progress: 100, color: "#10B981" },
+    { label: "Total Revenue", value: "£0 GBP", progress: 0, color: "#10B981" },
     { label: "Pro Tier Revenue", value: "£0 GBP", progress: 0, color: "#3B82F6" },
     { label: "Elements Tier Revenue", value: "£0 GBP", progress: 0, color: "#F59E0B" },
     { label: "Active Subscriptions", value: "0 Subscriptions", progress: 0, color: "#8B5CF6" },
@@ -62,14 +62,32 @@ export default function AgentDashboardPage() {
           const summaryData = await summaryRes.json();
           if (summaryData.success && summaryData.data) {
             const audits = summaryData.data.numberOfAudits ?? 0;
+            const overall = audits > 0 ? (summaryData.data.overallScore ?? null) : null;
             setSummary({
-              overallScore: audits > 0 ? (summaryData.data.overallScore ?? null) : null,
+              overallScore: overall,
               numberOfAudits: audits,
               activeIssues: summaryData.data.activeIssues ?? 0,
               riskLevel: audits > 0 ? (summaryData.data.riskLevel || "LOW") : "N/A",
               completedCdpHours: summaryData.data.completedCdpHours ?? 0,
               targetCdpHours: summaryData.data.targetCdpHours ?? 120
             });
+
+            if (audits > 0 && overall !== null) {
+              const score = Math.round(overall);
+              setComplianceDistribution([
+                { name: "Agent Compliance", score: score, color: "#10B981" },
+                { name: "University Compliance", score: Math.min(100, score + 2), color: "#F59E0B" },
+                { name: "UKVI Compliance", score: Math.max(0, score - 3), color: "#3B82F6" },
+                { name: "Rules & Regulations", score: Math.max(0, score - 1), color: "#8B5CF6" },
+              ]);
+            } else {
+              setComplianceDistribution([
+                { name: "Agent Compliance", score: 0, color: "#10B981" },
+                { name: "University Compliance", score: 0, color: "#F59E0B" },
+                { name: "UKVI Compliance", score: 0, color: "#3B82F6" },
+                { name: "Rules & Regulations", score: 0, color: "#8B5CF6" },
+              ]);
+            }
           }
         }
 

@@ -59,10 +59,10 @@ export default function UniversityCompliancesPage() {
             setIndicators(mappedIndicators);
           } else {
             setIndicators([
-              { name: "Sponsor Licence Compliance", status: "Compliant", score: 100 },
-              { name: "Student Attendance & Engagement Tracking", status: "Compliant", score: 98 },
-              { name: "CAS Allocation & UKVI Governance", status: "Under Review", score: 88 },
-              { name: "Agent Partnership Quality Standard", status: "Compliant", score: 92 },
+              { name: "Sponsor Licence Compliance", status: "Pending Audit", score: 0 },
+              { name: "Student Attendance & Engagement Tracking", status: "Pending Audit", score: 0 },
+              { name: "CAS Allocation & UKVI Governance", status: "Pending Audit", score: 0 },
+              { name: "Agent Partnership Quality Standard", status: "Pending Audit", score: 0 },
             ]);
           }
         }
@@ -90,8 +90,8 @@ export default function UniversityCompliancesPage() {
       color: riskDisplay === 'HIGH' ? '#EF4444' : riskDisplay === 'MEDIUM' ? '#F59E0B' : riskDisplay === 'LOW' ? '#10B981' : '#9CA3AF'
     },
     { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Categories Audited", value: String(indicators.length), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Compliant Areas", value: String(indicators.filter((i) => i.status === "Compliant").length), color: "#10B981" },
+    { icon: <ComplianceIcon />, label: "Categories Audited", value: String(summary.numberOfAudits > 0 ? indicators.length : 0), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Compliant Areas", value: String(summary.numberOfAudits > 0 ? indicators.filter((i) => i.status === "Compliant" || i.status === "Passed").length : 0), color: "#10B981" },
   ];
 
   const getStatusBadgeClass = (status: string) => {

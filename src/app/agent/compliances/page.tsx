@@ -63,12 +63,12 @@ export default function AgentCompliancesPage() {
             });
             setIndicators(mappedIndicators);
           } else {
-            // Default indicators fallback
+            // Pending Audit Indicators for accounts without audits yet
             setIndicators([
-              { name: "Agent License Verification", status: "Compliant", score: 100 },
-              { name: "UKVI Regulations & Student Visa Check", status: "Compliant", score: 95 },
-              { name: "University Code of Practice", status: "Under Review", score: 85 },
-              { name: "Financial & Tuition Fee Governance", status: "Compliant", score: 90 },
+              { name: "Agent License Verification", status: "Pending Audit", score: 0 },
+              { name: "UKVI Regulations & Student Visa Check", status: "Pending Audit", score: 0 },
+              { name: "University Code of Practice", status: "Pending Audit", score: 0 },
+              { name: "Financial & Tuition Fee Governance", status: "Pending Audit", score: 0 },
             ]);
           }
         }
@@ -96,8 +96,8 @@ export default function AgentCompliancesPage() {
       color: riskDisplay === 'HIGH' ? '#EF4444' : riskDisplay === 'MEDIUM' ? '#F59E0B' : riskDisplay === 'LOW' ? '#10B981' : '#9CA3AF'
     },
     { icon: <ComplianceIcon />, label: "No. of Audits", value: String(summary.numberOfAudits), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Categories Audited", value: String(indicators.length), color: "#F68E2D" },
-    { icon: <ComplianceIcon />, label: "Compliant Areas", value: String(indicators.filter((i) => i.status === "Compliant").length), color: "#10B981" },
+    { icon: <ComplianceIcon />, label: "Categories Audited", value: String(summary.numberOfAudits > 0 ? indicators.length : 0), color: "#F68E2D" },
+    { icon: <ComplianceIcon />, label: "Compliant Areas", value: String(summary.numberOfAudits > 0 ? indicators.filter((i) => i.status === "Compliant" || i.status === "Passed").length : 0), color: "#10B981" },
   ];
 
   const getStatusBadgeClass = (status: string) => {

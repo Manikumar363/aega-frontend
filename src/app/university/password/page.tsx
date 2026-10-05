@@ -99,7 +99,7 @@ export default function UniversityPasswordPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div className="space-y-1">
-              <label className="block text-gray-400 font-semibold">Current Password *</label>
+              <label className="block text-gray-300 font-semibold">Current Password <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <div className="relative">
                 <input
                   type={showCurrent ? "text" : "password"}
@@ -114,13 +114,13 @@ export default function UniversityPasswordPage() {
                   onClick={() => setShowCurrent(!showCurrent)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
                 >
-                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showCurrent ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-gray-400 font-semibold">New Password *</label>
+              <label className="block text-gray-300 font-semibold">New Password <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <div className="relative">
                 <input
                   type={showNew ? "text" : "password"}
@@ -135,13 +135,13 @@ export default function UniversityPasswordPage() {
                   onClick={() => setShowNew(!showNew)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
                 >
-                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showNew ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-gray-400 font-semibold">Confirm New Password *</label>
+              <label className="block text-gray-300 font-semibold">Confirm New Password <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <div className="relative">
                 <input
                   type={showConfirm ? "text" : "password"}
@@ -156,7 +156,7 @@ export default function UniversityPasswordPage() {
                   onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
                 >
-                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirm ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
             </div>

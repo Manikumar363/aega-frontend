@@ -72,7 +72,7 @@ const AddUniversity: React.FC<AddUniversityProps> = ({ onClose, onSuccess }) => 
 
 			if (!response.ok) {
 				if (response.status === 409 || data?.error?.toLowerCase().includes("exist") || data?.message?.toLowerCase().includes("exist")) {
-					toast.error("Company already exist with this emailid");
+					toast.error("University already exist with this emailid");
 				} else {
 					toast.error(data?.error || data?.message || "Failed to add university");
 				}

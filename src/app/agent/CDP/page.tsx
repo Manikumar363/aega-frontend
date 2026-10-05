@@ -24,6 +24,7 @@ export default function AgentCDPPage() {
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [isViewDetailsModalOpen, setIsViewDetailsModalOpen] = useState(false);
   const [isViewCertificateModalOpen, setIsViewCertificateModalOpen] = useState(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [watchVideoUrl, setWatchVideoUrl] = useState<string | null>(null);

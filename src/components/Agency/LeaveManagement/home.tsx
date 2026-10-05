@@ -39,6 +39,8 @@ interface ApiLeaveResponse {
     role?: string;
     profilePic?: string;
     profileImage?: string;
+    avatar?: string;
+    logo?: string;
   } | string;
   ownerAgentId?: any;
   startDate: string;
@@ -48,6 +50,14 @@ interface ApiLeaveResponse {
   reason: string;
   status: "pending" | "accepted" | "rejected";
 }
+
+const getTodayStr = () => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 
 export default function LeaveManagement() {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
@@ -66,8 +76,8 @@ export default function LeaveManagement() {
   // Leave Form Modal States (Apply Leave)
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [leaveType, setLeaveType] = useState("Casual Leave");
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(getTodayStr);
+  const [endDate, setEndDate] = useState(getTodayStr);
   const [title, setTitle] = useState("");
   const [reason, setReason] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
@@ -84,6 +94,18 @@ export default function LeaveManagement() {
       console.error(e);
     }
     return "Team Member";
+  };
+
+  const getLoggedInUserImage = () => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = localStorage.getItem("userData");
+      if (stored) {
+        const parsedUser = JSON.parse(stored);
+        return parsedUser.profileImage || parsedUser.profilePic || parsedUser.avatar || parsedUser.logo || null;
+      }
+    } catch (err) {}
+    return null;
   };
 
   // Fetch leave requests
@@ -113,24 +135,38 @@ export default function LeaveManagement() {
         ? data
         : data.leaves || data.data || [];
 
+      const formatImageUrl = (img?: string | null) => {
+        if (!img) return null;
+        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+        const base = (
+          process.env.NEXT_PUBLIC_ANTRYK_BASE_URL ||
+          process.env.NEXT_PUBLIC_API_BASE_URL ||
+          "http://localhost:5000"
+        ).replace(/\/$/, "");
+        const rel = img.startsWith("/") ? img : `/${img}`;
+        return `${base}${rel}`;
+      };
+
       const transformedLeaves: LeaveRequest[] = parsedData.map((leave: ApiLeaveResponse) => {
         let name = "Counsellor";
-        let image = null;
-
-        const formatImageUrl = (img?: string) => {
-          if (!img) return null;
-          if (img.startsWith("http://") || img.startsWith("https://")) return img;
-          const base = (process.env.NEXT_PUBLIC_ANTRYK_BASE_URL || "").replace(/\/$/, "");
-          const rel = img.startsWith("/") ? img : `/${img}`;
-          return `${base}${rel}`;
-        };
+        let rawImg: string | null = null;
 
         if (leave.counsellorId && typeof leave.counsellorId === "object") {
           name = leave.counsellorId.name || `${leave.counsellorId.firstName || ""} ${leave.counsellorId.lastName || ""}`.trim() || "Counsellor";
-          image = formatImageUrl(leave.counsellorId.profileImage) || null;
+          rawImg = leave.counsellorId.profileImage || leave.counsellorId.profilePic || leave.counsellorId.avatar || leave.counsellorId.logo || null;
+        } else if (leave.ownerAgentId && typeof leave.ownerAgentId === "object") {
+          name = leave.ownerAgentId.name || `${leave.ownerAgentId.firstName || ""} ${leave.ownerAgentId.lastName || ""}`.trim() || "Agent";
+          rawImg = leave.ownerAgentId.profileImage || leave.ownerAgentId.profilePic || leave.ownerAgentId.avatar || leave.ownerAgentId.logo || null;
         } else {
           name = getLoggedInUserName();
+          rawImg = getLoggedInUserImage();
         }
+
+        if (!rawImg) {
+          rawImg = getLoggedInUserImage();
+        }
+
+        const image = formatImageUrl(rawImg);
 
         let mappedStatus: "Pending" | "Approved" | "Rejected" = "Pending";
         if (leave.status === "accepted") mappedStatus = "Approved";
@@ -163,6 +199,36 @@ export default function LeaveManagement() {
     fetchLeaves();
   }, [fetchLeaves]);
 
+  // Date Change Handlers with Validation
+  const handleStartDateChange = (val: string) => {
+    const today = getTodayStr();
+    if (val < today) {
+      toast.error("Past dates are not allowed.");
+      setStartDate(today);
+      if (endDate < today) setEndDate(today);
+      return;
+    }
+    setStartDate(val);
+    if (endDate < val) {
+      setEndDate(val);
+    }
+  };
+
+  const handleEndDateChange = (val: string) => {
+    const today = getTodayStr();
+    if (val < today) {
+      toast.error("Past dates are not allowed.");
+      setEndDate(startDate > today ? startDate : today);
+      return;
+    }
+    if (val < startDate) {
+      toast.error("End Date cannot be earlier than Start Date.");
+      setEndDate(startDate);
+      return;
+    }
+    setEndDate(val);
+  };
+
   // Apply for Leave Handler
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,15 +237,19 @@ export default function LeaveManagement() {
       return;
     }
 
-    if (new Date(startDate) > new Date(endDate)) {
-      toast.error("Start Date cannot be greater than End Date.");
+    const todayStr = getTodayStr();
+    if (startDate < todayStr) {
+      toast.error("Start Date cannot be in the past.");
       return;
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (new Date(startDate) < today) {
-      toast.error("Start Date cannot be in the past.");
+    if (endDate < todayStr) {
+      toast.error("End Date cannot be in the past.");
+      return;
+    }
+
+    if (endDate < startDate) {
+      toast.error("End Date cannot be earlier than Start Date.");
       return;
     }
 
@@ -211,6 +281,8 @@ export default function LeaveManagement() {
       setShowApplyModal(false);
       setTitle("");
       setReason("");
+      setStartDate(getTodayStr());
+      setEndDate(getTodayStr());
       await fetchLeaves();
     } catch (err: any) {
       toast.error(err.message || "Failed to submit leave request.");
@@ -323,7 +395,11 @@ export default function LeaveManagement() {
           </div>
 
           <button
-            onClick={() => setShowApplyModal(true)}
+            onClick={() => {
+              setStartDate(getTodayStr());
+              setEndDate(getTodayStr());
+              setShowApplyModal(true);
+            }}
             className="bg-[#F68E2D] hover:bg-[#e28124] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" /> Apply Leave
@@ -364,9 +440,16 @@ export default function LeaveManagement() {
                   <tr key={leave.id} className="hover:bg-[#1A163E] transition-colors">
                     {/* Image */}
                     <td className="px-5 py-3 text-center">
-                      <div className="w-9 h-9 rounded-full bg-gray-700 mx-auto overflow-hidden border border-gray-600 flex items-center justify-center font-bold text-white">
+                      <div className="w-9 h-9 rounded-full bg-gray-700 mx-auto overflow-hidden border border-gray-600 flex items-center justify-center font-bold text-white shrink-0">
                         {leave.image ? (
-                          <img src={leave.image} alt={leave.name} className="w-full h-full object-cover" />
+                          <img
+                            src={leave.image}
+                            alt={leave.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
                         ) : (
                           leave.name.charAt(0).toUpperCase()
                         )}
@@ -472,14 +555,14 @@ export default function LeaveManagement() {
 
       {/* VIEW LEAVE MODAL */}
       {showModal && selectedLeave && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#14112E] border border-gray-700 rounded-xl p-6 max-w-md w-full text-white space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#14112E] border border-gray-700 rounded-xl p-6 max-w-lg w-full max-h-[85vh] flex flex-col text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3 shrink-0">
               <h3 className="text-lg font-bold text-[#F68E2D]">Leave Details</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white font-bold">×</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white font-bold cursor-pointer">×</button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs overflow-y-auto my-3 pr-1 grow">
               <div>
                 <span className="text-gray-400 font-semibold block">Submitted By</span>
                 <span className="text-base font-bold text-white">{selectedLeave.name}</span>
@@ -509,17 +592,17 @@ export default function LeaveManagement() {
                 <span className="text-white font-medium">{selectedLeave.title}</span>
               </div>
               <div>
-                <span className="text-gray-400 font-semibold block">Reason</span>
-                <p className="bg-[#0A0724] border border-gray-800 p-3 rounded text-gray-300 italic mt-1 leading-relaxed max-h-[150px] overflow-y-auto">
+                <span className="text-gray-400 font-semibold block mb-1">Reason</span>
+                <div className="bg-[#0A0724] border border-gray-800 p-3 rounded text-gray-300 italic whitespace-pre-wrap max-h-48 overflow-y-auto break-words leading-relaxed border-l-4 border-l-[#F68E2D]">
                   "{selectedLeave.reason}"
-                </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-gray-800">
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-800 shrink-0">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-bold cursor-pointer"
+                className="px-5 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-bold cursor-pointer transition-colors"
               >
                 Close
               </button>
@@ -530,14 +613,14 @@ export default function LeaveManagement() {
 
       {/* APPLY LEAVE MODAL */}
       {showApplyModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#14112E] border border-gray-700 rounded-xl p-6 max-w-md w-full text-white space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#14112E] border border-gray-700 rounded-xl p-6 max-w-md w-full max-h-[90vh] flex flex-col text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3 shrink-0">
               <h3 className="text-lg font-bold text-[#F68E2D]">Apply for Leave</h3>
-              <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-white font-bold">×</button>
+              <button onClick={() => setShowApplyModal(false)} className="text-gray-400 hover:text-white font-bold cursor-pointer">×</button>
             </div>
 
-            <form onSubmit={handleApplySubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleApplySubmit} className="space-y-3 text-xs overflow-y-auto my-3 pr-1 grow">
               <div>
                 <label className="block text-gray-300 font-semibold mb-1">Leave Type</label>
                 <select
@@ -558,8 +641,8 @@ export default function LeaveManagement() {
                   <input
                     type="date"
                     value={startDate}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    min={getTodayStr()}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
                     required
                     className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-[#F68E2D]"
                   />
@@ -569,8 +652,8 @@ export default function LeaveManagement() {
                   <input
                     type="date"
                     value={endDate}
-                    min={startDate || new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate || getTodayStr()}
+                    onChange={(e) => handleEndDateChange(e.target.value)}
                     required
                     className="w-full bg-[#0A0724] border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-[#F68E2D]"
                   />
@@ -592,7 +675,7 @@ export default function LeaveManagement() {
               <div>
                 <label className="block text-gray-300 font-semibold mb-1">Reason *</label>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
@@ -601,7 +684,7 @@ export default function LeaveManagement() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-gray-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowApplyModal(false)}
@@ -633,14 +716,14 @@ export default function LeaveManagement() {
             <div className="flex justify-center gap-3 pt-2">
               <button
                 onClick={() => setDeleteDialogOpen(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-bold"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase disabled:opacity-50"
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>

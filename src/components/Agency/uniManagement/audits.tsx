@@ -278,10 +278,10 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h4 className="text-sm font-bold text-white tracking-wide uppercase group-hover:text-[#F68E2D] transition-colors leading-tight">
+            <h4 className="text-base md:text-lg font-bold text-white tracking-wide uppercase group-hover:text-[#F68E2D] transition-colors leading-tight">
               {item.categoryName}
             </h4>
-            <span className="text-xs text-white/50 block mt-1">
+            <span className="text-sm text-gray-300 block mt-1.5 font-medium">
               Audited by: {auditorName}
             </span>
           </div>
@@ -306,11 +306,11 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         {/* Footer info & Download Report button */}
         <div className="flex items-center justify-between text-xs text-white/60 pt-1">
           <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-[#F68E2D]" />
-            <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+            <Calendar className="w-4 h-4 text-[#F68E2D]" />
+            <span className="text-sm text-gray-300 font-medium">Date: {new Date(item.createdAt).toLocaleDateString()}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-[#F68E2D]">
+            <span className="text-sm text-amber-400 font-bold">
               {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
             </span>
             <button
@@ -334,51 +334,51 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         {/* Overall Score */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className="font-extrabold text-2xl text-[#F68E2D]">
               {summary ? `${summary.complianceScore.toFixed(2)}%` : "100.00%"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Overall Score</span>
+          <span className="text-white/90 text-base font-semibold">Overall Score</span>
         </div>
 
         {/* Total Audits */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className="font-extrabold text-2xl text-[#F68E2D]">
               {summary?.numberOfAudits ?? completedChecks.length}
             </span>
           </div>
-          <span className="text-white/70 text-sm">No. of Audits</span>
+          <span className="text-white/90 text-base font-semibold">No. of Audits</span>
         </div>
 
         {/* Active Issues */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className="font-extrabold text-2xl text-[#F68E2D]">
               {summary?.activeAlerts ?? 0}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Active Issues</span>
+          <span className="text-white/90 text-base font-semibold">Active Issues</span>
         </div>
 
         {/* Risk Level */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className={`font-bold text-base uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className={`font-extrabold text-2xl uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
               {summary?.riskLevel ?? "LOW"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Risk Level</span>
+          <span className="text-white/90 text-base font-semibold">Risk Level</span>
         </div>
       </div>
 
       {/* Latest Audits Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
+        <h3 className="text-lg font-bold tracking-wide text-white uppercase">
           Latest Audits ({latestChecks.length})
         </h3>
 
@@ -396,7 +396,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
       {/* Previous Audits Section */}
       {previousChecks.length > 0 && (
         <div className="space-y-4 pt-4">
-          <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
+          <h3 className="text-lg font-bold tracking-wide text-white uppercase">
             Previous Audit History ({previousChecks.length})
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -413,7 +413,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
             <div className="flex items-center justify-between border-b border-gray-800 pb-3">
               <div>
                 <h3 className="text-xl font-bold text-[#F68E2D]">{selectedAuditModal.categoryName}</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm text-gray-300 mt-1">
                   Audited Date: {new Date(selectedAuditModal.createdAt).toLocaleString()}
                 </p>
               </div>

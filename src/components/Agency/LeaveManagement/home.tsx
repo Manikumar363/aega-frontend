@@ -593,7 +593,7 @@ export default function LeaveManagement() {
               </div>
               <div>
                 <span className="text-gray-400 font-semibold block mb-1">Reason</span>
-                <div className="bg-[#0A0724] border border-gray-800 p-3 rounded text-gray-300 italic whitespace-pre-wrap max-h-48 overflow-y-auto break-words leading-relaxed border-l-4 border-l-[#F68E2D]">
+                <div className="bg-[#0A0724] border border-gray-800 p-3 rounded text-gray-200 italic whitespace-pre-wrap max-h-40 overflow-y-auto break-words leading-relaxed border-l-4 border-l-[#F68E2D] scrollbar-thin scrollbar-thumb-gray-700">
                   "{selectedLeave.reason}"
                 </div>
               </div>

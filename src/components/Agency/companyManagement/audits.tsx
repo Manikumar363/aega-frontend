@@ -132,51 +132,51 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         {/* Overall Score */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className="font-extrabold text-2xl text-[#F68E2D]">
               {summary ? `${summary.complianceScore.toFixed(2)}%` : "100.00%"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Overall Score</span>
+          <span className="text-white/90 text-base font-semibold">Overall Score</span>
         </div>
 
         {/* Total Audits */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className="font-extrabold text-2xl text-[#F68E2D]">
               {summary?.numberOfAudits ?? 0}
             </span>
           </div>
-          <span className="text-white/70 text-sm">No. of Audits</span>
+          <span className="text-white/90 text-base font-semibold">No. of Audits</span>
         </div>
 
         {/* Active Issues */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className="font-bold text-base text-[#F68E2D]">
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className="font-extrabold text-2xl text-[#F68E2D]">
               {summary?.activeAlerts ?? 0}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Active Issues</span>
+          <span className="text-white/90 text-base font-semibold">Active Issues</span>
         </div>
 
         {/* Risk Level */}
         <div className="px-6 py-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
-            <span className={`font-bold text-base uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
+            <span className={`font-extrabold text-2xl uppercase ${getRiskColor(summary?.riskLevel ?? "LOW")}`}>
               {summary?.riskLevel ?? "LOW"}
             </span>
           </div>
-          <span className="text-white/70 text-sm">Risk Level</span>
+          <span className="text-white/90 text-base font-semibold">Risk Level</span>
         </div>
       </div>
 
       {/* Completed History */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold tracking-wider text-white/50 uppercase">
+        <h3 className="text-lg font-bold tracking-wide text-white uppercase">
           Completed Audit History ({completedChecks.length})
         </h3>
 
@@ -196,7 +196,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
                   className="bg-[#14123A] border border-[#3A3760] p-5 flex flex-col justify-between min-h-[144px] hover:border-[#F68E2D]/40 transition-all rounded space-y-3"
                 >
                   <div className="flex flex-col gap-2">
-                    <h4 className="text-sm font-bold text-white tracking-wide uppercase leading-tight">
+                    <h4 className="text-base md:text-lg font-bold text-white tracking-wide uppercase leading-tight">
                       {item.categoryName}
                     </h4>
                     <span className="text-xs text-white/50 block">
@@ -205,24 +205,24 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
                   </div>
 
                   <div className="my-2 flex items-center justify-center text-center">
-                    <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 shadow-sm">
+                    <div className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm">
                       <span>{item.complianceScore.toFixed(2)}% Score</span>
                     </div>
                   </div>
 
                   {commentsList.length > 0 ? (
                     <div className="bg-[#1A163E] border border-[#383B63] p-2.5 rounded text-xs text-white/80">
-                      <span className="font-semibold text-[#F68E2D] block mb-1">Admin Verification Notes / Comments:</span>
-                      <p className="whitespace-pre-line text-white/75">{commentsList.join(" | ")}</p>
+                      <span className="font-bold text-sm text-[#F68E2D] block mb-1.5">Admin Verification Notes / Comments:</span>
+                      <p className="whitespace-pre-line text-sm text-white font-medium leading-relaxed">{commentsList.join(" | ")}</p>
                     </div>
                   ) : null}
 
                   <div className="flex items-center justify-between text-xs text-white/60 pt-2 border-t border-[#3A3760]/30">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-white/40" />
-                      <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      <Calendar className="w-4 h-4 text-[#F68E2D]" />
+                      <span className="text-sm text-gray-300 font-medium">Date: {new Date(item.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <span className="text-[11px] text-[#F68E2D] font-medium">
+                    <span className="text-sm text-amber-400 font-bold">
                       {issuesCount} {issuesCount === 1 ? "Issue" : "Issues"} Flagged
                     </span>
                   </div>

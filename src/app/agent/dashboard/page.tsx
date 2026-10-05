@@ -53,32 +53,36 @@ export default function AgentDashboardPage() {
       try {
         setIsLoading(true);
 
-        // Fetch compliance summary
+        // 1. Fetch live user compliance summary & audit data
         const summaryRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/compliance-indicators/summary`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        let userAuditsCount = 0;
+        let userOverallScore: number | null = null;
+
         if (summaryRes.ok) {
           const summaryData = await summaryRes.json();
           if (summaryData.success && summaryData.data) {
-            const audits = summaryData.data.numberOfAudits ?? 0;
-            const overall = audits > 0 ? (summaryData.data.overallScore ?? null) : null;
+            userAuditsCount = summaryData.data.numberOfAudits ?? 0;
+            userOverallScore = userAuditsCount > 0 ? (summaryData.data.overallScore ?? null) : null;
             setSummary({
-              overallScore: overall,
-              numberOfAudits: audits,
+              overallScore: userOverallScore,
+              numberOfAudits: userAuditsCount,
               activeIssues: summaryData.data.activeIssues ?? 0,
-              riskLevel: audits > 0 ? (summaryData.data.riskLevel || "LOW") : "N/A",
+              riskLevel: userAuditsCount > 0 ? (summaryData.data.riskLevel || "LOW") : "N/A",
               completedCdpHours: summaryData.data.completedCdpHours ?? 0,
               targetCdpHours: summaryData.data.targetCdpHours ?? 120
             });
 
-            if (audits > 0 && overall !== null) {
-              const score = Math.round(overall);
+            // Dynamic Compliance Distribution (0% for newly created accounts, dynamic upon audit completion)
+            if (userAuditsCount > 0 && userOverallScore !== null) {
+              const score = Math.round(userOverallScore);
               setComplianceDistribution([
                 { name: "Agent Compliance", score: score, color: "#10B981" },
-                { name: "University Compliance", score: Math.min(100, score + 2), color: "#F59E0B" },
-                { name: "UKVI Compliance", score: Math.max(0, score - 3), color: "#3B82F6" },
-                { name: "Rules & Regulations", score: Math.max(0, score - 1), color: "#8B5CF6" },
+                { name: "University Compliance", score: Math.min(100, Math.round(score * 0.95)), color: "#F59E0B" },
+                { name: "UKVI Compliance", score: Math.max(0, Math.round(score * 0.9)), color: "#3B82F6" },
+                { name: "Rules & Regulations", score: score, color: "#8B5CF6" },
               ]);
             } else {
               setComplianceDistribution([
@@ -91,25 +95,55 @@ export default function AgentDashboardPage() {
           }
         }
 
-        // Fetch admin stats for dynamic total hours and distributions
-        const adminStatsRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/dashboard/stats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 2. Fetch live subscription/revenue details for current user
+        try {
+          const subRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/subscription/subscription-status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        if (adminStatsRes.ok) {
-          const adminData = await adminStatsRes.json();
-          if (adminData.success && adminData.data) {
-            if (adminData.data.totalCdpHours) {
-              setSummary((prev) => ({ ...prev, targetCdpHours: adminData.data.totalCdpHours }));
-            }
-            if (adminData.data.complianceDistribution) {
-              setComplianceDistribution(adminData.data.complianceDistribution);
-            }
-            if (adminData.data.revenueDistribution) {
-              setRevenueDistribution(adminData.data.revenueDistribution);
+          if (subRes.ok) {
+            const subData = await subRes.json();
+            const sub = subData.subscription;
+            if (sub && sub.status === "active") {
+              const paid = Number(sub.amountPaidGbp) || 0;
+              const isPro = sub.planName === "Pro";
+              const isElements = sub.planName === "Elements";
+
+              setRevenueDistribution([
+                { label: "Total Revenue", value: `£${paid} GBP`, progress: Math.min(100, Math.round((paid / 500) * 100)), color: "#10B981" },
+                { label: "Pro Tier Revenue", value: isPro ? `£${paid} GBP` : "£0 GBP", progress: isPro ? 100 : 0, color: "#3B82F6" },
+                { label: "Elements Tier Revenue", value: isElements ? `£${paid} GBP` : "£0 GBP", progress: isElements ? 100 : 0, color: "#F59E0B" },
+                { label: "Active Subscriptions", value: "1 Active", progress: 100, color: "#8B5CF6" },
+              ]);
+            } else {
+              setRevenueDistribution([
+                { label: "Total Revenue", value: "£0 GBP", progress: 0, color: "#10B981" },
+                { label: "Pro Tier Revenue", value: "£0 GBP", progress: 0, color: "#3B82F6" },
+                { label: "Elements Tier Revenue", value: "£0 GBP", progress: 0, color: "#F59E0B" },
+                { label: "Active Subscriptions", value: "0 Subscriptions", progress: 0, color: "#8B5CF6" },
+              ]);
             }
           }
+        } catch (subErr) {
+          console.error("Subscription fetch error:", subErr);
         }
+
+        // 3. Dynamic total available CDP hours calculation
+        try {
+          const cdpRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cdp-courses`);
+          if (cdpRes.ok) {
+            const cdpCourses = await cdpRes.json();
+            if (Array.isArray(cdpCourses) && cdpCourses.length > 0) {
+              const totalHours = cdpCourses.reduce((sum: number, c: any) => sum + (Number(c.timeInHr) || 1), 0);
+              if (totalHours > 0) {
+                setSummary(prev => ({ ...prev, targetCdpHours: totalHours }));
+              }
+            }
+          }
+        } catch (cdpErr) {
+          console.error("CDP courses fetch error:", cdpErr);
+        }
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -158,12 +192,12 @@ export default function AgentDashboardPage() {
               href={stat.href}
               className="bg-[#14112E] border border-gray-800 rounded-lg p-6 flex items-center justify-between hover:border-[#F68E2D]/40 transition-colors"
             >
-              <div className="flex items-start gap-3">
-                <div className="text-2xl" style={{ color: stat.color }}>
+              <div className="flex items-center gap-3.5">
+                <div className="text-2xl text-[#F68E2D] shrink-0">
                   {stat.icon}
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">{stat.label}</p>
+                  <p className="text-white/90 text-base font-semibold">{stat.label}</p>
                 </div>
               </div>
               <div>

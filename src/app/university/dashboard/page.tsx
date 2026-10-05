@@ -121,12 +121,12 @@ export default function UniversityDashboardPage() {
               href={stat.href}
               className="bg-[#14112E] border border-gray-800 rounded-lg p-6 flex items-center justify-between hover:border-[#F68E2D]/40 transition-colors"
             >
-              <div className="flex items-start gap-3">
-                <div className="text-2xl" style={{ color: stat.color }}>
+              <div className="flex items-center gap-3.5">
+                <div className="text-2xl text-[#F68E2D] shrink-0">
                   {stat.icon}
                 </div>
                 <div className="text-left">
-                  <p className="text-gray-400 text-sm">{stat.label}</p>
+                  <p className="text-white/90 text-base font-semibold">{stat.label}</p>
                 </div>
               </div>
               <div>

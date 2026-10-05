@@ -51,26 +51,80 @@ export default function AgentCDPPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      const icefRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cdp-courses/icef`);
-      if (!icefRes.ok) throw new Error("Failed to fetch ICEF courses");
-      const data = await icefRes.json();
-      
-      const enrolled = await getMyEnrolledCourses().catch(() => []);
 
-      const enrolledByWpId = new Map<number, any>();
+      // 1. Fetch Admin Created Agent CDP Courses
+      const adminCoursesPromise = fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cdp-courses?courseFor=agents`)
+        .then(async (res) => {
+          if (!res.ok) return [];
+          const data = await res.json();
+          if (Array.isArray(data)) return data;
+          if (data?.data && Array.isArray(data.data)) return data.data;
+          if (data?.courses && Array.isArray(data.courses)) return data.courses;
+          return [];
+        })
+        .catch(() => []);
+
+      // 2. Fetch Additional Catalog Courses (ICEF)
+      const icefCoursesPromise = fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cdp-courses/icef`)
+        .then(async (res) => {
+          if (!res.ok) return [];
+          const data = await res.json();
+          return Array.isArray(data) ? data : [];
+        })
+        .catch(() => []);
+
+      // 3. Fetch Enrolled Courses for current user
+      const enrolledPromise = getMyEnrolledCourses().catch(() => []);
+
+      const [adminCourses, icefCourses, enrolled] = await Promise.all([
+        adminCoursesPromise,
+        icefCoursesPromise,
+        enrolledPromise
+      ]);
+
+      const enrolledMap = new Map<string, any>();
       enrolled.forEach((e: any) => {
-        const wpId = e.courseId && e.courseId.wpCourseId;
-        if (wpId) enrolledByWpId.set(Number(wpId), e);
+        const cId = e.courseId?._id || e.courseId?.id || (typeof e.courseId === "string" ? e.courseId : null);
+        if (cId) enrolledMap.set(String(cId), e);
+        if (e.courseId?.wpCourseId) enrolledMap.set(`wp_${e.courseId.wpCourseId}`, e);
+        if (e._id) enrolledMap.set(String(e._id), e);
       });
 
-      const normalized = data.map((c: any) => {
-        const match = enrolledByWpId.get(Number(c.wp_course_id));
-        const hoursStr = c.hours_of_content || "";
-        const hours = parseInt(hoursStr.replace(/\D/g, ""), 10) || 1;
-        const img = c.card_image ? extractImageSrc(c.card_image) : "";
+      // Normalize admin courses
+      const normalizedAdminCourses: CdpCourse[] = adminCourses.map((c: any) => {
+        const cId = String(c._id || c.id);
+        const match = enrolledMap.get(cId) || (c.wpCourseId ? enrolledMap.get(`wp_${c.wpCourseId}`) : null);
 
-        if (match) {
+        return {
+          ...c,
+          _id: cId,
+          id: cId,
+          courseName: c.courseName || c.title || "Agent Training Module",
+          type: c.type || "optional",
+          timeInHr: Number(c.timeInHr) || 1,
+          modules: Number(c.modules) || 1,
+          hyperLink: c.hyperLink || c.videoUrl || "",
+          description: c.description || "",
+          coverPicture: c.coverPicture || "",
+          registered: !!match,
+          progressId: match?._id || match?.id,
+          registrationStartDate: match?.startDate || match?.enrollmentDate,
+          registrationNote: match?.notes || "",
+          enrollmentStatus: match?.status || "on-going",
+          certificateUrl: match?.certificateUrl || null,
+        };
+      });
+
+      // Normalize ICEF courses (avoid duplicates)
+      const normalizedIcefCourses: CdpCourse[] = icefCourses
+        .filter((c: any) => !adminCourses.some((ac: any) => ac.wpCourseId === Number(c.wp_course_id)))
+        .map((c: any) => {
+          const wpKey = `wp_${c.wp_course_id}`;
+          const match = enrolledMap.get(wpKey) || enrolledMap.get(String(c.wp_course_id));
+          const hoursStr = c.hours_of_content || "";
+          const hours = parseInt(hoursStr.replace(/\D/g, ""), 10) || 1;
+          const img = c.card_image ? extractImageSrc(c.card_image) : "";
+
           return {
             ...c,
             _id: String(c.wp_course_id),
@@ -82,30 +136,17 @@ export default function AgentCDPPage() {
             hyperLink: c.permalink,
             description: c.card_description || c.title,
             coverPicture: img,
-            registered: true,
-            progressId: match._id || match.id,
-            registrationStartDate: match.startDate || match.enrollmentDate,
-            registrationNote: match.notes || "",
-            enrollmentStatus: match.status || "on-going",
-            certificateUrl: match.certificateUrl || null,
+            registered: !!match,
+            progressId: match?._id || match?.id,
+            registrationStartDate: match?.startDate || match?.enrollmentDate,
+            registrationNote: match?.notes || "",
+            enrollmentStatus: match?.status || "on-going",
+            certificateUrl: match?.certificateUrl || null,
           };
-        }
-        return {
-          ...c,
-          _id: String(c.wp_course_id),
-          id: String(c.wp_course_id),
-          courseName: c.title,
-          type: "optional",
-          timeInHr: hours,
-          modules: 1,
-          hyperLink: c.permalink,
-          description: c.card_description || c.title,
-          coverPicture: img,
-          registered: false,
-        };
-      });
+        });
 
-      setCourses(normalized);
+      const combinedCourses = [...normalizedAdminCourses, ...normalizedIcefCourses];
+      setCourses(combinedCourses);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch courses");
     } finally {

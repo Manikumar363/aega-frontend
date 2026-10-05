@@ -281,7 +281,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
             <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#F68E2D] transition-colors leading-snug">
               {item.categoryName}
             </h4>
-            <span className="text-xs text-white/50 block mt-1">
+            <span className="text-sm text-gray-300 block mt-1.5 font-medium">
               Audited by: {auditorName}
             </span>
           </div>
@@ -306,7 +306,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         {/* Footer info & Download Report button */}
         <div className="flex items-center justify-between text-xs text-white/60 pt-1">
           <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-[#F68E2D]" />
+            <Calendar className="w-4 h-4 text-[#F68E2D]" />
             <span>{new Date(item.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</span>
           </div>
           <button
@@ -329,7 +329,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
         {/* Overall Score */}
         <div className="px-6 py-5 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <ShieldAlert className="w-5 h-5 text-[#F68E2D]" />
+            <ShieldAlert className="w-6 h-6 text-[#F68E2D]" />
             <span className="font-bold text-lg text-[#F68E2D]">
               {summary?.complianceScore != null ? `${summary.complianceScore.toFixed(0)}%` : "N/A"}
             </span>
@@ -408,7 +408,7 @@ const Audits: React.FC<AuditsProps> = ({ targetId, targetType }) => {
             <div className="flex items-center justify-between border-b border-gray-800 pb-3">
               <div>
                 <h3 className="text-xl font-bold text-[#F68E2D]">{selectedAuditModal.categoryName}</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm text-gray-300 mt-1">
                   Audited Date: {new Date(selectedAuditModal.createdAt).toLocaleString()}
                 </p>
               </div>

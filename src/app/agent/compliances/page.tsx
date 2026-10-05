@@ -146,11 +146,11 @@ export default function AgentCompliancesPage() {
                     className="flex items-center justify-between p-6 border-b md:border-b-0 md:border-r border-gray-800 last:border-r-0"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="text-2xl" style={{ color: stat.color }}>
+                      <div className="text-2xl text-[#F68E2D] shrink-0">
                         {stat.icon}
                       </div>
                       <div>
-                        <p className="text-white/80 text-sm font-semibold">{stat.label}</p>
+                        <p className="text-white/90 text-base font-semibold">{stat.label}</p>
                       </div>
                     </div>
                     <div>
@@ -169,11 +169,11 @@ export default function AgentCompliancesPage() {
                     className="flex items-center justify-between p-6 border-b md:border-b-0 md:border-r border-gray-800 last:border-r-0"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="text-2xl" style={{ color: stat.color }}>
+                      <div className="text-2xl text-[#F68E2D] shrink-0">
                         {stat.icon}
                       </div>
                       <div>
-                        <p className="text-white/80 text-sm font-semibold">{stat.label}</p>
+                        <p className="text-white/90 text-base font-semibold">{stat.label}</p>
                       </div>
                     </div>
                     <div>

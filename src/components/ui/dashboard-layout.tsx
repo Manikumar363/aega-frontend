@@ -130,8 +130,15 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     (typeof window !== "undefined" ? localStorage.getItem("businessType") : null)
   )?.toString().toLowerCase() ?? null;
 
+  const isCounsellorOrB2C = userState?.role === "counsellor" || effectiveBusinessType === "b2c" || (userState as any)?.agentBusinessType === "b2c";
+
   const topNavigationItems = role === "agent"
-    ? agentTopNav.filter((item) => !(effectiveBusinessType === "b2c" && item.label === "Company Management"))
+    ? agentTopNav.filter((item) => {
+        if (isCounsellorOrB2C) {
+          return item.label !== "Company Management" && item.label !== "Agent Management" && item.label !== "Office";
+        }
+        return true;
+      })
     : universityTopNav;
   const bottomNavigationItems = role === "agent" ? agentBottomNav : universityBottomNav;
 
@@ -204,15 +211,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
     const userRole = userState?.role || (role === "agent" ? "agent" : "university");
 
-    let platformPrefix = "B2B";
-    if (userRole === "counsellor") {
-      platformPrefix = "Counsellor";
-    } else if (userRole === "university") {
+    let platformPrefix = "Agent/Counsellor";
+    if (userRole === "university" || role === "university") {
       platformPrefix = "University";
-    } else if (effectiveBusinessType === "b2c" || pathname.includes("/public") || pathname.includes("/student")) {
-      platformPrefix = "B2C";
     } else {
-      platformPrefix = "B2B";
+      platformPrefix = "Agent/Counsellor";
     }
 
     document.title = `${platformPrefix} | ${label}`;
@@ -236,6 +239,14 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       const targetRole = storedUserRole === 'counsellor' ? 'agent' : (storedUserRole === 'admin' ? 'agent' : storedUserRole);
       router.push(`/${targetRole}/dashboard`);
       return;
+    }
+
+    const isCounsellorAccount = storedUserRole === 'counsellor' || storedUser?.businessType === 'b2c' || (storedUser as any)?.agentBusinessType === 'b2c';
+    if (isCounsellorAccount) {
+      if (pathname.includes('/company-management') || pathname.includes('/agent-management') || pathname.includes('/office-management')) {
+        router.push('/agent/dashboard');
+        return;
+      }
     }
 
     setUserState(storedUser);
